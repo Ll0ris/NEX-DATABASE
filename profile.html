@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Profil</title>
+    
+    <!-- Theme Loader - Must be first to prevent flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Set initial theme icon class to prevent flash
+            if (savedTheme === 'dark') {
+                document.documentElement.style.setProperty('--initial-theme-icon', '"\\f186"'); // moon
+            } else {
+                document.documentElement.style.setProperty('--initial-theme-icon', '"\\f185"'); // sun
+            }
+        })();
+    </script>
+    
+    <link rel="stylesheet" href="database-style.css">
+    <link rel="stylesheet" href="profile-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="profile-page">
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <!-- Sol Taraf -->
+        <div class="left-section">
+            <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
+                <img src="logo.png" alt="NEX Logo" class="top-logo">
+                <div class="logo-text">
+                    <span class="top-title">NEX DATABASE</span>
+                    <span class="top-subtitle">FSAC - Yıldız Teknik Üniversitesi</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orta Bölüm - Admin Dropdown -->
+        <div class="center-section">
+            <div class="admin-dropdown" id="adminDropdown">
+                <div class="admin-dropdown-trigger" id="dropdownTrigger">
+                    <i class="fas fa-shield-alt mode-icon" id="modeIcon"></i>
+                    <span class="mode-text">Güvenli Mod</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-option active" data-mode="safe">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Güvenli Mod</span>
+                    </div>
+                    <div class="dropdown-option" data-mode="admin">
+                        <i class="fas fa-cog"></i>
+                        <span>Yönetici Modu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sağ Taraf -->
+        <div class="right-section">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-sun theme-icon"></i>
+            </div>
+            <div class="profile-section" id="profileSection">
+                <div class="profile-info">
+                    <div class="profile-name">Oğuzhan Dedeoğlu</div>
+                    <div class="profile-rank">Sistem Yöneticisi</div>
+                </div>
+                <div class="profile-avatar">
+                    <i class="fas fa-user-circle top-profile-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel active" id="profileSidePanel">
+        <!-- Profil Bilgileri -->
+        <div class="side-profile-section">
+            <div class="side-profile-photo">
+                <i class="fas fa-user-circle default-profile-icon"></i>
+            </div>
+            <div class="side-profile-info">
+                <div class="side-profile-title">Prof. Dr.</div>
+                <div class="side-profile-name">Oğuzhan Dedeoğlu</div>
+                <div class="side-profile-institution">Yıldız Teknik Üniversitesi</div>
+                <div class="side-profile-links">
+                    <a href="#" class="side-link" title="LinkedIn">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="#" class="side-link" title="ORCID">
+                        <i class="fab fa-orcid"></i>
+                    </a>
+                    <a href="#" class="side-link" title="Web of Science">
+                        <i class="fas fa-microscope"></i>
+                    </a>
+                    <a href="#" class="side-link" title="Scopus">
+                        <i class="fas fa-book-open"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigasyon -->
+        <nav class="side-nav">
+            <a href="#" class="nav-item" data-section="profile">
+                <i class="fas fa-user nav-icon"></i>
+                <span>Profil</span>
+            </a>
+            <a href="#" class="nav-item" data-section="education">
+                <i class="fas fa-graduation-cap nav-icon"></i>
+                <span>Eğitim</span>
+            </a>
+            <a href="#" class="nav-item" data-section="research">
+                <i class="fas fa-flask nav-icon"></i>
+                <span>Araştırma Alanları</span>
+            </a>
+            <a href="#" class="nav-item" data-section="membership">
+                <i class="fas fa-university nav-icon"></i>
+                <span>Üyelik</span>
+            </a>
+            <a href="#" class="nav-item" data-section="works">
+                <i class="fas fa-file-alt nav-icon"></i>
+                <span>Çalışmalar</span>
+            </a>
+            <a href="#" class="nav-item" data-section="achievements">
+                <i class="fas fa-trophy nav-icon"></i>
+                <span>Başarılar</span>
+            </a>
+            <a href="#" class="nav-item" data-section="announcements">
+                <i class="fas fa-bullhorn nav-icon"></i>
+                <span>Duyurular & Dokümanlar</span>
+            </a>
+            <a href="#" class="nav-item" data-section="connections">
+                <i class="fas fa-network-wired nav-icon"></i>
+                <span>Bağlantılar</span>
+            </a>
+            <a href="#" class="nav-item" data-section="contact">
+                <i class="fas fa-phone nav-icon"></i>
+                <span>İletişim</span>
+            </a>
+            <a href="#" class="nav-item cv-download" id="downloadCV">
+                <i class="fas fa-download nav-icon"></i>
+                <span>CV'yi İndir</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Profile Editing Panel -->
+    <div class="profile-editing-panel" id="profileEditingPanel">
+        <div class="profile-panel-header">
+            <h3>Profil Düzenleme</h3>
+        </div>
+        
+        <div class="profile-panel-content">
+            <!-- Profil Fotoğrafı -->
+            <div class="profile-photo-section">
+                <div class="profile-photo-container">
+                    <i class="fas fa-user-circle profile-edit-icon"></i>
+                    <div class="photo-overlay">
+                        <label for="photoUpload" class="photo-upload-btn">
+                            <i class="fas fa-camera"></i> Değiştir
+                        </label>
+                        <input type="file" id="photoUpload" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Akademik Linkler -->
+            <div class="profile-section">
+                <h4>Akademik Linkler</h4>
+                <div class="academic-links">
+                    <div class="link-group">
+                        <label>LinkedIn</label>
+                        <input type="url" id="linkedinLink" placeholder="https://linkedin.com/in/...">
+                    </div>
+                    <div class="link-group">
+                        <label>Web of Science</label>
+                        <input type="url" id="wosLink" placeholder="ResearcherID">
+                    </div>
+                    <div class="link-group">
+                        <label>Scopus</label>
+                        <input type="url" id="scopusLink" placeholder="Scopus Author ID">
+                    </div>
+                    <div class="link-group">
+                        <label>ORCID</label>
+                        <input type="url" id="orcidLink" placeholder="https://orcid.org/...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kişisel Bilgiler -->
+            <div class="profile-section">
+                <h4>Kişisel Bilgiler</h4>
+                <div class="personal-info">
+                    <div class="info-group">
+                        <label>Ad Soyad</label>
+                        <input type="text" id="fullName" placeholder="Adınız Soyadınız">
+                    </div>
+                    <div class="info-group">
+                        <label>E-posta</label>
+                        <input type="email" id="email" placeholder="email@yildiz.edu.tr">
+                    </div>
+                    <div class="info-group">
+                        <label>Telefon</label>
+                        <input type="tel" id="phone" placeholder="+90 xxx xxx xx xx">
+                    </div>
+                    <div class="info-group">
+                        <label>Bölüm</label>
+                        <input type="text" id="department" placeholder="Fakülte / Bölüm">
+                    </div>
+                    <div class="info-group">
+                        <label>Ünvan</label>
+                        <input type="text" id="title" placeholder="Akademik Ünvan">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kaydet Butonu -->
+            <div class="profile-actions">
+                <button class="save-profile-btn" id="saveProfileBtn">
+                    <i class="fas fa-save"></i> Profili Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content" id="mainContent">
+        <!-- Profil Content -->
+        <div class="content-section" id="profileContent">
+            <div class="content-header">
+                <button class="edit-mode-btn" id="profileEditBtn">
+                    <i class="fas fa-edit"></i>
+                    Düzenle
+                </button>
+            </div>
+            
+            <div class="profile-content">
+                <div class="profile-main-info">
+                    <!-- Profil Fotoğrafı ve Temel Bilgiler -->
+                    <div class="profile-photo-info">
+                        <div class="main-profile-photo">
+                            <i class="fas fa-user-circle default-photo-icon"></i>
+                        </div>
+                        <div class="basic-info">
+                            <div class="name-title">
+                                <span class="title-prefix">Prof. Dr.</span>
+                                <span class="full-name">Oğuzhan Dedeoğlu</span>
+                            </div>
+                            <div class="institution-info">
+                                <div class="institution">Yıldız Teknik Üniversitesi</div>
+                                <div class="faculty">Fen Fakültesi</div>
+                                <div class="department">Matematik Mühendisliği Bölümü</div>
+                                <div class="status">Aktif Öğretim Üyesi</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profil Detay Bilgileri -->
+                <div class="profile-details">
+                    <!-- Biyografi -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-user-edit"></i>
+                            Biyografi
+                        </h3>
+                        <div class="detail-content" id="biographyContent">
+                            <p>Prof. Dr. Oğuzhan Dedeoğlu, matematik mühendisliği alanında uzmanlaşmış deneyimli bir akademisyendir. Araştırma alanları arasında sayısal analiz, optimizasyon teorisi ve uygulamalı matematik yer almaktadır.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Çalışmalar -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-briefcase"></i>
+                            Çalışmalar
+                        </h3>
+                        <div class="detail-content" id="worksContent">
+                            <div class="work-item">
+                                <h4>Matematik Mühendisliği Bölümü Başkanı</h4>
+                                <p>Yıldız Teknik Üniversitesi - 2020 - Devam Ediyor</p>
+                            </div>
+                            <div class="work-item">
+                                <h4>Araştırma Görevlisi</h4>
+                                <p>YTÜ Fen Fakültesi - 2015 - 2020</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Üyelik Kartı -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-id-card"></i>
+                            Akademik Üyelik Kartı
+                        </h3>
+                        <div class="detail-content" id="membershipCardContent">
+                            <div class="academic-card">
+                                <div class="card-info">
+                                    <div class="card-item">
+                                        <span class="card-label">Kurum:</span>
+                                        <span class="card-value">Yıldız Teknik Üniversitesi</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Fakülte:</span>
+                                        <span class="card-value">Fen Fakültesi</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Bölüm:</span>
+                                        <span class="card-value">Matematik Mühendisliği</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Sicil No:</span>
+                                        <span class="card-value">20190001</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Başlangıç Tarihi:</span>
+                                        <span class="card-value">15 Eylül 2019</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AGNO -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-chart-line"></i>
+                            Ağırlıklı Genel Not Ortalaması
+                        </h3>
+                        <div class="detail-content" id="gpaContent">
+                            <div class="gpa-display">
+                                <div class="gpa-value">3.87</div>
+                                <div class="gpa-scale">/ 4.00</div>
+                                <div class="gpa-status">Yüksek Onur</div>
+                            </div>
+                            <div class="gpa-details">
+                                <div class="gpa-item">
+                                    <span>Lisans AGNO:</span>
+                                    <span>3.92 / 4.00</span>
+                                </div>
+                                <div class="gpa-item">
+                                    <span>Yüksek Lisans AGNO:</span>
+                                    <span>3.85 / 4.00</span>
+                                </div>
+                                <div class="gpa-item">
+                                    <span>Doktora AGNO:</span>
+                                    <span>3.82 / 4.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Education Content -->
+        <div class="content-section" id="educationContent" style="display: none;">
+            <div class="education-container">
+                <!-- Education Information Section -->
+                <div class="education-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        Eğitim Bilgileri
+                    </h3>
+                    <div class="education-items" id="educationItems">
+                        <!-- Education items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addEducationBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Eğitim Bilgisi Ekle</span>
+                    </div>
+                </div>
+
+                <!-- Thesis Section -->
+                <div class="education-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-scroll"></i>
+                        Tezler
+                    </h3>
+                    <div class="education-items" id="thesisItems">
+                        <!-- Thesis items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addThesisBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Tez Ekle</span>
+                    </div>
+                </div>
+
+                <!-- Languages Section -->
+                <div class="education-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-language"></i>
+                        Yabancı Diller
+                    </h3>
+                    <div class="education-items" id="languageItems">
+                        <!-- Language items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addLanguageBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Yabancı Dil Ekle</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Research Content -->
+        <div class="content-section" id="researchContent" style="display: none;">
+            <div class="research-container">
+                <!-- Work Areas Section -->
+                <div class="research-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-briefcase"></i>
+                        Çalışma Alanları
+                    </h3>
+                    <div class="research-items" id="workAreaItems">
+                        <!-- Work area items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addWorkAreaBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Çalışma Alanı Ekle</span>
+                    </div>
+                </div>
+
+                <!-- Interest Areas Section -->
+                <div class="research-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-heart"></i>
+                        İlgi Alanları
+                    </h3>
+                    <div class="research-items" id="interestAreaItems">
+                        <!-- Interest area items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addInterestAreaBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>İlgi Alanı Ekle</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Membership Content -->
+        <div class="content-section" id="membershipContent" style="display: none;">
+            <div class="membership-cards-container">
+                <!-- FSAC Membership Card -->
+                <div class="membership-card" id="fsacCard">
+                    <div class="card-3d">
+                        <div class="card-background fsac-background"></div>
+                        <div class="card-overlay"></div>
+                        <div class="card-content">
+                            <div class="card-header">
+                                <h3 class="card-title">FSAC</h3>
+                                <div class="card-logo">
+                                    <i class="fas fa-university"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <div class="membership-info">
+                                    <div class="info-item">
+                                        <label>Üyelik Durumu:</label>
+                                        <span class="status-active">Aktif</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Üyelik Türü:</label>
+                                        <span class="membership-type">Asil Üye</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Giriş Tarihi:</label>
+                                        <span class="join-date">15 Eylül 2018</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Pozisyon:</label>
+                                        <span class="position">Kurucu Üye</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-footer">
+                                <div class="organization-name">
+                                    Faculty of Science Academic Club
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEX Membership Card -->
+                <div class="membership-card" id="nexCard">
+                    <div class="card-3d">
+                        <div class="card-background nex-background"></div>
+                        <div class="card-overlay"></div>
+                        <div class="card-content">
+                            <div class="card-header">
+                                <h3 class="card-title">NEX</h3>
+                                <div class="card-logo">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <div class="membership-info">
+                                    <div class="info-item">
+                                        <label>Üyelik Numarası:</label>
+                                        <span class="membership-number">#12500001</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Rütbe:</label>
+                                        <span class="rank">Kurucu</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Katılış Tarihi:</label>
+                                        <span class="join-date">20 Ocak 2019</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Aktif Pozisyonlar:</label>
+                                        <span class="active-positions">Sistem Yöneticisi, Mentor</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Kabul Eden:</label>
+                                        <span class="acceptor">Yıldız Teknik Üniversitesi</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-footer">
+                                <div class="organization-name">
+                                    Next Generation Excellence
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Works Content -->
+        <div class="content-section" id="worksContent" style="display: none;">
+            <div class="content-header">
+                <h1>Çalışmalar</h1>
+                <p class="content-subtitle">Yayınlar, projeler ve akademik çalışmalarınız</p>
+            </div>
+            <div class="section-placeholder">
+                <p>Çalışmalar içeriği burada olacak...</p>
+            </div>
+        </div>
+
+        <!-- Achievements Content -->
+        <div class="content-section" id="achievementsContent" style="display: none;">
+            <div class="content-header">
+                <h1>Başarılar</h1>
+                <p class="content-subtitle">Ödülleriniz, sertifikalarınız ve başarılarınız</p>
+            </div>
+            <div class="section-placeholder">
+                <p>Başarılar içeriği burada olacak...</p>
+            </div>
+        </div>
+
+        <!-- Announcements Content -->
+        <div class="content-section" id="announcementsContent" style="display: none;">
+            <div class="content-header">
+                <h1>Duyurular & Dokümanlar</h1>
+                <p class="content-subtitle">Önemli duyurular ve belgeleriniz</p>
+            </div>
+            <div class="section-placeholder">
+                <p>Duyurular ve dokümanlar içeriği burada olacak...</p>
+            </div>
+        </div>
+
+        <!-- Connections Content -->
+        <div class="content-section" id="connectionsContent" style="display: none;">
+            <div class="content-header">
+                <h1>Bağlantılar</h1>
+                <p class="content-subtitle">Akademik ağınız ve profesyonel bağlantılarınız</p>
+            </div>
+            <div class="section-placeholder">
+                <p>Bağlantılar içeriği burada olacak...</p>
+            </div>
+        </div>
+
+        <!-- Contact Content -->
+        <div class="content-section" id="contactContent" style="display: none;">
+            <div class="contact-container">
+                <!-- Address Section -->
+                <div class="contact-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Adres Bilgileri
+                    </h3>
+                    <div class="contact-items" id="addressItems">
+                        <!-- Address items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addAddressBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Adres Ekle</span>
+                    </div>
+                </div>
+
+                <!-- Email Section -->
+                <div class="contact-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-envelope"></i>
+                        E-posta Adresleri
+                    </h3>
+                    <div class="contact-items" id="emailItems">
+                        <!-- Email items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addEmailBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>E-posta Ekle</span>
+                    </div>
+                </div>
+
+                <!-- Phone Section -->
+                <div class="contact-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-phone"></i>
+                        Telefon Numaraları
+                    </h3>
+                    <div class="contact-items" id="phoneItems">
+                        <!-- Phone items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addPhoneBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Telefon Ekle</span>
+                    </div>
+                </div>
+
+                <!-- Links Section -->
+                <div class="contact-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-link"></i>
+                        Bağlantılar
+                    </h3>
+                    <div class="contact-items" id="linkItems">
+                        <!-- Link items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addLinkBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Bağlantı Ekle</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Education Modals -->
+    <!-- Education Modal -->
+    <div class="modal-overlay" id="educationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Eğitim Bilgisi Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeEducationModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="educationForm">
+                <div class="form-group">
+                    <label>Düzey</label>
+                    <select name="level" required>
+                        <option value="">Seçiniz</option>
+                        <option value="Lise">Lise</option>
+                        <option value="Lisans">Lisans</option>
+                        <option value="Yüksek Lisans">Yüksek Lisans</option>
+                        <option value="Doktora">Doktora</option>
+                        <option value="Yan Dal">Yan Dal</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Kurum</label>
+                    <input type="text" name="institution" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Başlangıç Yılı</label>
+                        <input type="number" name="startYear" min="1950" max="2030" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Bitiş Yılı</label>
+                        <input type="number" name="endYear" min="1950" max="2030">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelEducation">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Thesis Modal -->
+    <div class="modal-overlay" id="thesisModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tez Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeThesisModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="thesisForm">
+                <div class="form-group">
+                    <label>Tez Düzeyi</label>
+                    <select name="level" required>
+                        <option value="">Seçiniz</option>
+                        <option value="Yüksek Lisans">Yüksek Lisans</option>
+                        <option value="Doktora">Doktora</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tez Başlığı</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Yıl</label>
+                    <input type="number" name="year" min="1950" max="2030" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelThesis">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Language Modal -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Yabancı Dil Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeLanguageModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="languageForm">
+                <div class="form-group">
+                    <label>Dil Adı</label>
+                    <input type="text" name="language" required>
+                </div>
+                <div class="form-group">
+                    <label>Düzey</label>
+                    <select name="level" required>
+                        <option value="">Seçiniz</option>
+                        <option value="A1">A1 - Başlangıç</option>
+                        <option value="A2">A2 - Temel</option>
+                        <option value="B1">B1 - Orta Alt</option>
+                        <option value="B2">B2 - Orta Üst</option>
+                        <option value="C1">C1 - İleri</option>
+                        <option value="C2">C2 - Yeterlik</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelLanguage">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Work Area Modal -->
+    <div class="modal-overlay" id="workAreaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Çalışma Alanı Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeWorkAreaModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="workAreaForm">
+                <div class="form-group">
+                    <label>Çalışma Alanı Adı</label>
+                    <input type="text" name="areaName" placeholder="Örn: Yapay Zeka, Makine Öğrenmesi" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelWorkArea">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Interest Area Modal -->
+    <div class="modal-overlay" id="interestAreaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>İlgi Alanı Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeInterestAreaModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="interestAreaForm">
+                <div class="form-group">
+                    <label>İlgi Alanı Adı</label>
+                    <input type="text" name="areaName" placeholder="Örn: Doğal Dil İşleme, Robotik" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelInterestArea">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Address Modal -->
+    <div class="modal-overlay" id="addressModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adres Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeAddressModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="addressForm">
+                <div class="form-group">
+                    <label>Adres Türü</label>
+                    <select name="type">
+                        <option value="">Seçiniz (Opsiyonel)</option>
+                        <option value="Okul">Okul Adresi</option>
+                        <option value="Ev">Ev Adresi</option>
+                        <option value="İş">İş Adresi</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Adres</label>
+                    <textarea name="address" rows="3" placeholder="Tam adres bilgisini giriniz"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelAddress">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div class="modal-overlay" id="emailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>E-posta Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeEmailModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="emailForm">
+                <div class="form-group">
+                    <label>E-posta Türü</label>
+                    <select name="type">
+                        <option value="">Seçiniz (Opsiyonel)</option>
+                        <option value="İş">İş E-postası</option>
+                        <option value="Kişisel">Kişisel E-posta</option>
+                        <option value="Akademik">Akademik E-posta</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>E-posta Adresi</label>
+                    <input type="email" name="email" placeholder="ornek@yildiz.edu.tr">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelEmail">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Phone Modal -->
+    <div class="modal-overlay" id="phoneModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Telefon Ekle/Düzenle</h3>
+                <button class="modal-close" id="closePhoneModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="phoneForm">
+                <div class="form-group">
+                    <label>Telefon Türü</label>
+                    <select name="type">
+                        <option value="">Seçiniz (Opsiyonel)</option>
+                        <option value="Cep">Cep Telefonu</option>
+                        <option value="İş">İş Telefonu</option>
+                        <option value="Ev">Ev Telefonu</option>
+                        <option value="Faks">Faks</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Telefon Numarası</label>
+                    <input type="tel" name="phone" placeholder="+90 xxx xxx xx xx">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelPhone">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Link Modal -->
+    <div class="modal-overlay" id="linkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Bağlantı Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeLinkModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="linkForm">
+                <div class="form-group">
+                    <label>Bağlantı Türü</label>
+                    <select name="type">
+                        <option value="">Seçiniz (Opsiyonel)</option>
+                        <option value="Website">Kişisel Website</option>
+                        <option value="Blog">Blog</option>
+                        <option value="Portfolio">Portfolio</option>
+                        <option value="Sosyal Medya">Sosyal Medya</option>
+                        <option value="Akademik">Akademik Profil</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Bağlantı Adı</label>
+                    <input type="text" name="title" placeholder="Bağlantı başlığı (opsiyonel)">
+                </div>
+                <div class="form-group">
+                    <label>URL</label>
+                    <input type="url" name="url" placeholder="https://ornek.com">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelLink">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Dropdown -->
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="#" class="dropdown-item">
+            <i class="fas fa-cog dropdown-icon"></i>
+            <span>Ayarlar</span>
+        </a>
+        <hr class="dropdown-divider">
+        <a href="index.html" class="dropdown-item logout">
+            <i class="fas fa-sign-out-alt dropdown-icon"></i>
+            <span>Çıkış</span>
+        </a>
+    </div>
+
+    <script src="profile-script.js"></script>
+    <script src="global-features.js"></script>
+</body>
+</html>
+
+

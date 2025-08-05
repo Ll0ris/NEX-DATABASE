@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Ana Panel</title>
+    
+    <!-- Theme Loader - Must be first to prevent flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Set theme icon immediately when DOM starts loading
+            document.addEventListener('DOMContentLoaded', function() {
+                const themeIcon = document.querySelector('.theme-icon');
+                if (themeIcon) {
+                    if (savedTheme === 'dark') {
+                        themeIcon.className = 'fas fa-moon theme-icon';
+                    } else {
+                        themeIcon.className = 'fas fa-sun theme-icon';
+                    }
+                }
+            });
+        })();
+    </script>
+    
+    <link rel="stylesheet" href="database-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <!-- Sol Taraf -->
+        <div class="left-section">
+            <button class="hamburger-btn" id="hamburgerBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
+                <img src="logo.png" alt="NEX Logo" class="top-logo">
+                <div class="logo-text">
+                    <span class="top-title">NEX DATABASE</span>
+                    <span class="top-subtitle">FSAC - Yıldız Teknik Üniversitesi</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orta Bölüm - Admin Dropdown -->
+        <div class="center-section">
+            <div class="admin-mode-dropdown" id="adminModeDropdown">
+                <div class="dropdown-trigger" id="dropdownTrigger">
+                    <i class="fas fa-shield-alt mode-icon" id="modeIcon"></i>
+                    <span class="mode-text">Güvenli Mod</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-option active" data-mode="safe">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Güvenli Mod</span>
+                    </div>
+                    <div class="dropdown-option" data-mode="admin">
+                        <i class="fas fa-cog"></i>
+                        <span>Admin Paneli</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sağ Taraf -->
+        <div class="right-section">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-sun theme-icon"></i>
+            </div>
+            <div class="profile-section" id="profileSection">
+                <div class="profile-info">
+                    <div class="profile-name">Oğuzhan Dedeoğlu</div>
+                    <div class="profile-rank">Sistem Yöneticisi</div>
+                </div>
+                <div class="profile-avatar">
+                    <i class="fas fa-user-circle top-profile-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Side Panel -->
+    <div class="side-panel" id="sidePanel">
+        <nav class="side-nav">
+            <a href="database.html" class="nav-item active">
+                <i class="fas fa-home nav-icon"></i>
+                <span>Ana Sayfa</span>
+            </a>
+            <a href="members.html" class="nav-item">
+                <i class="fas fa-users nav-icon"></i>
+                <span>Üyeler</span>
+            </a>
+            <a href="teams.html" class="nav-item">
+                <i class="fas fa-user-friends nav-icon"></i>
+                <span>Takımlar</span>
+            </a>
+            <a href="management.html" class="nav-item">
+                <i class="fas fa-user-tie nav-icon"></i>
+                <span>Yönetim Kadrosu</span>
+            </a>
+            <a href="archive.html" class="nav-item">
+                <i class="fas fa-archive nav-icon"></i>
+                <span>Arşiv</span>
+            </a>
+            <a href="awards.html" class="nav-item">
+                <i class="fas fa-trophy nav-icon"></i>
+                <span>NEX Awards</span>
+            </a>
+            <a href="workshops.html" class="nav-item">
+                <i class="fas fa-tools nav-icon"></i>
+                <span>Atölyeler</span>
+            </a>
+            
+            <!-- Admin Only Section -->
+            <div class="admin-section admin-only">
+                <div class="admin-divider"></div>
+                <a href="reports.html" class="nav-item admin-only">
+                    <i class="fas fa-chart-bar nav-icon"></i>
+                    <span>Raporlar</span>
+                </a>
+                <a href="server-status.html" class="nav-item admin-only">
+                    <i class="fas fa-server nav-icon"></i>
+                    <span>Sunucu Durumu</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Journal Section -->
+        <div class="journal-section">
+            <div class="journal-container">
+                <!-- 3D Rotating Journal Cover -->
+                <div class="journal-cover-container">
+                    <div class="journal-cover">
+                        <img src="journal.png" alt="NEX Annual Science Journal" class="journal-image">
+                    </div>
+                </div>
+
+                <!-- Journal Info -->
+                <div class="journal-info">
+                    <div class="journal-header">
+                        <h1 class="journal-title">NEX ANNUAL SCIENCE</h1>
+                        <p class="journal-authors">C. Ertuğrul ERDOĞAN, NEX</p>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div class="journal-progress">
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" data-progress="0"></div>
+                                <span class="progress-text">0/40 sayfa hazırlandı</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="journal-actions">
+                        <button class="btn-about">
+                            <i class="fas fa-info-circle"></i>
+                            Hakkında
+                        </button>
+                        <button class="btn-read">
+                            <i class="fas fa-book-open"></i>
+                            Oku
+                        </button>
+                        <button class="btn-edit admin-only">
+                            <i class="fas fa-edit"></i>
+                            Düzenle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Deadline Section -->
+                <div class="journal-deadline">
+                    <div class="deadline-container">
+                        <h3 class="deadline-title">Deadline</h3>
+                        <div class="deadline-counter" id="deadlineCounter">180d</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Section -->
+        <div class="calendar-section">
+            <div class="calendar-container">
+                <!-- Calendar Header -->
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn" id="prevMonthBtn">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 class="calendar-month-year" id="calendarMonthYear">Ağustos 2025</h2>
+                    <button class="calendar-nav-btn" id="nextMonthBtn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="calendar-grid">
+                    <!-- Days of Week -->
+                    <div class="calendar-day-header">Pzt</div>
+                    <div class="calendar-day-header">Sal</div>
+                    <div class="calendar-day-header">Çar</div>
+                    <div class="calendar-day-header">Per</div>
+                    <div class="calendar-day-header">Cum</div>
+                    <div class="calendar-day-header">Cmt</div>
+                    <div class="calendar-day-header">Paz</div>
+                    
+                    <!-- Calendar Days will be dynamically generated -->
+                    <div class="calendar-days" id="calendarDays"></div>
+                </div>
+
+                <!-- Admin Controls -->
+                <div class="calendar-admin-controls admin-only">
+                    <button class="btn-calendar-edit">
+                        <i class="fas fa-edit"></i>
+                        Düzenle
+                    </button>
+                </div>
+            </div>
+
+            <!-- Upcoming Events Sidebar -->
+            <div class="events-sidebar">
+                <h3 class="events-title">Yaklaşan Etkinlikler</h3>
+                <div class="upcoming-events" id="upcomingEvents">
+                    <!-- Events will be dynamically generated -->
+                </div>
+                <button class="btn-all-events">
+                    <i class="fas fa-calendar-alt"></i>
+                    Tüm Etkinlikler
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Dropdown -->
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="profile.html" class="dropdown-item">
+            <i class="fas fa-user dropdown-icon"></i>
+            <span>Profil</span>
+        </a>
+        <a href="#" class="dropdown-item">
+            <i class="fas fa-cog dropdown-icon"></i>
+            <span>Ayarlar</span>
+        </a>
+        <hr class="dropdown-divider">
+        <a href="index.html" class="dropdown-item logout">
+            <i class="fas fa-sign-out-alt dropdown-icon"></i>
+            <span>Çıkış</span>
+        </a>
+    </div>
+
+    <!-- Admin Protocol Password Modal -->
+    <div class="modal-overlay" id="protocolModal">
+        <div class="modal-content protocol-modal">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-lock"></i>
+                    Protokol Şifresi Gerekli
+                </h3>
+                <button class="modal-close" id="closeProtocolModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="protocol-description">
+                    Admin paneline erişim için protokol şifresini girin:
+                </p>
+                <div class="password-field">
+                    <input type="password" id="protocolPassword" placeholder="Protokol şifresi..." maxlength="20">
+                    <i class="fas fa-eye password-toggle" id="passwordToggle"></i>
+                </div>
+                <div class="error-message" id="errorMessage" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Yanlış şifre! Tekrar deneyin.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancelProtocol">İptal</button>
+                <button class="btn-confirm" id="confirmProtocol">Onayla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Welcome Bubble -->
+    <div class="welcome-bubble" id="welcomeBubble">
+        <div class="welcome-content">
+            <div class="welcome-title">Hoş Geldiniz!</div>
+            <div class="welcome-user">Oğuzhan Dedeoğlu</div>
+        </div>
+    </div>
+
+    <script src="database-script.js"></script>
+    <script src="global-features.js"></script>
+</body>
+</html>
