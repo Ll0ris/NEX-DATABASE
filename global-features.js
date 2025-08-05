@@ -353,11 +353,12 @@ document.addEventListener('DOMContentLoaded', function() {
         initTopBarFeatures();
         initNavigationActive();
         
-        // Add admin-user class for other pages too
-        const isAdmin = true; // Bu değer gerçek sistemde dinamik olacak
-        if (isAdmin) {
+        // Add admin-user class only if adminMode is set in localStorage
+        const adminMode = localStorage.getItem('adminMode');
+        if (adminMode === 'admin') {
             document.body.classList.add('admin-user');
-            document.body.classList.remove('admin-mode');
+        } else {
+            document.body.classList.remove('admin-user');
         }
     }
 });

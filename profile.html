@@ -360,6 +360,12 @@
 
         <!-- Education Content -->
         <div class="content-section" id="educationContent" style="display: none;">
+            <div class="content-header">
+                <button class="edit-mode-btn" id="educationEditBtn">
+                    <i class="fas fa-edit"></i>
+                    Düzenle
+                </button>
+            </div>
             <div class="education-container">
                 <!-- Education Information Section -->
                 <div class="education-section">
@@ -410,6 +416,12 @@
 
         <!-- Research Content -->
         <div class="content-section" id="researchContent" style="display: none;">
+            <div class="content-header">
+                <button class="edit-mode-btn" id="researchEditBtn">
+                    <i class="fas fa-edit"></i>
+                    Düzenle
+                </button>
+            </div>
             <div class="research-container">
                 <!-- Work Areas Section -->
                 <div class="research-section">
@@ -584,6 +596,12 @@
 
         <!-- Contact Content -->
         <div class="content-section" id="contactContent" style="display: none;">
+            <div class="content-header">
+                <button class="edit-mode-btn" id="contactEditBtn">
+                    <i class="fas fa-edit"></i>
+                    Düzenle
+                </button>
+            </div>
             <div class="contact-container">
                 <!-- Address Section -->
                 <div class="contact-section">
@@ -950,6 +968,47 @@
             <i class="fas fa-sign-out-alt dropdown-icon"></i>
             <span>Çıkış</span>
         </a>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Düzenle</h3>
+                <button class="close-btn" id="closeModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editContent">İçerik:</label>
+                    <textarea id="editContent" rows="8" placeholder="İçeriği buraya yazın..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" id="cancelBtn">İptal</button>
+                <button class="save-btn" id="saveBtn">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Özel Form Modal -->
+    <div class="custom-form-modal" id="customFormModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="customModalTitle">Yeni Öğe Ekle</h3>
+                <button class="close-btn" id="closeCustomModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="customFormBody">
+                <!-- Form içeriği dinamik olarak oluşturulacak -->
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" id="customCancelBtn">İptal</button>
+                <button class="save-btn" id="customSaveBtn">Kaydet</button>
+            </div>
+        </div>
     </div>
 
     <script src="profile-script.js"></script>

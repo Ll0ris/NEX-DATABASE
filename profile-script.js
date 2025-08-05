@@ -37,16 +37,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Initialize education system if switching to education section
             if (sectionName === 'education') {
                 setTimeout(initEducationSystem, 100);
+                setTimeout(initEducationEditing, 100);
             }
             
             // Initialize research system if switching to research section
             if (sectionName === 'research') {
                 setTimeout(initResearchSystem, 100);
+                setTimeout(initResearchEditing, 100);
             }
             
             // Initialize contact system if switching to contact section
             if (sectionName === 'contact') {
                 setTimeout(initContactSystem, 100);
+                setTimeout(initContactEditing, 100);
             }
         }
 
@@ -1251,14 +1254,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize profile editing on page load
     setTimeout(initProfileEditing, 100);
+    setTimeout(initEducationEditing, 100);
+    setTimeout(initResearchEditing, 100);
+    setTimeout(initContactEditing, 100);
 });
 
 // Profile Editing System
 function initProfileEditing() {
     const profileEditBtn = document.getElementById('profileEditBtn');
-    
     if (profileEditBtn) {
-        profileEditBtn.addEventListener('click', function() {
+        // Önce eski event'leri temizle
+        const newBtn = profileEditBtn.cloneNode(true);
+        profileEditBtn.parentNode.replaceChild(newBtn, profileEditBtn);
+        newBtn.addEventListener('click', function() {
             toggleProfileEditMode();
         });
     }
@@ -1268,41 +1276,36 @@ function toggleProfileEditMode() {
     const profileContent = document.querySelector('#profileContent');
     const editBtn = document.getElementById('profileEditBtn');
     const isEditing = profileContent.classList.contains('edit-mode');
-    
+    // Tüm content-section'lardaki eski edit butonlarını temizle
+    document.querySelectorAll('.content-section .edit-item-btn').forEach(btn => btn.remove());
     if (isEditing) {
         // Exit edit mode
         profileContent.classList.remove('edit-mode');
         editBtn.innerHTML = '<i class="fas fa-edit"></i> Düzenle';
         editBtn.style.background = '#8b5cf6';
-        
-        // Hide all edit buttons
-        const editButtons = profileContent.querySelectorAll('.edit-item-btn');
-        editButtons.forEach(btn => btn.style.display = 'none');
-        
         console.log('Profile edit mode: OFF');
     } else {
         // Enter edit mode
         profileContent.classList.add('edit-mode');
         editBtn.innerHTML = '<i class="fas fa-times"></i> Çıkış';
         editBtn.style.background = '#ef4444';
-        
-        // Show edit buttons for each section
+        // Show edit buttons for each section (sadece aktif sekmede)
         addEditButtons();
-        
         console.log('Profile edit mode: ON');
     }
 }
 
 function addEditButtons() {
-    const detailSections = document.querySelectorAll('.detail-section');
-    
+    // Sadece aktif olan content-section içindeki detail-section'lara ekle
+    const activeSection = document.querySelector('.content-section.active');
+    if (!activeSection) return;
+    const detailSections = activeSection.querySelectorAll('.detail-section');
     detailSections.forEach(section => {
         // Remove existing edit button if any
         const existingBtn = section.querySelector('.edit-item-btn');
         if (existingBtn) {
             existingBtn.remove();
         }
-        
         // Create edit button
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-item-btn';
@@ -1323,28 +1326,785 @@ function addEditButtons() {
         editBtn.style.fontSize = '14px';
         editBtn.style.transition = 'all 0.3s ease';
         editBtn.style.zIndex = '10';
-        
         // Make section relative for absolute positioning
         section.style.position = 'relative';
-        
         // Add hover effect
         editBtn.addEventListener('mouseenter', function() {
             this.style.background = '#2563eb';
             this.style.transform = 'scale(1.1)';
         });
-        
         editBtn.addEventListener('mouseleave', function() {
             this.style.background = '#3b82f6';
             this.style.transform = 'scale(1)';
         });
-        
         // Add click handler
         editBtn.addEventListener('click', function() {
             const sectionTitle = section.querySelector('.detail-title').textContent.trim();
             console.log(`Editing section: ${sectionTitle}`);
-            // Here you would open specific edit modal for each section
+            openEditModal(section, sectionTitle);
         });
-        
         section.appendChild(editBtn);
     });
+}
+
+// Education Editing System
+function initEducationEditing() {
+    const educationEditBtn = document.getElementById('educationEditBtn');
+    if (educationEditBtn) {
+        // Önce eski event'leri temizle
+        const newBtn = educationEditBtn.cloneNode(true);
+        educationEditBtn.parentNode.replaceChild(newBtn, educationEditBtn);
+        newBtn.addEventListener('click', function() {
+            toggleEditMode('education');
+        });
+    }
+}
+
+// Research Editing System
+function initResearchEditing() {
+    const researchEditBtn = document.getElementById('researchEditBtn');
+    if (researchEditBtn) {
+        // Önce eski event'leri temizle
+        const newBtn = researchEditBtn.cloneNode(true);
+        researchEditBtn.parentNode.replaceChild(newBtn, researchEditBtn);
+        newBtn.addEventListener('click', function() {
+            toggleEditMode('research');
+        });
+    }
+}
+
+// Contact Editing System
+function initContactEditing() {
+    const contactEditBtn = document.getElementById('contactEditBtn');
+    if (contactEditBtn) {
+        // Önce eski event'leri temizle
+        const newBtn = contactEditBtn.cloneNode(true);
+        contactEditBtn.parentNode.replaceChild(newBtn, contactEditBtn);
+        newBtn.addEventListener('click', function() {
+            toggleEditMode('contact');
+        });
+    }
+}
+
+// Genel edit mode toggle fonksiyonu
+function toggleEditMode(sectionType) {
+    const contentSection = document.querySelector(`#${sectionType}Content`);
+    const editBtn = document.getElementById(`${sectionType}EditBtn`);
+    const isEditing = contentSection.classList.contains('edit-mode');
+    
+    // Tüm content-section'lardaki eski edit butonlarını temizle
+    document.querySelectorAll('.content-section .edit-item-btn').forEach(btn => btn.remove());
+    
+    if (isEditing) {
+        // Exit edit mode
+        contentSection.classList.remove('edit-mode');
+        editBtn.innerHTML = '<i class="fas fa-edit"></i> Düzenle';
+        editBtn.style.background = '#8b5cf6';
+        
+        // + ve - butonlarını gizle
+        hideAddRemoveButtons(contentSection);
+        
+        console.log(`${sectionType} edit mode: OFF`);
+    } else {
+        // Enter edit mode
+        contentSection.classList.add('edit-mode');
+        editBtn.innerHTML = '<i class="fas fa-times"></i> Çıkış';
+        editBtn.style.background = '#ef4444';
+        
+        // Show edit buttons for each section (sadece aktif sekmede)
+        addEditButtons();
+        
+        // + ve - butonlarını göster
+        showAddRemoveButtons(contentSection, sectionType);
+        
+        console.log(`${sectionType} edit mode: ON`);
+    }
+}
+
+// Modal işlevleri
+let currentEditingSection = null;
+
+function openEditModal(section, sectionTitle) {
+    const modal = document.getElementById('editModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const editContent = document.getElementById('editContent');
+    
+    // Mevcut içeriği al
+    const contentElement = section.querySelector('.detail-content, .contact-info, .education-items, .research-items');
+    let currentContent = '';
+    
+    if (contentElement) {
+        // Paragraph içeriğini al
+        const paragraphs = contentElement.querySelectorAll('p');
+        if (paragraphs.length > 0) {
+            currentContent = Array.from(paragraphs).map(p => p.textContent).join('\n\n');
+        } else {
+            currentContent = contentElement.textContent.trim();
+        }
+    }
+    
+    currentEditingSection = section;
+    modalTitle.textContent = sectionTitle + ' Düzenle';
+    editContent.value = currentContent;
+    modal.classList.add('show');
+    editContent.focus();
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    modal.classList.remove('show');
+    currentEditingSection = null;
+}
+
+function saveEditContent() {
+    if (!currentEditingSection) return;
+    
+    const editContent = document.getElementById('editContent');
+    const newContent = editContent.value.trim();
+    
+    if (newContent === '') {
+        alert('İçerik boş olamaz!');
+        return;
+    }
+    
+    // İçeriği güncelle
+    const contentElement = currentEditingSection.querySelector('.detail-content, .contact-info, .education-items, .research-items');
+    if (contentElement) {
+        // Paragraf olarak böl ve HTML'e çevir
+        const paragraphs = newContent.split('\n\n').filter(p => p.trim() !== '');
+        const htmlContent = paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
+        contentElement.innerHTML = htmlContent;
+    }
+    
+    closeEditModal();
+    
+    // Başarı mesajı
+    console.log('İçerik başarıyla güncellendi!');
+    
+    // İsteğe bağlı: Görsel geri bildirim
+    const successMessage = document.createElement('div');
+    successMessage.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 1001;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    successMessage.textContent = 'İçerik başarıyla güncellendi!';
+    document.body.appendChild(successMessage);
+    
+    setTimeout(() => {
+        successMessage.remove();
+    }, 3000);
+}
+
+// Modal event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('editModal');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    
+    // Kapama butonları
+    closeBtn.addEventListener('click', closeEditModal);
+    cancelBtn.addEventListener('click', closeEditModal);
+    
+    // Kaydet butonu
+    saveBtn.addEventListener('click', saveEditContent);
+    
+    // Modal dışına tıklama ile kapama
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeEditModal();
+        }
+    });
+    
+    // Özel form modal event listeners
+    const customModal = document.getElementById('customFormModal');
+    const customCloseBtn = document.getElementById('closeCustomModalBtn');
+    const customCancelBtn = document.getElementById('customCancelBtn');
+    const customSaveBtn = document.getElementById('customSaveBtn');
+    
+    // Kapama butonları
+    customCloseBtn.addEventListener('click', closeCustomFormModal);
+    customCancelBtn.addEventListener('click', closeCustomFormModal);
+    
+    // Kaydet butonu
+    customSaveBtn.addEventListener('click', saveCustomFormData);
+    
+    // Modal dışına tıklama ile kapama
+    customModal.addEventListener('click', function(e) {
+        if (e.target === customModal) {
+            closeCustomFormModal();
+        }
+    });
+    
+    // ESC tuşu ile kapama
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (modal.classList.contains('show')) {
+                closeEditModal();
+            }
+            if (customModal.classList.contains('show')) {
+                closeCustomFormModal();
+            }
+        }
+    });
+});
+
+// + ve - butonlarını gösterme/gizleme fonksiyonları
+function showAddRemoveButtons(contentSection, sectionType) {
+    // + butonlarını göster
+    contentSection.querySelectorAll('.section-title, .detail-title').forEach(title => {
+        addPlusButton(title, sectionType);
+    });
+    
+    // Mevcut öğelere - butonları ekle
+    addMinusButtons(contentSection);
+}
+
+function hideAddRemoveButtons(contentSection) {
+    // Tüm + ve - butonlarını kaldır
+    contentSection.querySelectorAll('.add-btn, .remove-btn').forEach(btn => btn.remove());
+}
+
+function addPlusButton(titleElement, sectionType) {
+    // Zaten varsa ekleme
+    if (titleElement.querySelector('.add-btn')) return;
+    
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-btn';
+    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+    addBtn.style.cssText = `
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        margin-left: 10px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.3s ease;
+    `;
+    
+    addBtn.addEventListener('mouseenter', function() {
+        this.style.background = '#059669';
+        this.style.transform = 'scale(1.1)';
+    });
+    
+    addBtn.addEventListener('mouseleave', function() {
+        this.style.background = '#10b981';
+        this.style.transform = 'scale(1)';
+    });
+    
+    addBtn.addEventListener('click', function() {
+        addNewItem(titleElement, sectionType);
+    });
+    
+    titleElement.appendChild(addBtn);
+}
+
+function addMinusButtons(contentSection) {
+    // Mevcut öğeleri bul ve - butonu ekle, ancak başlık gruplarını ve yer tutucu metinleri hariç tut
+    const items = contentSection.querySelectorAll('p, .education-item, .research-item, .contact-item');
+    
+    items.forEach(item => {
+        if (item.querySelector('.remove-btn')) return; // Zaten varsa ekleme
+        
+        // Bu öğeleri koruyacağız (silme butonu eklemeyeceğiz)
+        const protectedTexts = [
+            'Henüz tez bilgisi eklenmemiş',
+            'Henüz yayın eklenmemiş',
+            'Henüz proje eklenmemiş',
+            'Bağlantılar içeriği burada olacak',
+            'Duyurular içeriği burada olacak',
+            'Başarılar içeriği burada olacak',
+            'Çalışmalar içeriği burada olacak'
+        ];
+        
+        const itemText = item.textContent.trim();
+        
+        // Korumalı metinlerden biriyse veya başlık grubu ise silme butonu ekleme
+        if (protectedTexts.some(text => itemText.includes(text))) {
+            return;
+        }
+        
+        // Başlık gruplarını kontrol et (yıl, kurum adı vb.)
+        const parent = item.closest('.education-item, .research-item, .contact-item');
+        if (parent && parent.querySelector('.item-header, .year-title, .institution-name, h4, h5')) {
+            // Bu bir başlık grubu ise, sadece 1 tane - butonu olmalı (grup seviyesinde)
+            if (parent.querySelector('.remove-btn')) return; // Zaten grup seviyesinde buton varsa ekleme
+            
+            // Grup seviyesinde - butonu ekle
+            addGroupRemoveButton(parent);
+            return;
+        }
+        
+        // Normal öğeler için - butonu ekle
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+        removeBtn.style.cssText = `
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-left: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            top: -2px;
+        `;
+        
+        removeBtn.addEventListener('mouseenter', function() {
+            this.style.background = '#dc2626';
+            this.style.transform = 'scale(1.1)';
+        });
+        
+        removeBtn.addEventListener('mouseleave', function() {
+            this.style.background = '#ef4444';
+            this.style.transform = 'scale(1)';
+        });
+        
+        removeBtn.addEventListener('click', function() {
+            if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
+                item.remove();
+            }
+        });
+        
+        item.appendChild(removeBtn);
+    });
+}
+
+function addGroupRemoveButton(groupElement) {
+    // Grup seviyesinde tek bir - butonu ekle
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn group-remove';
+    removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+    removeBtn.style.cssText = `
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        margin-left: 10px;
+        transition: all 0.3s ease;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 5;
+    `;
+    
+    // Grup elementini relative yap
+    groupElement.style.position = 'relative';
+    
+    removeBtn.addEventListener('mouseenter', function() {
+        this.style.background = '#dc2626';
+        this.style.transform = 'scale(1.1)';
+    });
+    
+    removeBtn.addEventListener('mouseleave', function() {
+        this.style.background = '#ef4444';
+        this.style.transform = 'scale(1)';
+    });
+    
+    removeBtn.addEventListener('click', function() {
+        const groupTitle = groupElement.querySelector('h4, h5, .year-title, .institution-name');
+        const titleText = groupTitle ? groupTitle.textContent.trim() : 'Bu grubu';
+        
+        if (confirm(`${titleText} grubunu silmek istediğinizden emin misiniz?`)) {
+            groupElement.remove();
+        }
+    });
+    
+    groupElement.appendChild(removeBtn);
+}
+
+function addNewItem(titleElement, sectionType) {
+    // Özel form modal'ını aç
+    openCustomFormModal(titleElement, sectionType);
+}
+
+function getItemClassName(sectionType) {
+    switch(sectionType) {
+        case 'education': return 'education-item';
+        case 'research': return 'research-item';
+        case 'contact': return 'contact-item';
+        default: return 'item';
+    }
+}
+
+function getItemContainer(titleElement, sectionType) {
+    // Başlığın altındaki uygun konteyneri bul
+    const section = titleElement.closest('.education-section, .research-section, .contact-section, .detail-section');
+    if (!section) return null;
+    
+    return section.querySelector('.education-items, .research-items, .contact-info, .detail-content') || 
+           section.querySelector('.section-content') || 
+           section;
+}
+
+// Özel Form Modal İşlevleri
+let currentCustomFormData = null;
+
+function openCustomFormModal(titleElement, sectionType) {
+    const modal = document.getElementById('customFormModal');
+    const modalTitle = document.getElementById('customModalTitle');
+    const formBody = document.getElementById('customFormBody');
+    
+    currentCustomFormData = { titleElement, sectionType };
+    
+    // Form içeriğini temizle
+    formBody.innerHTML = '';
+    
+    // Bölüm türüne göre form oluştur
+    switch(sectionType) {
+        case 'education':
+            createEducationForm(formBody, titleElement);
+            break;
+        case 'research':
+            createResearchForm(formBody, titleElement);
+            break;
+        case 'contact':
+            createContactForm(formBody, titleElement);
+            break;
+    }
+    
+    modalTitle.textContent = getModalTitle(sectionType, titleElement);
+    modal.classList.add('show');
+}
+
+function getModalTitle(sectionType, titleElement) {
+    const titleText = titleElement.textContent.trim();
+    
+    if (titleText.includes('Eğitim')) return 'Yeni Eğitim Bilgisi Ekle';
+    if (titleText.includes('Tez')) return 'Yeni Tez Bilgisi Ekle';
+    if (titleText.includes('Dil') || titleText.includes('Language')) return 'Yeni Dil Bilgisi Ekle';
+    if (titleText.includes('Çalışma Alanları')) return 'Yeni Çalışma Alanı Ekle';
+    if (titleText.includes('İlgi Alanları')) return 'Yeni İlgi Alanı Ekle';
+    if (titleText.includes('İletişim')) return 'Yeni İletişim Bilgisi Ekle';
+    if (titleText.includes('Bağlantılar')) return 'Yeni Bağlantı Ekle';
+    
+    return 'Yeni Öğe Ekle';
+}
+
+function createEducationForm(formBody, titleElement) {
+    const titleText = titleElement.textContent.trim();
+    
+    if (titleText.includes('Tez')) {
+        // Tez formu
+        formBody.innerHTML = `
+            <div class="custom-form-row">
+                <div class="form-group">
+                    <label for="thesisType">Tez Türü:</label>
+                    <select id="thesisType">
+                        <option value="">Seçiniz</option>
+                        <option value="Yüksek Lisans Tezi">Yüksek Lisans Tezi</option>
+                        <option value="Doktora Tezi">Doktora Tezi</option>
+                        <option value="Sanatta Yeterlik Tezi">Sanatta Yeterlik Tezi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="thesisYear">Tez Yılı:</label>
+                    <input type="number" id="thesisYear" min="1950" max="2030" placeholder="2023">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="thesisTitle">Tez Başlığı:</label>
+                <input type="text" id="thesisTitle" placeholder="Tez başlığını girin">
+            </div>
+        `;
+    } else if (titleText.includes('Dil') || titleText.includes('Language')) {
+        // Dil formu
+        formBody.innerHTML = `
+            <div class="custom-form-row">
+                <div class="form-group">
+                    <label for="languageName">Yabancı Dil:</label>
+                    <select id="languageName">
+                        <option value="">Seçiniz</option>
+                        <option value="İngilizce">İngilizce</option>
+                        <option value="Almanca">Almanca</option>
+                        <option value="Fransızca">Fransızca</option>
+                        <option value="İspanyolca">İspanyolca</option>
+                        <option value="İtalyanca">İtalyanca</option>
+                        <option value="Rusça">Rusça</option>
+                        <option value="Japonca">Japonca</option>
+                        <option value="Çince">Çince</option>
+                        <option value="Arapça">Arapça</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="languageLevel">Seviye:</label>
+                    <select id="languageLevel">
+                        <option value="">Seçiniz</option>
+                        <option value="A1">A1 - Başlangıç</option>
+                        <option value="A2">A2 - Temel</option>
+                        <option value="B1">B1 - Orta Alt</option>
+                        <option value="B2">B2 - Orta Üst</option>
+                        <option value="C1">C1 - İleri</option>
+                        <option value="C2">C2 - Üst Düzey</option>
+                    </select>
+                </div>
+            </div>
+        `;
+    } else {
+        // Eğitim bilgisi formu
+        formBody.innerHTML = `
+            <div class="custom-form-row">
+                <div class="form-group">
+                    <label for="educationType">Eğitim Türü:</label>
+                    <select id="educationType">
+                        <option value="">Seçiniz</option>
+                        <option value="Lisans">Lisans</option>
+                        <option value="Yüksek Lisans">Yüksek Lisans</option>
+                        <option value="Doktora">Doktora</option>
+                        <option value="Sanatta Yeterlik">Sanatta Yeterlik</option>
+                        <option value="Lise">Lise</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="institution">Kurum:</label>
+                    <input type="text" id="institution" placeholder="Üniversite/Kurum adı">
+                </div>
+            </div>
+            <div class="custom-form-row">
+                <div class="form-group">
+                    <label for="startYear">Başlangıç Yılı:</label>
+                    <input type="number" id="startYear" min="1950" max="2030" placeholder="2018">
+                </div>
+                <div class="form-group">
+                    <label for="endYear">Bitiş Yılı:</label>
+                    <input type="number" id="endYear" min="1950" max="2030" placeholder="2022">
+                </div>
+            </div>
+        `;
+    }
+}
+
+function createResearchForm(formBody, titleElement) {
+    formBody.innerHTML = `
+        <div class="form-group">
+            <label for="researchTitle">Başlık:</label>
+            <input type="text" id="researchTitle" placeholder="Araştırma alanı/ilgi alanı başlığını girin">
+        </div>
+    `;
+}
+
+function createContactForm(formBody, titleElement) {
+    const titleText = titleElement.textContent.trim();
+    
+    if (titleText.includes('Bağlantılar')) {
+        // Bağlantılar formu
+        formBody.innerHTML = `
+            <div class="custom-form-row">
+                <div class="form-group">
+                    <label for="linkType">Platform:</label>
+                    <select id="linkType">
+                        <option value="">Seçiniz</option>
+                        <option value="SCOPUS">SCOPUS</option>
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="ORCID">ORCID</option>
+                        <option value="Web of Science">Web of Science</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="linkUrl">URL:</label>
+                    <input type="url" id="linkUrl" placeholder="https://example.com/profile">
+                </div>
+            </div>
+        `;
+    } else {
+        // Genel iletişim formu
+        formBody.innerHTML = `
+            <div class="form-group">
+                <label for="contactTitle">İletişim Türü:</label>
+                <input type="text" id="contactTitle" placeholder="E-posta, Telefon, Adres vb.">
+            </div>
+        `;
+    }
+}
+
+function closeCustomFormModal() {
+    const modal = document.getElementById('customFormModal');
+    modal.classList.remove('show');
+    currentCustomFormData = null;
+}
+
+function saveCustomFormData() {
+    if (!currentCustomFormData) return;
+    
+    const { titleElement, sectionType } = currentCustomFormData;
+    const titleText = titleElement.textContent.trim();
+    let newContent = '';
+    
+    // Form verilerini topla
+    if (sectionType === 'education') {
+        if (titleText.includes('Tez')) {
+            const type = document.getElementById('thesisType').value;
+            const year = document.getElementById('thesisYear').value;
+            const title = document.getElementById('thesisTitle').value;
+            
+            if (!type || !year || !title) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            newContent = `${type} (${year}): ${title}`;
+        } else if (titleText.includes('Dil')) {
+            const name = document.getElementById('languageName').value;
+            const level = document.getElementById('languageLevel').value;
+            
+            if (!name || !level) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            newContent = `${name}: ${level}`;
+        } else {
+            const type = document.getElementById('educationType').value;
+            const institution = document.getElementById('institution').value;
+            const startYear = document.getElementById('startYear').value;
+            const endYear = document.getElementById('endYear').value;
+            
+            if (!type || !institution || !startYear || !endYear) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            newContent = `${type} - ${institution} (${startYear}-${endYear})`;
+        }
+    } else if (sectionType === 'research') {
+        const title = document.getElementById('researchTitle').value;
+        
+        if (!title) {
+            alert('Lütfen başlık alanını doldurun!');
+            return;
+        }
+        
+        newContent = title;
+    } else if (sectionType === 'contact') {
+        if (titleText.includes('Bağlantılar')) {
+            const type = document.getElementById('linkType').value;
+            const url = document.getElementById('linkUrl').value;
+            
+            if (!type || !url) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            newContent = `${type}: ${url}`;
+        } else {
+            const title = document.getElementById('contactTitle').value;
+            
+            if (!title) {
+                alert('Lütfen iletişim türü alanını doldurun!');
+                return;
+            }
+            
+            newContent = title;
+        }
+    }
+    
+    // Yeni öğeyi oluştur ve ekle
+    addNewItemToDOM(titleElement, sectionType, newContent);
+    
+    closeCustomFormModal();
+}
+
+function addNewItemToDOM(titleElement, sectionType, content) {
+    // Yeni öğe oluştur
+    const newItem = document.createElement('div');
+    newItem.className = getItemClassName(sectionType);
+    newItem.innerHTML = `<p>${content}</p>`;
+    
+    // - butonu ekle
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn';
+    removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+    removeBtn.style.cssText = `
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        margin-left: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+        top: -2px;
+    `;
+    
+    removeBtn.addEventListener('mouseenter', function() {
+        this.style.background = '#dc2626';
+        this.style.transform = 'scale(1.1)';
+    });
+    
+    removeBtn.addEventListener('mouseleave', function() {
+        this.style.background = '#ef4444';
+        this.style.transform = 'scale(1)';
+    });
+    
+    removeBtn.addEventListener('click', function() {
+        if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
+            newItem.remove();
+        }
+    });
+    
+    newItem.querySelector('p').appendChild(removeBtn);
+    
+    // Uygun konteynera ekle
+    const container = getItemContainer(titleElement, sectionType);
+    if (container) {
+        container.appendChild(newItem);
+    }
+    
+    // Başarı mesajı
+    showSuccessMessage('Yeni öğe başarıyla eklendi!');
+}
+
+function showSuccessMessage(message) {
+    const successMessage = document.createElement('div');
+    successMessage.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 1001;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    successMessage.textContent = message;
+    document.body.appendChild(successMessage);
+    
+    setTimeout(() => {
+        successMessage.remove();
+    }, 3000);
 }
