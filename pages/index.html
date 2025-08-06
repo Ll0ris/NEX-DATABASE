@@ -118,9 +118,18 @@
                 checkUserByEmailInFirebase(email, password)
                 .then(isValid => {
                     if (isValid) {
+                        // Generate authentication token
+                        const authToken = generateAuthToken(email);
+                        const tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+                        
+                        // Store authentication data
                         localStorage.setItem('currentUserId', email);
                         localStorage.setItem('currentUserEmail', email);
-                        console.log('✅ Firestore giriş - Kullanıcı email localStorage\'a kaydedildi:', email);
+                        localStorage.setItem('authToken', authToken);
+                        localStorage.setItem('tokenExpiry', tokenExpiry.toString());
+                        localStorage.setItem('isAuthenticated', 'true');
+                        
+                        console.log('✅ Firestore giriş - Kullanıcı email ve token localStorage\'a kaydedildi:', email);
                         document.getElementById('loadingScreen').style.display = 'flex';
                         setTimeout(function() {
                             window.location.href = 'database.html';
@@ -165,6 +174,47 @@
             });
         }
         
+        // Generate authentication token
+        function generateAuthToken(email) {
+            const timestamp = Date.now();
+            const randomString = Math.random().toString(36).substring(2, 15);
+            const tokenData = btoa(`${email}:${timestamp}:${randomString}`);
+            return tokenData;
+        }
+        
+        // Check if user is already authenticated
+        function checkExistingAuth() {
+            const authToken = localStorage.getItem('authToken');
+            const tokenExpiry = localStorage.getItem('tokenExpiry');
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            
+            if (authToken && tokenExpiry && isAuthenticated === 'true') {
+                const currentTime = Date.now();
+                if (currentTime < parseInt(tokenExpiry)) {
+                    // Token is still valid, redirect to main page
+                    console.log('✅ Geçerli token bulundu, ana sayfaya yönlendiriliyor...');
+                    document.getElementById('loadingScreen').style.display = 'flex';
+                    setTimeout(function() {
+                        window.location.href = 'database.html';
+                    }, 500);
+                    return true;
+                } else {
+                    // Token expired, clear auth data
+                    clearAuthData();
+                }
+            }
+            return false;
+        }
+        
+        // Clear authentication data
+        function clearAuthData() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('tokenExpiry');
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('currentUserId');
+            localStorage.removeItem('currentUserEmail');
+        }
+        
         // Giriş sayfasında admin mode'u sıfırla ve güvenli moda geç
         function resetToSafeMode() {
             localStorage.setItem('adminMode', 'safe');
@@ -172,9 +222,15 @@
             document.body.classList.remove('admin-user');
         }
         
-        // Sayfa yüklendiğinde güvenli moda geç
+        // Sayfa yüklendiğinde güvenli moda geç ve mevcut auth kontrolü yap
         document.addEventListener('DOMContentLoaded', function() {
             resetToSafeMode();
+            
+            // Check if user is already authenticated
+            if (!checkExistingAuth()) {
+                // User is not authenticated, show login form
+                console.log('Kullanıcı giriş yapmamış, giriş formu gösteriliyor');
+            }
         });
     </script>
     <script src="../assets/js/global-features.js"></script>

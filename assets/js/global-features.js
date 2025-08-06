@@ -6,13 +6,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initGlobalFeatures() {
+    // Check authentication first on non-login pages
+    const currentPage = window.location.pathname;
+    const isLoginPage = currentPage.includes('index.html') || currentPage === '/' || currentPage.endsWith('/');
+    
+    if (!isLoginPage && !checkAuthentication()) {
+        return; // Authentication failed, redirect will happen
+    }
+    
     createBackToTopButton();
     initThemeToggle(); // Tema toggle'ı başlat
     updateUserNameDisplay(); // Kullanıcı adını güncelle
-    
-    // Session timer'ı sadece login sayfası değilse başlat
-    const currentPage = window.location.pathname;
-    const isLoginPage = currentPage.includes('index.html') || currentPage === '/' || currentPage.endsWith('/');
     
     if (!isLoginPage) {
         // Initialize session timer (HTML'de zaten varsa kullan, yoksa oluştur)
@@ -25,6 +29,55 @@ function initGlobalFeatures() {
     }
     
     initScrollDetection();
+}
+
+// Check authentication token
+function checkAuthentication() {
+    const authToken = localStorage.getItem('authToken');
+    const tokenExpiry = localStorage.getItem('tokenExpiry');
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    
+    if (!authToken || !tokenExpiry || isAuthenticated !== 'true') {
+        console.warn('❌ Token bulunamadı, giriş sayfasına yönlendiriliyor...');
+        redirectToLogin();
+        return false;
+    }
+    
+    const currentTime = Date.now();
+    if (currentTime >= parseInt(tokenExpiry)) {
+        console.warn('❌ Token süresi dolmuş, giriş sayfasına yönlendiriliyor...');
+        clearAuthData();
+        redirectToLogin();
+        return false;
+    }
+    
+    console.log('✅ Geçerli token bulundu, sayfa yükleniyor...');
+    return true;
+}
+
+// Clear authentication data
+function clearAuthData() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('tokenExpiry');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('currentUserId');
+    localStorage.removeItem('currentUserEmail');
+}
+
+// Redirect to login page
+function redirectToLogin() {
+    const currentPath = window.location.pathname;
+    let loginPath = '';
+    
+    if (currentPath.includes('/pages/')) {
+        loginPath = 'index.html';
+    } else {
+        loginPath = 'pages/index.html';
+    }
+    
+    setTimeout(() => {
+        window.location.href = loginPath;
+    }, 100);
 }
 
 // Update user name and photo display from localStorage or database
@@ -263,6 +316,9 @@ function initSessionManagement() {
     
     function sessionExpired() {
         clearInterval(sessionTimer);
+        
+        // Clear authentication data before redirecting
+        clearAuthData();
         
         // Direkt giriş sayfasına yönlendir (uyarı yok)
         window.location.href = 'index.html';
