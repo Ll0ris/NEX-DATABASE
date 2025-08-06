@@ -33,32 +33,31 @@ async function updateUserNameDisplay() {
     if (!currentUserEmail) return;
 
     try {
-        // Try to get user data from Firestore
         if (window.firestoreDb && window.firestoreFunctions) {
             const { collection, query, where, getDocs } = window.firestoreFunctions;
             const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
             const snapshot = await getDocs(q);
-            
             if (!snapshot.empty) {
                 const userData = snapshot.docs[0].data();
-                const userName = userData.name || userData.fullName || currentUserEmail;
-                
-                // Update all profile name elements
+                const userName = userData.name || userData.fullName || '';
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
                 profileNameElements.forEach(element => {
                     element.textContent = userName;
                 });
-                
                 console.log('✅ Kullanıcı adı güncellendi:', userName);
+            } else {
+                // Kullanıcı bulunamazsa alanlar boş kalsın
+                const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
+                profileNameElements.forEach(element => {
+                    element.textContent = '';
+                });
             }
         }
     } catch (error) {
-        console.log('Kullanıcı adı güncellenirken hata (normal olabilir):', error);
-        
-        // Fallback: just use email
+        console.log('Kullanıcı adı güncellenirken hata:', error);
         const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
         profileNameElements.forEach(element => {
-            element.textContent = currentUserEmail.split('@')[0]; // Email'in @ öncesi kısmı
+            element.textContent = '';
         });
     }
 }
