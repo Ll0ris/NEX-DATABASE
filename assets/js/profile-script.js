@@ -649,14 +649,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function saveBasicInfo() {
-        // Get form data
+        // Get all form data
         const titlePrefix = document.getElementById('titlePrefixEdit')?.value || '';
         const fullName = document.getElementById('fullNameEdit')?.value || '';
         const institution = document.getElementById('institutionEdit')?.value || '';
         const faculty = document.getElementById('facultyEdit')?.value || '';
         const department = document.getElementById('departmentEdit')?.value || '';
         const status = document.getElementById('statusEdit')?.value || '';
-        
+        const phone = document.getElementById('phoneEdit')?.value || '';
+        const email = document.getElementById('emailEdit')?.value || '';
+        // Positions (assume comma separated string)
+        const positions = document.getElementById('positionsEdit')?.value || '';
+        // Add other fields as needed
+
         // Update display elements
         const titlePrefixElement = document.querySelector('.title-prefix');
         const fullNameElement = document.querySelector('.full-name');
@@ -664,29 +669,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const facultyElement = document.querySelector('.faculty');
         const departmentElement = document.querySelector('.department');
         const statusElement = document.querySelector('.status');
-        
+        const phoneElement = document.querySelector('.phone');
+        const positionElement = document.querySelector('.position');
+
         if (titlePrefixElement) titlePrefixElement.textContent = titlePrefix || '';
         if (fullNameElement) fullNameElement.textContent = fullName || '';
         if (institutionElement) institutionElement.textContent = institution || '';
         if (facultyElement) facultyElement.textContent = faculty || '';
         if (departmentElement) departmentElement.textContent = department || '';
         if (statusElement) statusElement.textContent = status || '';
-        
+        if (phoneElement) phoneElement.textContent = phone || '';
+        if (positionElement) positionElement.textContent = positions || '';
+
         // Update top panel name
         const topProfileName = document.querySelector('.profile-name');
         if (topProfileName) {
             topProfileName.textContent = fullName || '';
         }
-        
+
         // Update side panel information
         const sideProfileTitle = document.querySelector('.side-profile-title');
         const sideProfileName = document.querySelector('.side-profile-name');
         const sideProfileInstitution = document.querySelector('.side-profile-institution');
-        
+
         if (sideProfileTitle) sideProfileTitle.textContent = titlePrefix || '';
         if (sideProfileName) sideProfileName.textContent = fullName || '';
         if (sideProfileInstitution) sideProfileInstitution.textContent = institution || '';
-        
+
         // Update original form data with current saved values (including photo)
         const mainProfilePhoto = document.getElementById('mainProfilePhoto');
         if (mainProfilePhoto) {
@@ -698,31 +707,37 @@ document.addEventListener('DOMContentLoaded', function() {
         originalFormData.faculty = faculty;
         originalFormData.department = department;
         originalFormData.status = status;
-        
+        originalFormData.phone = phone;
+        originalFormData.email = email;
+        originalFormData.positions = positions;
+
         // Save to Firebase
         saveProfileToFirebase({
             titlePrefix,
-            fullName,
+            name: fullName,
             institution,
             faculty,
             department,
             status,
-            photoHTML: mainProfilePhoto ? mainProfilePhoto.innerHTML : ''
+            phone,
+            email,
+            positions: positions ? positions.split(',').map(p => p.trim()) : [],
+            photoUrl: mainProfilePhoto ? (mainProfilePhoto.querySelector('img')?.src || '') : ''
         });
-        
+
         // Update Firebase users collection name field if fullName is provided
         if (fullName.trim()) {
             updateFirebaseUserName(fullName);
         }
-        
+
         // Show success message
         showSuccessMessage('Profil başarıyla güncellendi!');
-        
+
         // Switch back to view mode
         const viewMode = document.getElementById('infoViewMode');
         const editMode = document.getElementById('infoEditMode');
         const photoOverlay = document.getElementById('photoUploadOverlay');
-        
+
         if (viewMode && editMode) {
             viewMode.style.display = 'block';
             editMode.style.display = 'none';
