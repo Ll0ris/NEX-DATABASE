@@ -922,10 +922,11 @@ function addUserForm() {
 function submitUser() {
     const name = document.getElementById('userName').value.trim();
     const email = document.getElementById('userEmail').value.trim();
+    const password = document.getElementById('userPassword').value.trim();
     const role = document.getElementById('userRole').value.trim() || 'user';
     
-    if (!name || !email) {
-        addToConsoleOutput('✗ Hata: İsim ve e-mail alanları gerekli!', 'error');
+    if (!name || !email || !password) {
+        addToConsoleOutput('✗ Hata: İsim, e-mail ve şifre alanları gerekli!', 'error');
         return;
     }
     
@@ -941,7 +942,8 @@ function submitUser() {
     
     addDoc(collection(window.firestoreDb, "users"), {
         name: name,
-        email: email,
+        email: email.toLowerCase(), // Email'i lowercase yap
+        password: password,
         role: role,
         createdAt: new Date(),
         createdBy: 'admin'
@@ -950,6 +952,7 @@ function submitUser() {
         // Form temizle
         document.getElementById('userName').value = '';
         document.getElementById('userEmail').value = '';
+        document.getElementById('userPassword').value = '';
         document.getElementById('userRole').value = '';
         // Formu gizle
         document.getElementById('userForm').style.display = 'none';

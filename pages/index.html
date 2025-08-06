@@ -197,15 +197,43 @@
             }
 
             const { collection, query, where, getDocs } = window.firestoreFunctions;
+            
+            console.log('🔍 Login attempt:', {
+                email: email,
+                passwordLength: password.length,
+                emailLowerCase: email.toLowerCase()
+            });
 
-            // Email ile sorgu
-            const q = query(collection(window.firestoreDb, "users"), where("email", "==", email));
+            // Email ile sorgu (case insensitive için toLowerCase kullan)
+            const q = query(collection(window.firestoreDb, "users"), where("email", "==", email.toLowerCase()));
             return getDocs(q)
             .then(snapshot => {
+                console.log('📊 Firebase query result:', {
+                    isEmpty: snapshot.empty,
+                    size: snapshot.size
+                });
+                
                 if (!snapshot.empty) {
                     const userData = snapshot.docs[0].data();
+                    console.log('👤 User found in database:', {
+                        email: userData.email,
+                        hasPassword: !!userData.password,
+                        passwordMatch: userData.password === password
+                    });
                     return userData.password === password;
                 } else {
+                    console.warn('❌ No user found with email:', email.toLowerCase());
+                    
+                    // Tüm kullanıcıları listele debug için
+                    const allUsersQuery = query(collection(window.firestoreDb, "users"));
+                    getDocs(allUsersQuery).then(allSnapshot => {
+                        console.log('📋 All users in database:');
+                        allSnapshot.forEach(doc => {
+                            const data = doc.data();
+                            console.log(`- Email: ${data.email}, Name: ${data.name || 'N/A'}`);
+                        });
+                    });
+                    
                     return false;
                 }
             });
