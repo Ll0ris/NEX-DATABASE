@@ -109,27 +109,21 @@
             const errorBubble = document.getElementById('errorBubble');
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                const username = document.getElementById('username').value.trim();
+                const email = document.getElementById('username').value.trim(); // input id değişmediği için
                 const password = document.getElementById('password').value.trim();
-                
-                // Firebase'de kullanıcı kontrolü
-                checkUserInFirebase(username, password)
+
+                // Firestore'da email ile arama
+                checkUserByEmailInFirebase(email, password)
                 .then(isValid => {
                     if (isValid) {
-                        // Giriş başarılı, kullanıcı ID'sini kaydet
-                        localStorage.setItem('currentUserId', username);
-                        
-                        // Giriş yapan kullanıcının email'ini localStorage'a kaydet
-                        localStorage.setItem('currentUserEmail', username);
-                        console.log('✅ Firebase giriş sistemi - Kullanıcı email localStorage\'a kaydedildi:', username);
-                        console.log('✅ Firebase giriş sistemi - currentUserId:', username);
-                        
+                        localStorage.setItem('currentUserId', email);
+                        localStorage.setItem('currentUserEmail', email);
+                        console.log('✅ Firestore giriş - Kullanıcı email localStorage\'a kaydedildi:', email);
                         document.getElementById('loadingScreen').style.display = 'flex';
                         setTimeout(function() {
                             window.location.href = 'database.html';
                         }, 1200);
                     } else {
-                        // Hatalı giriş
                         errorBubble.style.display = 'flex';
                         setTimeout(function() {
                             errorBubble.style.display = 'none';
@@ -147,20 +141,21 @@
         });
 
         // Firebase kullanıcı kontrolü
-        function checkUserInFirebase(username, password) {
+        function checkUserByEmailInFirebase(email, password) {
             // Wait for Firebase to be ready
             if (!window.firestoreDb) {
                 console.error('Firebase not ready yet');
                 return Promise.reject(new Error('Firebase not ready'));
             }
 
-            const { doc, getDoc } = window.firestoreFunctions;
+            const { collection, query, where, getDocs } = window.firestoreFunctions;
 
-            // Sadece Firestore'daki users koleksiyonunda email ve password eşleşirse giriş yapılır
-            return getDoc(doc(window.firestoreDb, "users", username))
-            .then(docSnap => {
-                if (docSnap.exists()) {
-                    const userData = docSnap.data();
+            // Email ile sorgu
+            const q = query(collection(window.firestoreDb, "users"), where("email", "==", email));
+            return getDocs(q)
+            .then(snapshot => {
+                if (!snapshot.empty) {
+                    const userData = snapshot.docs[0].data();
                     return userData.password === password;
                 } else {
                     return false;
