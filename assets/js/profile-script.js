@@ -244,6 +244,55 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Update Firebase users collection name field
+    async function updateFirebaseUserName(newName) {
+        try {
+            const currentUserEmail = localStorage.getItem('currentUserEmail');
+            if (!currentUserEmail) {
+                console.warn('Kullanıcı email bulunamadı, name güncellemesi yapılamıyor');
+                return;
+            }
+
+            // Wait for Firebase to be available
+            let attempts = 0;
+            while (!window.firestoreDb && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
+            if (window.firestoreDb && window.firestoreFunctions) {
+                const { collection, query, where, getDocs, doc, updateDoc } = window.firestoreFunctions;
+                
+                // Find user by email
+                const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    const userDoc = snapshot.docs[0];
+                    const userRef = doc(window.firestoreDb, "users", userDoc.id);
+                    
+                    // Update name field
+                    await updateDoc(userRef, {
+                        name: newName
+                    });
+                    
+                    console.log('✅ Firebase users collection name güncellendi:', newName);
+                    
+                    // Update global user name display
+                    if (typeof updateUserNameDisplay === 'function') {
+                        updateUserNameDisplay();
+                    }
+                } else {
+                    console.warn('Kullanıcı email ile eşleşen kullanıcı bulunamadı');
+                }
+            } else {
+                console.warn('Firebase bağlantısı henüz hazır değil');
+            }
+        } catch (error) {
+            console.error('Firebase users name güncelleme hatası:', error);
+        }
+    }
+
     // Profile Editing Functions
     function initProfileEditing() {
         console.log('initProfileEditing called'); // Debug
@@ -587,6 +636,11 @@ document.addEventListener('DOMContentLoaded', function() {
             status,
             photoHTML: mainProfilePhoto ? mainProfilePhoto.innerHTML : ''
         });
+        
+        // Update Firebase users collection name field if fullName is provided
+        if (fullName.trim()) {
+            updateFirebaseUserName(fullName);
+        }
         
         // Show success message
         showSuccessMessage('Profil başarıyla güncellendi!');

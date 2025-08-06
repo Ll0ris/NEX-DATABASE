@@ -46,7 +46,7 @@ async function updateUserNameDisplay() {
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
                 const userData = snapshot.docs[0].data();
-                const userName = userData.name || userData.fullName || '';
+                const userName = userData.name || '';
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
                 profileNameElements.forEach(element => {
                     element.textContent = userName;
