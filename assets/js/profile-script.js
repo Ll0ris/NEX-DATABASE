@@ -4,6 +4,12 @@
 let originalFormData = {}; // Store original data for cancel functionality
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Hide profile content initially to prevent placeholder flash
+    const profileContent = document.getElementById('profileContent');
+    if (profileContent) {
+        profileContent.style.visibility = 'hidden';
+    }
+    
     // Wait for Firebase to be available
     let firebaseWaitAttempts = 0;
     const checkFirebase = () => {
@@ -264,6 +270,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (sideProfileInstitution) sideProfileInstitution.textContent = '';
                 const topProfileName = document.querySelector('.profile-name');
                 if (topProfileName) topProfileName.textContent = '';
+            }
+            
+            // Show profile content after data is loaded
+            const profileContent = document.getElementById('profileContent');
+            if (profileContent) {
+                profileContent.style.visibility = 'visible';
             }
         });
     }
