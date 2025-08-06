@@ -20,14 +20,14 @@
         })();
     </script>
     
-    <link rel="stylesheet" href="../assets/css/database-style.css">
-    <link rel="stylesheet" href="../assets/css/profile-style.css">
+    <link rel="stylesheet" href="database-style.css">
+    <link rel="stylesheet" href="profile-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase App (v8 - compatible with namespaced syntax) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <!-- Firebase App (core) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
     <!-- Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
 </head>
 <body class="profile-page">
     <!-- Top Panel -->
@@ -35,7 +35,7 @@
         <!-- Sol Taraf -->
         <div class="left-section">
             <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
-                <img src="../assets/images/logo.png" alt="NEX Logo" class="top-logo">
+                <img src="logo.png" alt="NEX Logo" class="top-logo">
                 <div class="logo-text">
                     <span class="top-title">NEX DATABASE</span>
                     <span class="top-subtitle">FSAC - Yıldız Teknik Üniversitesi</span>
@@ -123,6 +123,18 @@
                 <i class="fas fa-flask nav-icon"></i>
                 <span>Araştırma Alanları</span>
             </a>
+            <a href="#" class="nav-item" data-section="membership">
+                <i class="fas fa-university nav-icon"></i>
+                <span>Üyelik</span>
+            </a>
+            <a href="#" class="nav-item" data-section="works">
+                <i class="fas fa-file-alt nav-icon"></i>
+                <span>Çalışmalar</span>
+            </a>
+            <a href="#" class="nav-item" data-section="achievements">
+                <i class="fas fa-trophy nav-icon"></i>
+                <span>Başarılar</span>
+            </a>
             <a href="#" class="nav-item" data-section="announcements">
                 <i class="fas fa-bullhorn nav-icon"></i>
                 <span>Duyurular & Dokümanlar</span>
@@ -147,7 +159,7 @@
         <!-- Profil Content -->
         <div class="content-section" id="profileContent">
             <div class="content-header">
-                <button class="edit-mode-btn" id="profileEditBtn">
+                <button class="edit-mode-btn" id="profileEditBtn" onclick="toggleBlueEditButton()">
                     <i class="fas fa-edit"></i>
                     Düzenle
                 </button>
@@ -256,6 +268,97 @@
                 
                 <!-- Profil Detay Bilgileri -->
                 <div class="profile-details">
+                    <!-- Biyografi -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-user-edit"></i>
+                            Biyografi
+                        </h3>
+                        <div class="detail-content" id="biographyContent">
+                            <p>Prof. Dr. Oğuzhan Dedeoğlu, matematik mühendisliği alanında uzmanlaşmış deneyimli bir akademisyendir. Araştırma alanları arasında sayısal analiz, optimizasyon teorisi ve uygulamalı matematik yer almaktadır.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Çalışmalar -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-briefcase"></i>
+                            Çalışmalar
+                        </h3>
+                        <div class="detail-content" id="worksContent">
+                            <div class="work-item">
+                                <h4>Matematik Mühendisliği Bölümü Başkanı</h4>
+                                <p>Yıldız Teknik Üniversitesi - 2020 - Devam Ediyor</p>
+                            </div>
+                            <div class="work-item">
+                                <h4>Araştırma Görevlisi</h4>
+                                <p>YTÜ Fen Fakültesi - 2015 - 2020</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Üyelik Kartı -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-id-card"></i>
+                            Akademik Üyelik Kartı
+                        </h3>
+                        <div class="detail-content" id="membershipCardContent">
+                            <div class="academic-card">
+                                <div class="card-info">
+                                    <div class="card-item">
+                                        <span class="card-label">Kurum:</span>
+                                        <span class="card-value">Yıldız Teknik Üniversitesi</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Fakülte:</span>
+                                        <span class="card-value">Fen Fakültesi</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Bölüm:</span>
+                                        <span class="card-value">Matematik Mühendisliği</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Sicil No:</span>
+                                        <span class="card-value">20190001</span>
+                                    </div>
+                                    <div class="card-item">
+                                        <span class="card-label">Başlangıç Tarihi:</span>
+                                        <span class="card-value">15 Eylül 2019</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AGNO -->
+                    <div class="detail-section">
+                        <h3 class="detail-title">
+                            <i class="fas fa-chart-line"></i>
+                            Ağırlıklı Genel Not Ortalaması
+                        </h3>
+                        <div class="detail-content" id="gpaContent">
+                            <div class="gpa-display">
+                                <div class="gpa-value">3.87</div>
+                                <div class="gpa-scale">/ 4.00</div>
+                                <div class="gpa-status">Yüksek Onur</div>
+                            </div>
+                            <div class="gpa-details">
+                                <div class="gpa-item">
+                                    <span>Lisans AGNO:</span>
+                                    <span>3.92 / 4.00</span>
+                                </div>
+                                <div class="gpa-item">
+                                    <span>Yüksek Lisans AGNO:</span>
+                                    <span>3.85 / 4.00</span>
+                                </div>
+                                <div class="gpa-item">
+                                    <span>Doktora AGNO:</span>
+                                    <span>3.82 / 4.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -535,6 +638,51 @@
                     </div>
                 </div>
 
+                <!-- Phone Section -->
+                <div class="contact-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-phone"></i>
+                        Telefon Numaraları
+                    </h3>
+                    <div class="contact-items" id="phoneItems">
+                        <!-- Phone items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addPhoneBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Telefon Ekle</span>
+                    </div>
+                </div>
+
+                <!-- Links Section -->
+                <div class="contact-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-link"></i>
+                        Bağlantılar
+                    </h3>
+                    <div class="contact-items" id="linkItems">
+                        <!-- Link items will be dynamically generated -->
+                    </div>
+                    <div class="add-item-btn" id="addLinkBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        <span>Bağlantı Ekle</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Education Modals -->
+    <!-- Education Modal -->
+    <div class="modal-overlay" id="educationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Eğitim Bilgisi Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeEducationModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="educationForm">
+                <div class="form-group">
                     <label>Düzey</label>
                     <select name="level" required>
                         <option value="">Seçiniz</option>
@@ -882,8 +1030,8 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
     </script>
-    <script src="../assets/js/global-features.js"></script>
-    <script src="../assets/js/profile-script.js"></script>
+    <script src="profile-script.js"></script>
+    <script src="global-features.js"></script>
 </body>
 </html>
 
