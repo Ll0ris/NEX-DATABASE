@@ -484,14 +484,35 @@ function saveAdminState(mode, text) {
 }
 
 function loadAdminState() {
-    const savedMode = localStorage.getItem('adminMode') || 'safe';
-    const savedText = localStorage.getItem('adminModeText') || 'Güvenli Mod';
+    // GitHub domain kontrolü - eğer GitHub Pages'te ise güvenli moda zorla
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    
+    let savedMode, savedText;
+    
+    if (isGitHubPages) {
+        // GitHub Pages'te ise her zaman güvenli mod
+        savedMode = 'safe';
+        savedText = 'Güvenli Mod';
+        localStorage.setItem('adminMode', 'safe');
+        localStorage.setItem('adminModeText', 'Güvenli Mod');
+    } else {
+        // Localhost'ta ise kayıtlı durumu kullan
+        savedMode = localStorage.getItem('adminMode') || 'safe';
+        savedText = localStorage.getItem('adminModeText') || 'Güvenli Mod';
+    }
     
     selectAdminMode(savedMode, savedText);
 }
 
 // Global Protocol Modal for Admin Access
 function showGlobalProtocolModal(mode, text) {
+    // GitHub Pages'te admin erişimini engelle
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    if (isGitHubPages) {
+        alert('Admin modu GitHub Pages\'te kullanılamaz. Sadece güvenli mod aktiftir.');
+        return;
+    }
+    
     // Create modal if it doesn't exist
     let modal = document.getElementById('globalProtocolModal');
     if (!modal) {

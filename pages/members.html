@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEX Database - Yönetim Kadrosu</title>
+    <title>NEX Database - Üyeler</title>
     
     <!-- Theme Loader - Must be first to prevent flash -->
     <script>
@@ -20,7 +20,8 @@
         })();
     </script>
     
-    <link rel="stylesheet" href="database-style.css">
+    <link rel="stylesheet" href="../assets/css/database-style.css">
+    <link rel="stylesheet" href="../assets/css/members-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -34,7 +35,7 @@
                 <span></span>
             </button>
             <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
-                <img src="logo.png" alt="NEX Logo" class="top-logo">
+                <img src="../assets/images/logo.png" alt="NEX Logo" class="top-logo">
                 <div class="logo-text">
                     <span class="top-title">NEX DATABASE</span>
                     <span class="top-subtitle">FSAC - Yıldız Teknik Üniversitesi</span>
@@ -87,7 +88,7 @@
                 <i class="fas fa-home nav-icon"></i>
                 <span>Ana Sayfa</span>
             </a>
-            <a href="members.html" class="nav-item">
+            <a href="members.html" class="nav-item active">
                 <i class="fas fa-users nav-icon"></i>
                 <span>Üyeler</span>
             </a>
@@ -95,7 +96,7 @@
                 <i class="fas fa-user-friends nav-icon"></i>
                 <span>Takımlar</span>
             </a>
-            <a href="management.html" class="nav-item active">
+            <a href="management.html" class="nav-item">
                 <i class="fas fa-user-tie nav-icon"></i>
                 <span>Yönetim Kadrosu</span>
             </a>
@@ -130,35 +131,84 @@
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <div class="page-header">
-            <h1><i class="fas fa-user-tie"></i> Yönetim Kadrosu</h1>
-            <p>NEX topluluğunun yönetim kadrosu ve organizasyon yapısını burada görüntüleyebilirsiniz.</p>
+            <h1><i class="fas fa-users"></i> Üyeler</h1>
+            <p>NEX topluluğunun tüm üyelerini burada görüntüleyebilirsiniz.</p>
         </div>
         
-        <div class="content-section">
-            <div class="coming-soon">
-                <div class="coming-soon-icon">
-                    <i class="fas fa-user-tie"></i>
+        <!-- Member Statistics -->
+        <div class="member-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
                 </div>
-                <h2>Yakında Gelecek</h2>
-                <p>Yönetim kadrosu sayfası henüz geliştirilme aşamasındadır. Çok yakında burada topluluk yöneticilerini ve organizasyon yapısını görüntüleyebileceksiniz.</p>
-                <div class="features-preview">
-                    <div class="feature-item">
-                        <i class="fas fa-user-shield"></i>
-                        <span>Yönetici Profilleri</span>
+                <div class="stat-info">
+                    <div class="stat-number" id="totalMembers">156</div>
+                    <div class="stat-label">Toplam Üye</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number" id="activeMembers">89</div>
+                    <div class="stat-label">Aktif Üye</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number" id="activeAlumni">34</div>
+                    <div class="stat-label">Aktif Mezunlar</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member List -->
+        <div class="member-list-section">
+            <div class="member-list-header">
+                <h2>Üye Listesi</h2>
+                <div class="member-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="memberSearch" placeholder="Üye ara...">
                     </div>
-                    <div class="feature-item">
-                        <i class="fas fa-sitemap"></i>
-                        <span>Organizasyon Şeması</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-tasks"></i>
-                        <span>Sorumluluk Alanları</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Yönetim Takvimi</span>
+                    <div class="filter-dropdown">
+                        <select id="statusFilter">
+                            <option value="all">Tümü</option>
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Pasif</option>
+                            <option value="alumni">Mezun</option>
+                        </select>
                     </div>
                 </div>
+            </div>
+
+            <div class="member-table-container">
+                <table class="member-table" id="memberTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">
+                                İsim <i class="fas fa-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="year">
+                                Giriş Yılı <i class="fas fa-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="rank">
+                                Rütbe <i class="fas fa-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="status">
+                                Durum <i class="fas fa-sort"></i>
+                            </th>
+                            <th>İletişim</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memberTableBody">
+                        <!-- Member data will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -196,7 +246,8 @@
     <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
 
-    <script src="global-features.js"></script>
+    <script src="../assets/js/global-features.js"></script>
+    <script src="../assets/js/members-script.js"></script>
 </body>
 </html>
 
