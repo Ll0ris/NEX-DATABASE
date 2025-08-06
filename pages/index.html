@@ -41,7 +41,7 @@
             where
         };
         
-        console.log('Firebase initialized successfully!');
+        // Firebase initialized successfully
     </script>
 </head>
 <body>
@@ -127,11 +127,9 @@
                         if (rememberMe) {
                             // Beni hatırla aktifse 30 gün
                             tokenExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 gün
-                            console.log('✅ Beni hatırla aktif - Token 30 gün geçerli');
                         } else {
                             // Beni hatırla kapalıysa 24 saat
                             tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
-                            console.log('⚠️ Beni hatırla kapalı - Token 24 saat geçerli');
                         }
                         
                         // Store authentication data
@@ -145,97 +143,84 @@
                         if (rememberMe) {
                             localStorage.setItem('rememberMe', 'true');
                             localStorage.setItem('rememberMeExpiry', (Date.now() + (30 * 24 * 60 * 60 * 1000)).toString()); // 30 gün sonra
-                            console.log('✅ Beni hatırla seçeneği aktif - 30 gün kalıcı token');
                         } else {
                             localStorage.removeItem('rememberMe');
                             localStorage.removeItem('rememberMeExpiry');
-                            console.log('⚠️ Beni hatırla seçili değil - 24 saat geçici token');
                         }
                         
-                        // localStorage verilerini kontrol et
-                        console.log('📊 Giriş sonrası localStorage:', {
-                            authToken: localStorage.getItem('authToken') ? 'kaydedildi' : 'YOK',
-                            tokenExpiry: localStorage.getItem('tokenExpiry'),
-                            isAuthenticated: localStorage.getItem('isAuthenticated'),
-                            currentUserId: localStorage.getItem('currentUserId')
-                        });
-                        
-                        console.log('✅ Firestore giriş - Kullanıcı email ve token localStorage\'a kaydedildi:', email);
                         document.getElementById('loadingScreen').style.display = 'flex';
                         
-                        // Daha uzun bekleme ve localStorage'ı tekrar kontrol
                         setTimeout(function() {
-                            // Son kontrol
-                            const finalCheck = localStorage.getItem('authToken');
-                            console.log('🔍 Yönlendirme öncesi son localStorage kontrolü:', finalCheck ? 'VAR' : 'YOK');
-                            
                             window.location.href = 'database.html';
-                        }, 1500); // 1200'den 1500'e çıkardık
+                        }, 1500);
                     } else {
-                        errorBubble.style.display = 'flex';
+                        errorBubble.classList.remove('hide');
+                        errorBubble.classList.add('show');
+                        errorBubble.style.display = 'block';
                         setTimeout(function() {
-                            errorBubble.style.display = 'none';
-                        }, 2000);
+                            errorBubble.classList.remove('show');
+                            errorBubble.classList.add('hide');
+                            setTimeout(() => {
+                                errorBubble.style.display = 'none';
+                            }, 400); // CSS transition süresi
+                        }, 3000); // 3 saniye göster
                     }
                 })
                 .catch(error => {
-                    console.error('Giriş hatası:', error);
-                    errorBubble.style.display = 'flex';
+                    console.error('🔥 Giriş hatası:', error);
+                    errorBubble.classList.remove('hide');
+                    errorBubble.classList.add('show');
+                    errorBubble.style.display = 'block';
                     setTimeout(function() {
-                        errorBubble.style.display = 'none';
-                    }, 2000);
+                        errorBubble.classList.remove('show');
+                        errorBubble.classList.add('hide');
+                        setTimeout(() => {
+                            errorBubble.style.display = 'none';
+                        }, 400);
+                    }, 3000);
                 });
             });
         });
 
         // Firebase kullanıcı kontrolü
         function checkUserByEmailInFirebase(email, password) {
-            // Wait for Firebase to be ready
-            if (!window.firestoreDb) {
-                console.error('Firebase not ready yet');
-                return Promise.reject(new Error('Firebase not ready'));
-            }
-
-            const { collection, query, where, getDocs } = window.firestoreFunctions;
-            
-            console.log('🔍 Login attempt:', {
-                email: email,
-                passwordLength: password.length,
-                emailLowerCase: email.toLowerCase()
+            // Wait for Firebase to be ready with timeout
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 50;
+                
+                function waitForFirebase() {
+                    if (window.firestoreDb && window.firestoreFunctions) {
+                        // Firebase hazır, kullanıcı kontrolü yap
+                        performUserCheck(email, password, resolve, reject);
+                    } else if (attempts < maxAttempts) {
+                        attempts++;
+                        setTimeout(waitForFirebase, 100);
+                    } else {
+                        reject(new Error('Firebase connection timeout'));
+                    }
+                }
+                
+                waitForFirebase();
             });
+        }
+        
+        function performUserCheck(email, password, resolve, reject) {
+            const { collection, query, where, getDocs } = window.firestoreFunctions;
 
             // Email ile sorgu (case insensitive için toLowerCase kullan)
             const q = query(collection(window.firestoreDb, "users"), where("email", "==", email.toLowerCase()));
-            return getDocs(q)
+            getDocs(q)
             .then(snapshot => {
-                console.log('📊 Firebase query result:', {
-                    isEmpty: snapshot.empty,
-                    size: snapshot.size
-                });
-                
                 if (!snapshot.empty) {
                     const userData = snapshot.docs[0].data();
-                    console.log('👤 User found in database:', {
-                        email: userData.email,
-                        hasPassword: !!userData.password,
-                        passwordMatch: userData.password === password
-                    });
-                    return userData.password === password;
+                    resolve(userData.password === password);
                 } else {
-                    console.warn('❌ No user found with email:', email.toLowerCase());
-                    
-                    // Tüm kullanıcıları listele debug için
-                    const allUsersQuery = query(collection(window.firestoreDb, "users"));
-                    getDocs(allUsersQuery).then(allSnapshot => {
-                        console.log('📋 All users in database:');
-                        allSnapshot.forEach(doc => {
-                            const data = doc.data();
-                            console.log(`- Email: ${data.email}, Name: ${data.name || 'N/A'}`);
-                        });
-                    });
-                    
-                    return false;
+                    resolve(false);
                 }
+            })
+            .catch(error => {
+                reject(error);
             });
         }
         
@@ -257,7 +242,7 @@
                 const currentTime = Date.now();
                 if (currentTime < parseInt(tokenExpiry)) {
                     // Token is still valid
-                    console.log('✅ Geçerli token bulundu');
+                    // Geçerli token bulundu
                     return true;
                 } else {
                     // Token expired, clear auth data
@@ -296,8 +281,6 @@
                     // "Beni hatırla" aktif ama süresini kontrol et
                     if (rememberMeExpiry && Date.now() < parseInt(rememberMeExpiry)) {
                         // Beni hatırla süresi henüz dolmamış - direkt siteye yönlendir
-                        const remainingDays = Math.ceil((parseInt(rememberMeExpiry) - Date.now()) / (24 * 60 * 60 * 1000));
-                        console.log(`✅ Beni hatırla aktif - ${remainingDays} gün kaldı, direkt siteye yönlendiriliyor`);
                         document.getElementById('loadingScreen').style.display = 'flex';
                         setTimeout(function() {
                             window.location.href = 'database.html';
@@ -305,18 +288,15 @@
                         return;
                     } else {
                         // Beni hatırla süresi dolmuş - temizle
-                        console.log('⚠️ Beni hatırla süresi dolmuş - veriler temizleniyor');
                         clearAuthData();
                     }
                 } else {
                     // Beni hatırla aktif değil - token'ı temizle ve giriş formu göster
-                    console.log('⚠️ Beni hatırla aktif değil - token temizleniyor');
                     clearAuthData();
                 }
             }
             
             // Eğer buraya geldiyse, kullanıcı giriş yapmamış veya beni hatırla süresi dolmuş
-            console.log('Kullanıcı giriş yapmamış veya beni hatırla süresi dolmuş, giriş formu gösteriliyor');
         });
     </script>
     <script src="../assets/js/global-features.js"></script>

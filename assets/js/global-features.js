@@ -285,6 +285,46 @@ async function updateUserNameDisplay() {
                 const userData = snapshot.docs[0].data();
                 const userName = userData.name || '';
                 const userPhoto = userData.photoUrl || null;
+                const userRole = userData.role || 'user'; // Firebase'den rol al
+                
+                // Kullanıcının gerçek rolünü localStorage'a kaydet (güvenlik için)
+                const currentStoredRole = localStorage.getItem('userRole');
+                if (currentStoredRole !== userRole) {
+                    localStorage.setItem('userRole', userRole);
+                    console.log('🔐 Kullanıcı rolü Firebase\'den güncellendi:', userRole);
+                }
+                
+                console.log('🔍 Rol kontrol durumu:', {
+                    userEmail: currentUserEmail,
+                    userRole: userRole,
+                    currentAdminMode: localStorage.getItem('adminMode')
+                });
+                
+                // Admin mode localStorage'ını gerçek role göre zorla
+                if (userRole === 'admin') {
+                    // Gerçek admin ise admin moduna izin ver
+                    localStorage.setItem('realAdminAccess', 'true');
+                    console.log('✅ Gerçek admin yetkisi verildi');
+                } else {
+                    // Normal kullanıcı ise admin modunu zorla kapat
+                    const currentAdminMode = localStorage.getItem('adminMode');
+                    if (currentAdminMode === 'admin') {
+                        console.log('🚨 Normal kullanıcı admin modunda! Zorla güvenli moda çevriliyor...');
+                        localStorage.setItem('adminMode', 'safe');
+                        localStorage.setItem('adminModeText', 'Güvenli Mod');
+                        
+                        // UI'yi güncelle
+                        const modeText = document.querySelector('.mode-text');
+                        if (modeText) modeText.textContent = 'Güvenli Mod';
+                        
+                        const modeIcon = document.getElementById('modeIcon');
+                        if (modeIcon) modeIcon.className = 'fas fa-shield-alt mode-icon';
+                        
+                        alert('⚠️ Admin yetkisi yok! Güvenli moda çevrildi.');
+                    }
+                    localStorage.removeItem('realAdminAccess');
+                    console.log('❌ Admin yetkisi kaldırıldı');
+                }
                 
                 // Kullanıcı adını güncelle
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
@@ -295,7 +335,7 @@ async function updateUserNameDisplay() {
                 // Profil fotoğrafını güncelle
                 updateProfilePhoto(userPhoto);
                 
-                console.log('✅ Kullanıcı bilgileri güncellendi:', userName, userPhoto);
+                console.log('✅ Kullanıcı bilgileri güncellendi:', userName, userPhoto, 'Role:', userRole);
             } else {
                 // Kullanıcı bulunamazsa alanlar boş kalsın
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
@@ -826,6 +866,31 @@ function closeAdminDropdown() {
 }
 
 function selectAdminMode(mode, text) {
+    // Debug log
+    console.log('🔍 Admin mode değiştirme isteği:', mode, text);
+    
+    // Güvenlik kontrolü: Gerçek admin yetkisi var mı?
+    const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+    const userRole = localStorage.getItem('userRole') || 'user';
+    
+    console.log('🔐 Güvenlik durumu:', {
+        hasRealAdminAccess: hasRealAdminAccess,
+        userRole: userRole,
+        requestedMode: mode
+    });
+    
+    if (mode === 'admin' && (!hasRealAdminAccess || userRole !== 'admin')) {
+        console.warn('🚨 Güvenlik: Admin moduna geçiş reddedildi - Yetki yok!');
+        alert('⚠️ Admin yetkisi yok!\n\nSadece sistem yöneticileri admin moduna geçebilir.');
+        
+        // Zorla güvenli moda çevir
+        mode = 'safe';
+        text = 'Güvenli Mod';
+        console.log('🔄 Zorla güvenli moda çevrildi');
+    } else {
+        console.log('✅ Admin mode değişikliği onaylandı:', mode);
+    }
+    
     const dropdownOptions = document.querySelectorAll('.dropdown-option');
     const modeText = document.querySelector('.mode-text');
     
@@ -859,14 +924,18 @@ function updateProfileButtonsOnAdminChange(mode) {
     
     if (isProfilePage && isReadOnly) {
         const profileEditBtn = document.getElementById('profileEditBtn');
-        const isAdmin = mode === 'admin';
+        
+        // Güvenli admin kontrolü
+        const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+        const userRole = localStorage.getItem('userRole') || 'user';
+        const isRealAdmin = hasRealAdminAccess && userRole === 'admin' && mode === 'admin';
         
         if (profileEditBtn) {
-            if (isAdmin) {
-                // Admin modunda mor düzenle butonunu göster
+            if (isRealAdmin) {
+                // Gerçek admin modunda mor düzenle butonunu göster
                 profileEditBtn.style.display = 'block';
             } else {
-                // Normal modunda mor düzenle butonunu gizle
+                // Gerçek admin değilse mor düzenle butonunu gizle
                 profileEditBtn.style.display = 'none';
             }
         }

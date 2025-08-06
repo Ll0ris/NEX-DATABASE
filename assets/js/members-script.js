@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Profile sayfasına üye ID'si ile yönlendir
-        window.location.href = `profile.html?viewUser=${member.email}&readOnly=true`;
+        // Profile sayfasına üye ID'si ile yönlendir (email yerine Firestore document ID kullan)
+        window.location.href = `profile.html?viewUser=${member.id}&readOnly=true`;
     };
 });

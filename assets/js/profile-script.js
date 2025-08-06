@@ -179,23 +179,35 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadProfileFromFirebase() {
         // URL parametrelerini kontrol et
         const urlParams = new URLSearchParams(window.location.search);
-        const viewUserEmail = urlParams.get('viewUser');
+        const viewUserParam = urlParams.get('viewUser');
         const isReadOnly = urlParams.get('readOnly') === 'true';
         
-        // Hangi kullanıcının profilini göstereceğimizi belirle
-        let targetUserEmail = viewUserEmail || localStorage.getItem('currentUserEmail');
-        
-        if (!targetUserEmail) {
-            console.warn('Kullanıcı email yok, profil yüklenemiyor');
+        // Güvenlik kontrolü: viewUser varsa sadece readOnly modda açılmalı
+        if (viewUserParam && !isReadOnly) {
+            console.warn('🚨 Güvenlik: Başkasının profilini düzenleme modunda açmaya çalışıldı!');
+            console.log('🔄 Kendi profilinize yönlendiriliyorsunuz...');
+            // URL'i temizle ve kendi profiline yönlendir
+            window.location.href = 'profile.html';
             return;
         }
         
-        console.log('Loading profile for:', targetUserEmail, 'Read-only:', isReadOnly);
+        // Hangi kullanıcının profilini göstereceğimizi belirle
+        let targetUserIdentifier = viewUserParam || localStorage.getItem('currentUserEmail');
+        
+        if (!targetUserIdentifier) {
+            console.warn('Kullanıcı identifier yok, profil yüklenemiyor');
+            return;
+        }
+        
+        console.log('Loading profile for:', targetUserIdentifier, 'Read-only:', isReadOnly);
         
         // Read-only modda düzenleme butonlarını gizle
         if (isReadOnly) {
             hideEditButtons();
-            addViewOnlyIndicator(targetUserEmail);
+            addViewOnlyIndicator(targetUserIdentifier);
+        } else {
+            // Read-only mod değilse normal profil moduna geçir
+            showEditButtons();
         }
 
         // Firestore v9+ ile users koleksiyonundan tüm profil bilgilerini çek
@@ -211,11 +223,48 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         new Promise(waitForFirebase).then(async () => {
-            const { collection, query, where, getDocs } = window.firestoreFunctions;
-            const q = query(collection(window.firestoreDb, "users"), where("email", "==", targetUserEmail));
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                const data = snapshot.docs[0].data();
+            const { collection, query, where, getDocs, doc, getDoc } = window.firestoreFunctions;
+            
+            let snapshot;
+            let userData;
+            
+            // viewUserParam bir document ID mi yoksa email mi kontrol et
+            console.log('🔍 Checking viewUserParam:', viewUserParam, 'Length:', viewUserParam ? viewUserParam.length : 0);
+            
+            if (viewUserParam && viewUserParam.length >= 15 && !viewUserParam.includes('@') && !viewUserParam.includes('.')) {
+                // Document ID gibi görünüyor, direkt doc ile al
+                console.log('🆔 Document ID ile profil yükleniyor:', viewUserParam);
+                try {
+                    const docRef = doc(window.firestoreDb, "users", viewUserParam);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        userData = docSnap.data();
+                        console.log('✅ Document ID ile kullanıcı bulundu:', userData.email || userData.name);
+                    } else {
+                        console.error('❌ Document ID ile kullanıcı bulunamadı:', viewUserParam);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('🔥 Document ID ile sorgulama hatası:', error);
+                    return;
+                }
+            } else {
+                // Email ile sorgula
+                console.log('📧 Email ile profil yükleniyor:', viewUserParam || localStorage.getItem('currentUserEmail'));
+                const targetEmail = viewUserParam || localStorage.getItem('currentUserEmail');
+                const q = query(collection(window.firestoreDb, "users"), where("email", "==", targetEmail));
+                snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                    userData = snapshot.docs[0].data();
+                    console.log('✅ Email ile kullanıcı bulundu:', userData.email || userData.name);
+                } else {
+                    console.error('❌ Email ile kullanıcı bulunamadı:', targetEmail);
+                    return;
+                }
+            }
+            
+            if (userData) {
+                const data = userData;
                 // Sadece Firestore'dan gelen verileri DOM'a yaz
                 const titlePrefixElement = document.querySelector('.title-prefix');
                 if (titlePrefixElement) titlePrefixElement.textContent = (typeof data.titlePrefix !== 'undefined') ? data.titlePrefix : '';
@@ -246,6 +295,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const topProfileName = document.querySelector('.profile-name');
                 if (topProfileName && !isReadOnly) {
                     topProfileName.textContent = (typeof data.name !== 'undefined') ? data.name : '';
+                }
+
+                // Read-only indicator'ı kullanıcı adıyla güncelle
+                if (isReadOnly) {
+                    const indicator = document.getElementById('viewOnlyIndicator');
+                    if (indicator && data.name) {
+                        indicator.innerHTML = `📋 <strong>${data.name}</strong> kullanıcısının profili görüntüleniyor (Salt okunur mod)`;
+                    }
                 }
 
                 // Fotoğraf
@@ -297,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } else {
+                console.warn('❌ No user data found, showing empty profile');
                 // Hiçbir veri yoksa alanlar boş kalsın
                 const titlePrefixElement = document.querySelector('.title-prefix');
                 if (titlePrefixElement) titlePrefixElement.textContent = '';
@@ -3007,16 +3065,18 @@ function hideEditButtons() {
     const photoControls = document.getElementById('photoControls');
     const profileEditBtn = document.getElementById('profileEditBtn'); // Mor düzenle butonu
     
-    // Admin kontrolü
-    const isAdmin = localStorage.getItem('adminMode') === 'admin';
+    // Güvenli admin kontrolü
+    const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+    const userRole = localStorage.getItem('userRole') || 'user';
+    const isRealAdmin = hasRealAdminAccess && userRole === 'admin';
     
     if (editBtn) editBtn.style.display = 'none';
     if (saveBtn) saveBtn.style.display = 'none';
     if (cancelBtn) cancelBtn.style.display = 'none';
     if (photoControls) photoControls.style.display = 'none';
     
-    // Mor düzenle butonu sadece admin değilse gizle
-    if (profileEditBtn && !isAdmin) {
+    // Mor düzenle butonu sadece gerçek admin ise göster
+    if (profileEditBtn && !isRealAdmin) {
         profileEditBtn.style.display = 'none';
     }
     
@@ -3028,11 +3088,42 @@ function hideEditButtons() {
     });
 }
 
+// Normal modda düzenleme butonlarını göster
+function showEditButtons() {
+    const editBtn = document.getElementById('editProfileBtn');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const cancelBtn = document.getElementById('cancelProfileBtn');
+    const photoControls = document.getElementById('photoControls');
+    const profileEditBtn = document.getElementById('profileEditBtn');
+    
+    if (editBtn) editBtn.style.display = 'block';
+    if (profileEditBtn) profileEditBtn.style.display = 'block';
+    
+    // Save ve Cancel butonları edit modda gösterilir, normalde gizli
+    if (saveBtn) saveBtn.style.display = 'none';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (photoControls) photoControls.style.display = 'none';
+    
+    // Tüm inputları enable yap
+    const inputs = document.querySelectorAll('#profile-container input, #profile-container textarea');
+    inputs.forEach(input => {
+        input.disabled = false;
+        input.style.backgroundColor = '';
+    });
+    
+    // Read-only indicator'ı kaldır
+    const indicator = document.getElementById('viewOnlyIndicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
 // Read-only modda kimin profilini görüntülediğimizi belirt
-function addViewOnlyIndicator(userEmail) {
+function addViewOnlyIndicator(userIdentifier) {
     const header = document.querySelector('.header h1') || document.querySelector('h1');
     if (header) {
         const indicator = document.createElement('div');
+        indicator.id = 'viewOnlyIndicator'; // ID ekle ki güncellenebilsin
         indicator.style.cssText = `
             background: #e3f2fd;
             padding: 8px 16px;
@@ -3042,7 +3133,7 @@ function addViewOnlyIndicator(userEmail) {
             color: #1976d2;
             border-left: 4px solid #2196f3;
         `;
-        indicator.innerHTML = `📋 <strong>${userEmail}</strong> kullanıcısının profili görüntüleniyor (Salt okunur mod)`;
+        indicator.innerHTML = `📋 Profil görüntüleniyor (Salt okunur mod)`;
         header.parentNode.insertBefore(indicator, header.nextSibling);
     }
 }

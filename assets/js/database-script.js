@@ -1025,6 +1025,9 @@ function submitUser() {
         // Fotoğraf
         photoHTML: photoHTML || null,
         
+        // Güvenlik bilgileri
+        role: 'user', // Varsayılan role: normal kullanıcı
+        
         // Sistem bilgileri
         createdAt: currentTime,
         lastUpdated: currentTime,
