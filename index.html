@@ -7,10 +7,40 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="nodes.js" defer></script>
-    <!-- Firebase App (core) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-    <!-- Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+    <!-- Firebase v9+ Modular SDK -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
+            authDomain: "nex-database.firebaseapp.com",
+            projectId: "nex-database",
+            storageBucket: "nex-database.appspot.com",
+            messagingSenderId: "532729129753",
+            appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Make functions global for use in other scripts
+        window.firebaseApp = app;
+        window.firestoreDb = db;
+        window.firestoreFunctions = {
+            collection,
+            doc,
+            getDoc,
+            setDoc,
+            addDoc,
+            getDocs
+        };
+        
+        console.log('Firebase initialized successfully!');
+    </script>
 </head>
 <body>
     <canvas id="nodeCanvas"></canvas>
@@ -112,16 +142,24 @@
 
         // Firebase kullanıcı kontrolü
         function checkUserInFirebase(username, password) {
-            return db.collection("users").doc(username).get()
-            .then(doc => {
-                if (doc.exists) {
-                    const userData = doc.data();
+            // Wait for Firebase to be ready
+            if (!window.firestoreDb) {
+                console.error('Firebase not ready yet');
+                return Promise.reject(new Error('Firebase not ready'));
+            }
+            
+            const { doc, getDoc, setDoc } = window.firestoreFunctions;
+            
+            return getDoc(doc(window.firestoreDb, "users", username))
+            .then(docSnap => {
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
                     return userData.password === password;
                 } else {
                     // Eğer kullanıcı yoksa, basit user/user kontrolü yap ve oluştur
                     if (username === 'user' && password === 'user') {
                         // Varsayılan kullanıcıyı oluştur
-                        return db.collection("users").doc(username).set({
+                        return setDoc(doc(window.firestoreDb, "users", username), {
                             username: username,
                             password: password,
                             role: 'admin',
@@ -131,39 +169,6 @@
                     return false;
                 }
             });
-        }
-
-        // Firebase config - buraya kendi kodunuzu ekleyin
-        const firebaseConfig = {
-          apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
-          authDomain: "nex-database.firebaseapp.com",
-          projectId: "nex-database",
-          storageBucket: "nex-database.appspot.com",
-          messagingSenderId: "532729129753",
-          appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
-        };
-        // Başlat
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Örnek: Kullanıcı ekleme
-        function addUser(name, email, role) {
-          db.collection("users").add({
-            name: name,
-            email: email,
-            role: role
-          }).then(() => {
-            alert("Kullanıcı eklendi!");
-          });
-        }
-
-        // Örnek: Kullanıcıları çekme
-        function getUsers() {
-          db.collection("users").get().then(snapshot => {
-            snapshot.forEach(doc => {
-              console.log(doc.data());
-            });
-          });
         }
     </script>
     <script src="global-features.js"></script>

@@ -7,6 +7,9 @@
     
     <!-- Theme Loader - Must be first to prevent flash -->
     <script>
+        // Disable session timer for login page
+        window.DISABLE_SESSION_TIMER = true;
+        
         (function() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -27,6 +30,40 @@
     
     <link rel="stylesheet" href="database-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase v9+ Modular SDK -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
+            authDomain: "nex-database.firebaseapp.com",
+            projectId: "nex-database",
+            storageBucket: "nex-database.appspot.com",
+            messagingSenderId: "532729129753",
+            appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Make functions global for use in other scripts
+        window.firebaseApp = app;
+        window.firestoreDb = db;
+        window.firestoreFunctions = {
+            collection,
+            doc,
+            getDoc,
+            setDoc,
+            addDoc,
+            getDocs
+        };
+        
+        console.log('Firebase initialized successfully for database page!');
+    </script>
 </head>
 <body>
     <!-- Top Panel -->
@@ -120,6 +157,10 @@
             <!-- Admin Only Section -->
             <div class="admin-section admin-only">
                 <div class="admin-divider"></div>
+                <a href="#" class="nav-item admin-only" id="consoleToggle">
+                    <i class="fas fa-terminal nav-icon" style="color: #8b5cf6;"></i>
+                    <span>Konsol</span>
+                </a>
                 <a href="reports.html" class="nav-item admin-only">
                     <i class="fas fa-chart-bar nav-icon"></i>
                     <span>Raporlar</span>
@@ -236,6 +277,51 @@
                     <i class="fas fa-calendar-alt"></i>
                     Tüm Etkinlikler
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console Panel (Admin Only) -->
+    <div class="console-panel" id="consolePanel" style="display: none;">
+        <div class="console-header">
+            <div class="console-title">
+                <i class="fas fa-terminal"></i>
+                <span>Firebase Konsol</span>
+            </div>
+            <button class="console-close" id="consoleClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="console-content">
+            <div class="console-section">
+                <h3>Kullanıcı İşlemleri</h3>
+                <div class="console-buttons">
+                    <button class="console-btn" onclick="addUserForm()">
+                        <i class="fas fa-user-plus"></i> Kullanıcı Ekle
+                    </button>
+                    <button class="console-btn" onclick="getAllUsers()">
+                        <i class="fas fa-users"></i> Tüm Kullanıcıları Göster
+                    </button>
+                </div>
+            </div>
+            
+            <div class="console-section">
+                <h3>Kullanıcı Ekleme Formu</h3>
+                <div class="console-form" id="userForm" style="display: none;">
+                    <input type="text" id="userName" placeholder="İsim" class="console-input">
+                    <input type="email" id="userEmail" placeholder="E-mail" class="console-input">
+                    <input type="text" id="userRole" placeholder="Rol (örn: admin, user)" class="console-input">
+                    <button class="console-btn primary" onclick="submitUser()">
+                        <i class="fas fa-save"></i> Kaydet
+                    </button>
+                </div>
+            </div>
+            
+            <div class="console-section">
+                <h3>Konsol Çıktısı</h3>
+                <div class="console-output" id="consoleOutput">
+                    <div class="output-line">Firebase konsol hazır. Komutları kullanabilirsiniz.</div>
+                </div>
             </div>
         </div>
     </div>

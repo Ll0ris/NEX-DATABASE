@@ -819,3 +819,169 @@ function showAdminSuccessNotification() {
         }
     }, 5000);
 }
+
+// Firebase Configuration and Console Functions
+let firebaseInitialized = false;
+
+// Firebase'i başlat
+function initializeFirebase() {
+    try {
+        if (window.firestoreDb && window.firestoreFunctions && !firebaseInitialized) {
+            firebaseInitialized = true;
+            console.log('Firebase başarıyla başlatıldı');
+            return true;
+        }
+        return firebaseInitialized;
+    } catch (error) {
+        console.error('Firebase başlatma hatası:', error);
+        return false;
+    }
+}
+
+// Sayfa yüklendiğinde Firebase'i başlat
+document.addEventListener('DOMContentLoaded', function() {
+    // Firebase'i başlat
+    setTimeout(() => {
+        if (initializeFirebase()) {
+            console.log('✓ Firebase ready!');
+        } else {
+            setTimeout(initializeFirebase, 1000); // 1 saniye daha bekle
+        }
+    }, 500); // Firebase scriptlerinin yüklenmesi için bekle
+    
+    // Konsol panel event listeners
+    const consoleToggle = document.getElementById('consoleToggle');
+    const consolePanel = document.getElementById('consolePanel');
+    const consoleClose = document.getElementById('consoleClose');
+    
+    if (consoleToggle) {
+        consoleToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleConsole();
+        });
+    }
+    
+    if (consoleClose) {
+        consoleClose.addEventListener('click', function() {
+            hideConsole();
+        });
+    }
+});
+
+function toggleConsole() {
+    const consolePanel = document.getElementById('consolePanel');
+    if (consolePanel.style.display === 'none' || !consolePanel.style.display) {
+        showConsole();
+    } else {
+        hideConsole();
+    }
+}
+
+function showConsole() {
+    const consolePanel = document.getElementById('consolePanel');
+    consolePanel.style.display = 'flex';
+    
+    // Firebase bağlantısını kontrol et
+    if (!initializeFirebase()) {
+        addToConsoleOutput('⚠️ Firebase scriptleri yükleniyor, lütfen bekleyin...', 'info');
+        // 2 saniye sonra tekrar dene
+        setTimeout(() => {
+            if (initializeFirebase()) {
+                addToConsoleOutput('✓ Firebase bağlantısı başarılı!', 'success');
+            } else {
+                addToConsoleOutput('✗ Firebase bağlantısı kurulamadı!', 'error');
+            }
+        }, 2000);
+    } else {
+        addToConsoleOutput('✓ Firebase konsol açıldı. Hazır!', 'success');
+    }
+}
+
+function hideConsole() {
+    const consolePanel = document.getElementById('consolePanel');
+    consolePanel.style.display = 'none';
+}
+
+function addToConsoleOutput(message, type = 'normal') {
+    const output = document.getElementById('consoleOutput');
+    const line = document.createElement('div');
+    line.className = `output-line${type !== 'normal' ? ' output-' + type : ''}`;
+    line.textContent = message;
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+}
+
+function addUserForm() {
+    const form = document.getElementById('userForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    if (form.style.display === 'block') {
+        addToConsoleOutput('Kullanıcı ekleme formu açıldı', 'info');
+    }
+}
+
+function submitUser() {
+    const name = document.getElementById('userName').value.trim();
+    const email = document.getElementById('userEmail').value.trim();
+    const role = document.getElementById('userRole').value.trim() || 'user';
+    
+    if (!name || !email) {
+        addToConsoleOutput('✗ Hata: İsim ve e-mail alanları gerekli!', 'error');
+        return;
+    }
+    
+    // Firebase bağlantısını kontrol et ve gerekirse başlat
+    if (!initializeFirebase() || !window.firestoreDb) {
+        addToConsoleOutput('✗ Hata: Firebase bağlantısı kurulamadı!', 'error');
+        return;
+    }
+    
+    addToConsoleOutput(`→ Kullanıcı ekleniyor: ${name} (${email})`, 'info');
+    
+    const { collection, addDoc } = window.firestoreFunctions;
+    
+    addDoc(collection(window.firestoreDb, "users"), {
+        name: name,
+        email: email,
+        role: role,
+        createdAt: new Date(),
+        createdBy: 'admin'
+    }).then(() => {
+        addToConsoleOutput(`✓ Kullanıcı başarıyla eklendi: ${name}`, 'success');
+        // Form temizle
+        document.getElementById('userName').value = '';
+        document.getElementById('userEmail').value = '';
+        document.getElementById('userRole').value = '';
+        // Formu gizle
+        document.getElementById('userForm').style.display = 'none';
+    }).catch(error => {
+        addToConsoleOutput(`✗ Hata: ${error.message}`, 'error');
+    });
+}
+
+function getAllUsers() {
+    // Firebase bağlantısını kontrol et ve gerekirse başlat
+    if (!initializeFirebase() || !window.firestoreDb) {
+        addToConsoleOutput('✗ Hata: Firebase bağlantısı kurulamadı!', 'error');
+        return;
+    }
+    
+    addToConsoleOutput('→ Kullanıcılar getiriliyor...', 'info');
+    
+    const { collection, getDocs } = window.firestoreFunctions;
+    
+    getDocs(collection(window.firestoreDb, "users")).then(snapshot => {
+        if (snapshot.empty) {
+            addToConsoleOutput('ℹ️ Henüz kullanıcı kaydı bulunmuyor.', 'info');
+            return;
+        }
+        
+        addToConsoleOutput(`✓ ${snapshot.size} kullanıcı bulundu:`, 'success');
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const createdAt = data.createdAt ? data.createdAt.toDate().toLocaleString('tr-TR') : 'Bilinmiyor';
+            addToConsoleOutput(`  • ${data.name || 'İsimsiz'} - ${data.email || 'E-mail yok'} - Rol: ${data.role || 'user'} - Oluşturulma: ${createdAt}`);
+        });
+    }).catch(error => {
+        addToConsoleOutput(`✗ Hata: ${error.message}`, 'error');
+    });
+}

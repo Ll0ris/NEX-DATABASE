@@ -44,7 +44,7 @@ function createSessionTimer() {
             <i class="fas fa-clock"></i>
         </div>
         <div class="timer-text">Oturum</div>
-        <div class="timer-time" id="sessionTime">40:00</div>
+        <div class="timer-time" id="sessionTime">10:00</div>
     `;
     sessionTimer.title = 'Kalan Oturum Süresi';
     
@@ -67,8 +67,8 @@ function initScrollDetection() {
 // Session Management
 function initSessionManagement() {
     // Session duration: 40 minutes (2400 seconds)
-    const SESSION_DURATION = 40 * 60; // 40 minutes in seconds
-    const WARNING_TIME = 5 * 60; // Last 5 minutes warning
+    const SESSION_DURATION = 10 * 60; // 10 minutes in seconds
+    const WARNING_TIME = 2 * 60; // Last 2 minutes warning
     
     let remainingTime = SESSION_DURATION;
     let lastActivity = Date.now();
@@ -143,14 +143,14 @@ function initSessionManagement() {
         // Show notification
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Oturum Uyarısı', {
-                body: 'Oturumunuz 5 dakika içinde sona erecek. Lütfen sayfada bir işlem yapın.',
+                body: 'Oturumunuz 2 dakika içinde sona erecek. Lütfen sayfada bir işlem yapın.',
                 icon: 'logo.png'
             });
         } else {
             // Fallback alert
             setTimeout(() => {
                 if (remainingTime <= WARNING_TIME && remainingTime > 0) {
-                    alert('Oturumunuz 5 dakika içinde sona erecek. Lütfen sayfada bir işlem yapın.');
+                    alert('Oturumunuz 2 dakika içinde sona erecek. Lütfen sayfada bir işlem yapın.');
                 }
             }, 1000);
         }
@@ -181,7 +181,7 @@ window.extendSession = function() {
     
     // Reset session time
     if (window.sessionManagement) {
-        window.sessionManagement.remainingTime = 40 * 60; // Reset to 40 minutes
+        window.sessionManagement.remainingTime = 10 * 60; // Reset to 10 minutes
         window.sessionManagement.warningShown = false;
     }
     
