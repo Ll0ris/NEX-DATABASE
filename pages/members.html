@@ -27,7 +27,7 @@
     <!-- Firebase v9+ Modular SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
         
         const firebaseConfig = {
             apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
@@ -44,7 +44,7 @@
         window.firebaseApp = app;
         window.firestoreDb = db;
         window.firestoreFunctions = {
-            collection, doc, getDoc, setDoc, addDoc, getDocs, query, where
+            collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, deleteDoc
         };
         
         console.log('Firebase initialized for members page!');

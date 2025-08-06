@@ -125,6 +125,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function initializeMembersPage() {
         try {
+            // Firebase hazır olana kadar bekle
+            let attempts = 0;
+            while (!window.firestoreDb && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (!window.firestoreDb) {
+                console.error('Firebase bağlantısı kurulamadı');
+                showError('Veritabanı bağlantısı kurulamadı.');
+                return;
+            }
+            
             await loadMembersFromFirestore();
             updateStatistics();
             renderMemberTable();
@@ -138,7 +151,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Firestore'dan üyeleri yükle (users koleksiyonu)
     async function loadMembersFromFirestore() {
         try {
-            const usersSnapshot = await db.collection('users').get();
+            // Firebase v9+ modular SDK kullanım
+            if (!window.firestoreDb || !window.firestoreFunctions) {
+                console.error('Firebase bağlantısı henüz hazır değil');
+                return;
+            }
+            
+            const { collection, getDocs } = window.firestoreFunctions;
+            const usersSnapshot = await getDocs(collection(window.firestoreDb, 'users'));
             currentMembers = [];
             usersSnapshot.forEach((doc) => {
                 const userData = doc.data();
@@ -523,7 +543,14 @@ document.addEventListener('DOMContentLoaded', function() {
     window.deleteMember = async function(memberId) {
         if (confirm('Bu üyeyi silmek istediğinizden emin misiniz?')) {
             try {
-                await db.collection('users').doc(memberId).delete();
+                // Firebase v9+ modular SDK kullanım
+                if (!window.firestoreDb || !window.firestoreFunctions) {
+                    console.error('Firebase bağlantısı henüz hazır değil');
+                    return;
+                }
+                
+                const { doc, deleteDoc } = window.firestoreFunctions;
+                await deleteDoc(doc(window.firestoreDb, 'users', memberId));
                 await loadMembersFromFirestore();
                 updateStatistics();
                 renderMemberTable();
