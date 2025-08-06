@@ -10,8 +10,16 @@ function initGlobalFeatures() {
     const currentPage = window.location.pathname;
     const isLoginPage = currentPage.includes('index.html') || currentPage === '/' || currentPage.endsWith('/');
     
-    if (!isLoginPage && !checkAuthentication()) {
-        return; // Authentication failed, redirect will happen
+    if (!isLoginPage) {
+        // Hide page content immediately until authentication is verified
+        hidePageContent();
+        
+        if (!checkAuthentication()) {
+            return; // Authentication failed, redirect will happen
+        }
+        
+        // Show page content after authentication passes
+        showPageContent();
     }
     
     createBackToTopButton();
@@ -29,6 +37,54 @@ function initGlobalFeatures() {
     }
     
     initScrollDetection();
+}
+
+// Hide page content during authentication check
+function hidePageContent() {
+    document.body.style.visibility = 'hidden';
+    
+    // Create loading overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'authLoadingOverlay';
+    loadingOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #1a1a1a;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        color: white;
+        font-family: Arial, sans-serif;
+    `;
+    
+    loadingOverlay.innerHTML = `
+        <div style="text-align: center;">
+            <div style="border: 4px solid #333; border-top: 4px solid #007bff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <div style="font-size: 18px; margin-bottom: 10px;">Yetki kontrolü yapılıyor...</div>
+            <div style="font-size: 14px; opacity: 0.7;">Lütfen bekleyiniz</div>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+}
+
+// Show page content after authentication
+function showPageContent() {
+    document.body.style.visibility = 'visible';
+    const loadingOverlay = document.getElementById('authLoadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+    }
 }
 
 // Check authentication token
@@ -64,6 +120,63 @@ function clearAuthData() {
     localStorage.removeItem('currentUserEmail');
 }
 
+// Logout function
+function logout() {
+    // Clear all authentication data
+    clearAuthData();
+    
+    // Show logout message
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'logoutLoadingOverlay';
+    loadingOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #1a1a1a;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        color: white;
+        font-family: Arial, sans-serif;
+    `;
+    
+    loadingOverlay.innerHTML = `
+        <div style="text-align: center;">
+            <div style="border: 4px solid #333; border-top: 4px solid #28a745; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <div style="font-size: 18px; margin-bottom: 10px; color: #28a745;">Çıkış Yapılıyor</div>
+            <div style="font-size: 14px; opacity: 0.7;">Güvenli bir şekilde oturumunuz sonlandırılıyor...</div>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+    
+    // Redirect to login page after showing logout message
+    setTimeout(() => {
+        const currentPath = window.location.pathname;
+        let loginPath = '';
+        
+        if (currentPath.includes('/pages/')) {
+            loginPath = 'index.html';
+        } else {
+            loginPath = 'pages/index.html';
+        }
+        
+        window.location.href = loginPath;
+    }, 1500);
+}
+
+// Make logout function globally available
+window.logout = logout;
+
 // Redirect to login page
 function redirectToLogin() {
     const currentPath = window.location.pathname;
@@ -75,9 +188,27 @@ function redirectToLogin() {
         loginPath = 'pages/index.html';
     }
     
+    // Update loading message before redirect
+    const loadingOverlay = document.getElementById('authLoadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.innerHTML = `
+            <div style="text-align: center;">
+                <div style="border: 4px solid #333; border-top: 4px solid #dc3545; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <div style="font-size: 18px; margin-bottom: 10px; color: #dc3545;">Yetkisiz Erişim</div>
+                <div style="font-size: 14px; opacity: 0.7;">Giriş sayfasına yönlendiriliyorsunuz...</div>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+    }
+    
     setTimeout(() => {
         window.location.href = loginPath;
-    }, 100);
+    }, 1500);
 }
 
 // Update user name and photo display from localStorage or database
@@ -320,8 +451,47 @@ function initSessionManagement() {
         // Clear authentication data before redirecting
         clearAuthData();
         
-        // Direkt giriş sayfasına yönlendir (uyarı yok)
-        window.location.href = 'index.html';
+        // Show session expired message
+        const loadingOverlay = document.getElementById('authLoadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="border: 4px solid #333; border-top: 4px solid #ffc107; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                    <div style="font-size: 18px; margin-bottom: 10px; color: #ffc107;">Oturum Süresi Doldu</div>
+                    <div style="font-size: 14px; opacity: 0.7;">Giriş sayfasına yönlendiriliyorsunuz...</div>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+        } else {
+            // Create overlay if it doesn't exist
+            hidePageContent();
+            const overlay = document.getElementById('authLoadingOverlay');
+            if (overlay) {
+                overlay.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="border: 4px solid #333; border-top: 4px solid #ffc107; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                        <div style="font-size: 18px; margin-bottom: 10px; color: #ffc107;">Oturum Süresi Doldu</div>
+                        <div style="font-size: 14px; opacity: 0.7;">Giriş sayfasına yönlendiriliyorsunuz...</div>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    </style>
+                `;
+            }
+        }
+        
+        // Direkt giriş sayfasına yönlendir
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1500);
     }
     
     // Request notification permission on page load
