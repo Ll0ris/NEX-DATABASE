@@ -5,133 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEX Database - Ana Panel</title>
     
-    <!-- Theme Loader - Must be first to prevent flash -->
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            
-            // Set theme icon immediately when DOM starts loading
-            document.addEventListener('DOMContentLoaded', function() {
-                const themeIcon = document.querySelector('.theme-icon');
-                if (themeIcon) {
-                    if (savedTheme === 'dark') {
-                        themeIcon.className = 'fas fa-moon theme-icon';
-                    } else {
-                        themeIcon.className = 'fas fa-sun theme-icon';
-                    }
-                }
-            });
-        })();
-    </script>
+    <!-- Theme Loader -->
+    <script src="../assets/js/theme-loader.js"></script>
     
     <link rel="stylesheet" href="../assets/css/database-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase v9+ Modular SDK -->
-    <script type="module">
-        // Hemen localStorage kontrol et
-        function quickAuthCheck() {
-            console.log('🔍 Database page quickAuthCheck başlıyor...');
-            
-            return new Promise((resolve) => {
-                function checkAuth() {
-                    const authToken = localStorage.getItem('authToken');
-                    const tokenExpiry = localStorage.getItem('tokenExpiry');
-                    const isAuthenticated = localStorage.getItem('isAuthenticated');
-                    
-                    console.log('📊 LocalStorage durumu:', {
-                        authToken: authToken ? 'var' : 'yok',
-                        tokenExpiry: tokenExpiry ? new Date(parseInt(tokenExpiry)).toLocaleString() : 'yok',
-                        isAuthenticated: isAuthenticated,
-                        allItems: Object.keys(localStorage)
-                    });
-                    
-                    if (!authToken || !tokenExpiry || isAuthenticated !== 'true') {
-                        // Eğer localStorage boşsa, biraz bekle ve tekrar dene
-                        if (Object.keys(localStorage).length === 0) {
-                            console.log('⏳ LocalStorage henüz boş, 200ms bekleyip tekrar deneniyor...');
-                            setTimeout(checkAuth, 200);
-                            return;
-                        }
-                        
-                        console.log('❌ Database page: Auth verileri eksik/geçersiz');
-                        console.log('🔄 Giriş sayfasına yönlendiriliyor...');
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 500);
-                        resolve(false);
-                        return;
-                    }
-                    
-                    const currentTime = Date.now();
-                    if (currentTime >= parseInt(tokenExpiry)) {
-                        console.log('❌ Database page: Token süresi dolmuş');
-                        localStorage.clear();
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 500);
-                        resolve(false);
-                        return;
-                    }
-                    
-                    console.log('✅ Database page: Auth kontrol başarılı');
-                    resolve(true);
-                }
-                
-                checkAuth();
-            });
-        }
-        
-        // Hemen kontrol et
-        quickAuthCheck().then(authResult => {
-            if (authResult) {
-                // Auth başarılıysa Firebase'i yükle
-                initializeFirebase();
-            } else {
-                // Auth başarısızsa Firebase'i yükleme ve durr
-                console.error('Authentication failed, stopping page load...');
-            }
-        });
-        
-        function initializeFirebase() {
-            // Import Firebase functions
-            import('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js').then(({ initializeApp }) => {
-                import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js').then(({ getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, updateDoc }) => {
-                    
-                    // Firebase configuration
-                    const firebaseConfig = {
-                        apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
-                        authDomain: "nex-database.firebaseapp.com",
-                        projectId: "nex-database",
-                        storageBucket: "nex-database.appspot.com",
-                        messagingSenderId: "532729129753",
-                        appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
-                    };
-                    
-                    // Initialize Firebase
-                    const app = initializeApp(firebaseConfig);
-                    const db = getFirestore(app);
-                    
-                    // Make functions global for use in other scripts
-                    window.firebaseApp = app;
-                    window.firestoreDb = db;
-                    window.firestoreFunctions = {
-                        collection,
-                        doc,
-                        getDoc,
-                        setDoc,
-                        addDoc,
-                        getDocs,
-                        query,
-                        where,
-                        updateDoc
-                    };
-                    
-                    console.log('✅ Firebase initialized successfully for database page!');
-                });
-            });
-        }
-    </script>
+    
+    <!-- Database Firebase Configuration -->
+    <script type="module" src="../assets/js/database-firebase.js"></script>
 </head>
 <body>
     <!-- Top Panel -->

@@ -5,49 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEX Database - Atölyeler</title>
     
-    <!-- Theme Loader - Must be first to prevent flash -->
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            
-            // Set initial theme icon class to prevent flash
-            if (savedTheme === 'dark') {
-                document.documentElement.style.setProperty('--initial-theme-icon', '"\\f186"'); // moon
-            } else {
-                document.documentElement.style.setProperty('--initial-theme-icon', '"\\f185"'); // sun
-            }
-        })();
-    </script>
+    <!-- Theme Loader -->`n    <script src="../assets/js/theme-loader.js"></script>
     
     <link rel="stylesheet" href="../assets/css/database-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase v9+ Modular SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
-            authDomain: "nex-database.firebaseapp.com",
-            projectId: "nex-database",
-            storageBucket: "nex-database.appspot.com",
-            messagingSenderId: "532729129753",
-            appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        window.firebaseApp = app;
-        window.firestoreDb = db;
-        window.firestoreFunctions = {
-            collection, doc, getDoc, setDoc, addDoc, getDocs, query, where
-        };
-        
-        console.log('Firebase initialized for workshops page!');
-    </script>
+    <!-- Firebase Configuration -->`n    <script type="module" src="../assets/js/general-firebase.js"></script>
 </head>
 <body>
     <!-- Top Panel -->
@@ -225,5 +188,7 @@
     <script src="../assets/js/global-features.js"></script>
 </body>
 </html>
+
+
 
 

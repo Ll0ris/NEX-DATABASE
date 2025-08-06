@@ -6,48 +6,15 @@
     <title>NEX Database - Profil</title>
     
     <!-- Theme Loader - Must be first to prevent flash -->
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            
-            // Set initial theme icon class to prevent flash
-            if (savedTheme === 'dark') {
-                document.documentElement.style.setProperty('--initial-theme-icon', '"\\f186"'); // moon
-            } else {
-                document.documentElement.style.setProperty('--initial-theme-icon', '"\\f185"'); // sun
-            }
-        })();
-    </script>
+    <script src="assets/js/theme-loader.js"></script>
     
     <link rel="stylesheet" href="database-style.css">
     <link rel="stylesheet" href="profile-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase v9+ Modular SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, updateDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
-            authDomain: "nex-database.firebaseapp.com",
-            projectId: "nex-database",
-            storageBucket: "nex-database.appspot.com",
-            messagingSenderId: "532729129753",
-            appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        window.firebaseApp = app;
-        window.firestoreDb = db;
-        window.firestoreFunctions = {
-            collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, updateDoc
-        };
-        
-        console.log('Firebase initialized for profile page!');
+    <!-- Firebase Configuration -->
+    <script type="module" src="assets/js/profile-firebase.js"></script>
+</head>
     </script>
 </head>
 <body class="profile-page">
