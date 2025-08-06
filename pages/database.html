@@ -376,10 +376,29 @@
             <div class="console-section">
                 <h3>Kullanıcı Ekleme Formu</h3>
                 <div class="console-form" id="userForm" style="display: none;">
-                    <input type="text" id="userName" placeholder="İsim" class="console-input">
-                    <input type="email" id="userEmail" placeholder="E-mail" class="console-input">
-                    <input type="password" id="userPassword" placeholder="Şifre" class="console-input">
-                    <input type="text" id="userRole" placeholder="Rol (örn: admin, user)" class="console-input">
+                    <div class="form-row">
+                        <input type="text" id="userName" placeholder="İsim (name)" class="console-input">
+                        <input type="text" id="userFullName" placeholder="Tam İsim (fullName)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="email" id="userEmail" placeholder="E-mail" class="console-input">
+                        <input type="password" id="userPassword" placeholder="Şifre" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="userPhone" placeholder="Telefon" class="console-input">
+                        <input type="text" id="userDepartment" placeholder="Bölüm (department)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="userFaculty" placeholder="Fakülte (faculty)" class="console-input">
+                        <input type="text" id="userInstitution" placeholder="Kurum (institution)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="url" id="userLinkedinLink" placeholder="LinkedIn Profili (https://...)" class="console-input">
+                        <input type="url" id="userOrcidLink" placeholder="ORCID Profili (https://...)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <textarea id="userPhotoHTML" placeholder="Fotoğraf HTML kodu (opsiyonel)" class="console-input" rows="2"></textarea>
+                    </div>
                     <button class="console-btn primary" onclick="submitUser()">
                         <i class="fas fa-save"></i> Kaydet
                     </button>

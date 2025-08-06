@@ -920,11 +920,70 @@ function addUserForm() {
 }
 
 function submitUser() {
-    const name = document.getElementById('userName').value.trim();
-    const email = document.getElementById('userEmail').value.trim();
-    const password = document.getElementById('userPassword').value.trim();
-    const role = document.getElementById('userRole').value.trim() || 'user';
+    console.log('🚀 submitUser function called!'); // Debug
     
+    // Form görünürlüğünü kontrol et
+    const userForm = document.getElementById('userForm');
+    console.log('📋 Form durumu:', {
+        formExists: !!userForm,
+        formVisible: userForm ? userForm.style.display : 'N/A',
+        formInDOM: userForm ? true : false
+    });
+    
+    // Element kontrolü
+    const nameEl = document.getElementById('userName');
+    const fullNameEl = document.getElementById('userFullName');
+    const emailEl = document.getElementById('userEmail');
+    const passwordEl = document.getElementById('userPassword');
+    
+    console.log('📋 Element kontrolü:', {
+        nameEl: nameEl,
+        fullNameEl: fullNameEl,
+        emailEl: emailEl,
+        passwordEl: passwordEl
+    });
+    
+    if (!nameEl) {
+        console.error('❌ userName elementi bulunamadı!');
+        return;
+    }
+    if (!fullNameEl) {
+        console.error('❌ userFullName elementi bulunamadı!');
+        return;
+    }
+    if (!emailEl) {
+        console.error('❌ userEmail elementi bulunamadı!');
+        return;
+    }
+    if (!passwordEl) {
+        console.error('❌ userPassword elementi bulunamadı!');
+        return;
+    }
+    
+    // Temel alanlar (zorunlu)
+    const name = nameEl.value.trim();
+    const fullName = fullNameEl.value.trim();
+    const email = emailEl.value.trim();
+    const password = passwordEl.value.trim();
+    
+    // Opsiyonel alanlar - güvenli erişim
+    const phoneEl = document.getElementById('userPhone');
+    const departmentEl = document.getElementById('userDepartment');
+    const facultyEl = document.getElementById('userFaculty');
+    const institutionEl = document.getElementById('userInstitution');
+    const linkedinEl = document.getElementById('userLinkedinLink');
+    const orcidEl = document.getElementById('userOrcidLink');
+    const photoHTMLEl = document.getElementById('userPhotoHTML');
+    
+    const phone = phoneEl ? phoneEl.value.trim() : '';
+    const department = departmentEl ? departmentEl.value.trim() : '';
+    const faculty = facultyEl ? facultyEl.value.trim() : '';
+    const institution = institutionEl ? institutionEl.value.trim() : '';
+    const linkedinLink = linkedinEl ? linkedinEl.value.trim() : '';
+    const orcidLink = orcidEl ? orcidEl.value.trim() : '';
+    const photoHTML = photoHTMLEl ? photoHTMLEl.value.trim() : '';
+    
+    // Zorunlu alanları kontrol et
     if (!name || !email || !password) {
         addToConsoleOutput('✗ Hata: İsim, e-mail ve şifre alanları gerekli!', 'error');
         return;
@@ -936,24 +995,65 @@ function submitUser() {
         return;
     }
     
+    const currentUser = localStorage.getItem('currentUserEmail') || 'system';
+    const currentTime = new Date();
+    
     addToConsoleOutput(`→ Kullanıcı ekleniyor: ${name} (${email})`, 'info');
     
     const { collection, addDoc } = window.firestoreFunctions;
     
-    addDoc(collection(window.firestoreDb, "users"), {
+    // Tüm parametreleri içeren kullanıcı objesi
+    const userData = {
+        // Temel bilgiler
         name: name,
-        email: email.toLowerCase(), // Email'i lowercase yap
+        fullName: fullName || name, // fullName yoksa name kullan
+        email: email.toLowerCase(),
         password: password,
-        role: role,
-        createdAt: new Date(),
-        createdBy: 'admin'
-    }).then(() => {
+        
+        // İletişim bilgileri
+        phone: phone || null,
+        
+        // Akademik bilgiler
+        department: department || null,
+        faculty: faculty || null,
+        institution: institution || null,
+        
+        // Sosyal medya bağlantıları
+        linkedinLink: linkedinLink || null,
+        orcidLink: orcidLink || null,
+        
+        // Fotoğraf
+        photoHTML: photoHTML || null,
+        
+        // Sistem bilgileri
+        createdAt: currentTime,
+        lastUpdated: currentTime,
+        createdBy: currentUser
+    };
+    
+    addDoc(collection(window.firestoreDb, "users"), userData)
+    .then(() => {
         addToConsoleOutput(`✓ Kullanıcı başarıyla eklendi: ${name}`, 'success');
+        addToConsoleOutput(`  - Tam İsim: ${fullName || 'Belirtilmemiş'}`, 'info');
+        addToConsoleOutput(`  - E-mail: ${email}`, 'info');
+        addToConsoleOutput(`  - Telefon: ${phone || 'Belirtilmemiş'}`, 'info');
+        addToConsoleOutput(`  - Bölüm: ${department || 'Belirtilmemiş'}`, 'info');
+        addToConsoleOutput(`  - Fakülte: ${faculty || 'Belirtilmemiş'}`, 'info');
+        addToConsoleOutput(`  - Kurum: ${institution || 'Belirtilmemiş'}`, 'info');
+        
         // Form temizle
         document.getElementById('userName').value = '';
+        document.getElementById('userFullName').value = '';
         document.getElementById('userEmail').value = '';
         document.getElementById('userPassword').value = '';
-        document.getElementById('userRole').value = '';
+        document.getElementById('userPhone').value = '';
+        document.getElementById('userDepartment').value = '';
+        document.getElementById('userFaculty').value = '';
+        document.getElementById('userInstitution').value = '';
+        document.getElementById('userLinkedinLink').value = '';
+        document.getElementById('userOrcidLink').value = '';
+        document.getElementById('userPhotoHTML').value = '';
+        
         // Formu gizle
         document.getElementById('userForm').style.display = 'none';
     }).catch(error => {

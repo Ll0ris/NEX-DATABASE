@@ -2441,6 +2441,15 @@ body {
     margin-top: 10px;
 }
 
+.form-row {
+    display: flex;
+    gap: 10px;
+}
+
+.form-row .console-input {
+    flex: 1;
+}
+
 .console-input {
     padding: 10px 12px;
     border: 2px solid var(--border-color);
@@ -2449,6 +2458,11 @@ body {
     color: var(--text-color);
     font-size: 14px;
     transition: border-color 0.3s ease;
+}
+
+.console-input[rows] {
+    resize: vertical;
+    min-height: 50px;
 }
 
 .console-input:focus {

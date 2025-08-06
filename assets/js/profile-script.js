@@ -177,14 +177,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loadProfileFromFirebase() {
-        // Firestore v9+ ile users koleksiyonundan tüm profil bilgilerini çek
-        let currentUserEmail = localStorage.getItem('currentUserEmail');
-        if (!currentUserEmail) {
+        // URL parametrelerini kontrol et
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewUserEmail = urlParams.get('viewUser');
+        const isReadOnly = urlParams.get('readOnly') === 'true';
+        
+        // Hangi kullanıcının profilini göstereceğimizi belirle
+        let targetUserEmail = viewUserEmail || localStorage.getItem('currentUserEmail');
+        
+        if (!targetUserEmail) {
             console.warn('Kullanıcı email yok, profil yüklenemiyor');
             return;
         }
+        
+        console.log('Loading profile for:', targetUserEmail, 'Read-only:', isReadOnly);
+        
+        // Read-only modda düzenleme butonlarını gizle
+        if (isReadOnly) {
+            hideEditButtons();
+            addViewOnlyIndicator(targetUserEmail);
+        }
 
-        // Firebase hazır olana kadar bekle
+        // Firestore v9+ ile users koleksiyonundan tüm profil bilgilerini çek
         let attempts = 0;
         function waitForFirebase(resolve) {
             if (window.firestoreDb && window.firestoreFunctions) {
@@ -198,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         new Promise(waitForFirebase).then(async () => {
             const { collection, query, where, getDocs } = window.firestoreFunctions;
-            const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
+            const q = query(collection(window.firestoreDb, "users"), where("email", "==", targetUserEmail));
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
                 const data = snapshot.docs[0].data();
@@ -228,15 +242,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sideProfileInstitution = document.querySelector('.side-profile-institution');
                 if (sideProfileInstitution) sideProfileInstitution.textContent = (typeof data.institution !== 'undefined') ? data.institution : '';
 
-                // Top panel name
+                // Top panel name - read-only modda bu alanı güncelleme
                 const topProfileName = document.querySelector('.profile-name');
-                if (topProfileName) topProfileName.textContent = (typeof data.name !== 'undefined') ? data.name : '';
+                if (topProfileName && !isReadOnly) {
+                    topProfileName.textContent = (typeof data.name !== 'undefined') ? data.name : '';
+                }
 
                 // Fotoğraf
                 if (typeof data.photoUrl !== 'undefined' && data.photoUrl) {
                     const mainProfilePhoto = document.getElementById('mainProfilePhoto');
                     if (mainProfilePhoto) {
-                        mainProfilePhoto.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">`;
+                        // Mevcut photo-controls'i koru
+                        const existingPhotoControls = mainProfilePhoto.querySelector('.photo-controls');
+                        
+                        // Sadece img tag'ini güncelle veya ekle
+                        const existingImg = mainProfilePhoto.querySelector('img');
+                        const defaultIcon = mainProfilePhoto.querySelector('.default-photo-icon');
+                        
+                        if (existingImg) {
+                            // Mevcut img'yi güncelle
+                            existingImg.src = data.photoUrl;
+                            existingImg.alt = 'Profile Photo';
+                            existingImg.style.width = '150px';
+                            existingImg.style.height = '150px';
+                            existingImg.style.borderRadius = '50%';
+                            existingImg.style.objectFit = 'cover';
+                        } else {
+                            // Yeni img oluştur
+                            if (defaultIcon) {
+                                defaultIcon.remove();
+                            }
+                            
+                            const img = document.createElement('img');
+                            img.src = data.photoUrl;
+                            img.alt = 'Profile Photo';
+                            img.style.width = '150px';
+                            img.style.height = '150px';
+                            img.style.borderRadius = '50%';
+                            img.style.objectFit = 'cover';
+                            
+                            // img'yi photo-controls'den önce ekle
+                            if (existingPhotoControls) {
+                                mainProfilePhoto.insertBefore(img, existingPhotoControls);
+                            } else {
+                                mainProfilePhoto.appendChild(img);
+                            }
+                        }
+                        
                         setTimeout(() => { initPhotoUploadListeners(); }, 100);
                         const sideProfilePhoto = document.querySelector('.side-profile-photo');
                         if (sideProfilePhoto) {
@@ -505,6 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Fotoğraf kontrol butonlarını göster (düzenleme modunda)
             if (photoControls) {
+                console.log('🔧 PhotoControls element found, showing buttons...'); // Debug
                 photoControls.style.display = 'flex';
                 photoControls.classList.add('show-controls'); // CSS class ekle
                 console.log('✅ Photo controls shown - display set to flex and class added'); // Debug
@@ -515,16 +568,45 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('✅ info-edit-mode class added to editMode'); // Debug
                 }
                 
-                // Photo remove butonunu göster eğer fotoğraf varsa
+                // Photo upload butonu her zaman gösterilsin
+                const photoUploadBtn = photoControls.querySelector('.photo-upload-btn');
+                if (photoUploadBtn) {
+                    photoUploadBtn.style.display = 'flex';
+                    console.log('✅ Photo upload button shown'); // Debug
+                } else {
+                    console.warn('❌ Photo upload button not found in photoControls'); // Debug
+                }
+                
+                // Photo remove butonunu sadece fotoğraf varsa göster
                 const photoRemoveBtn = document.getElementById('photoRemoveBtn');
                 const mainPhotoImg = document.querySelector('#mainProfilePhoto img');
-                if (photoRemoveBtn && mainPhotoImg) {
-                    photoRemoveBtn.style.display = 'flex';
-                    console.log('✅ Photo remove button shown (image exists)'); // Debug
-                } else if (photoRemoveBtn) {
-                    photoRemoveBtn.style.display = 'none';
-                    console.log('⚠️ Photo remove button hidden (no image)'); // Debug
+                console.log('🖼️ Photo status check:', {
+                    hasRemoveBtn: !!photoRemoveBtn,
+                    hasMainImage: !!mainPhotoImg,
+                    imageDetails: mainPhotoImg ? {
+                        src: mainPhotoImg.src,
+                        alt: mainPhotoImg.alt
+                    } : null
+                }); // Debug
+                
+                if (photoRemoveBtn) {
+                    if (mainPhotoImg) {
+                        photoRemoveBtn.style.display = 'flex';
+                        console.log('✅ Photo remove button shown (image exists)'); // Debug
+                    } else {
+                        photoRemoveBtn.style.display = 'none';
+                        console.log('⚠️ Photo remove button hidden (no image)'); // Debug
+                    }
+                } else {
+                    console.warn('❌ Photo remove button not found'); // Debug
                 }
+                
+                // Final verification
+                console.log('🔍 Final photoControls state:', {
+                    display: photoControls.style.display,
+                    classList: Array.from(photoControls.classList),
+                    innerHTML: photoControls.innerHTML
+                }); // Debug
             } else {
                 console.warn('❌ Photo controls element not found!'); // Debug
                 // Element bulunamadıysa tüm photo-controls elementlerini ara
@@ -852,22 +934,47 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateProfilePhoto(imageSrc) {
         const mainProfilePhoto = document.getElementById('mainProfilePhoto');
         if (mainProfilePhoto) {
-            mainProfilePhoto.innerHTML = `
-                <img src="${imageSrc}" alt="Profile Photo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
-                <div class="photo-upload-overlay" id="photoUploadOverlay" style="display: flex;">
-                    <label for="photoUpload" class="photo-upload-btn">
-                        <i class="fas fa-camera"></i>
-                        Fotoğraf Değiştir
-                    </label>
-                    <button type="button" class="photo-remove-btn" id="photoRemoveBtn">
-                        <i class="fas fa-trash"></i>
-                        Fotoğrafı Kaldır
-                    </button>
-                    <input type="file" id="photoUpload" accept="image/*" style="display: none;">
-                </div>
-            `;
+            // Sadece img tag'ini güncelle, photo-controls'i koru
+            const existingImg = mainProfilePhoto.querySelector('img');
+            const photoControls = mainProfilePhoto.querySelector('.photo-controls');
             
-            // Re-attach event listeners immediately
+            if (existingImg) {
+                // Mevcut img'yi güncelle
+                existingImg.src = imageSrc;
+                existingImg.style.width = '150px';
+                existingImg.style.height = '150px';
+                existingImg.style.borderRadius = '50%';
+                existingImg.style.objectFit = 'cover';
+            } else {
+                // Yeni img oluştur ama photo-controls'i koru
+                const defaultIcon = mainProfilePhoto.querySelector('.default-photo-icon');
+                if (defaultIcon) {
+                    defaultIcon.remove();
+                }
+                
+                const img = document.createElement('img');
+                img.src = imageSrc;
+                img.alt = 'Profile Photo';
+                img.style.width = '150px';
+                img.style.height = '150px';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                
+                // img'yi photo-controls'den önce ekle
+                if (photoControls) {
+                    mainProfilePhoto.insertBefore(img, photoControls);
+                } else {
+                    mainProfilePhoto.appendChild(img);
+                }
+            }
+            
+            // Photo remove butonunu göster (fotoğraf var artık)
+            const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+            if (photoRemoveBtn) {
+                photoRemoveBtn.style.display = 'flex';
+            }
+            
+            // Re-attach event listeners
             setTimeout(() => {
                 initPhotoUploadListeners();
             }, 10);
@@ -894,18 +1001,34 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeProfilePhoto() {
         const mainProfilePhoto = document.getElementById('mainProfilePhoto');
         if (mainProfilePhoto) {
-            mainProfilePhoto.innerHTML = `
-                <i class="fas fa-user-circle default-photo-icon"></i>
-                <div class="photo-upload-overlay" id="photoUploadOverlay" style="display: flex;">
-                    <label for="photoUpload" class="photo-upload-btn">
-                        <i class="fas fa-camera"></i>
-                        Fotoğraf Değiştir
-                    </label>
-                    <input type="file" id="photoUpload" accept="image/*" style="display: none;">
-                </div>
-            `;
+            // Img'yi kaldır ve default icon ekle, photo-controls'i koru
+            const existingImg = mainProfilePhoto.querySelector('img');
+            if (existingImg) {
+                existingImg.remove();
+            }
             
-            // Re-attach event listener immediately
+            // Default icon ekle eğer yoksa
+            const defaultIcon = mainProfilePhoto.querySelector('.default-photo-icon');
+            if (!defaultIcon) {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-user-circle default-photo-icon';
+                
+                // Icon'u photo-controls'den önce ekle
+                const photoControls = mainProfilePhoto.querySelector('.photo-controls');
+                if (photoControls) {
+                    mainProfilePhoto.insertBefore(icon, photoControls);
+                } else {
+                    mainProfilePhoto.appendChild(icon);
+                }
+            }
+            
+            // Photo remove butonunu gizle (fotoğraf yok artık)
+            const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+            if (photoRemoveBtn) {
+                photoRemoveBtn.style.display = 'none';
+            }
+            
+            // Re-attach event listener
             setTimeout(() => {
                 initPhotoUploadListeners();
             }, 10);
@@ -2874,4 +2997,52 @@ function showSuccessMessage(message) {
     setTimeout(() => {
         successMessage.remove();
     }, 3000);
+}
+
+// Read-only modda düzenleme butonlarını gizle
+function hideEditButtons() {
+    const editBtn = document.getElementById('editProfileBtn');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const cancelBtn = document.getElementById('cancelProfileBtn');
+    const photoControls = document.getElementById('photoControls');
+    const profileEditBtn = document.getElementById('profileEditBtn'); // Mor düzenle butonu
+    
+    // Admin kontrolü
+    const isAdmin = localStorage.getItem('adminMode') === 'admin';
+    
+    if (editBtn) editBtn.style.display = 'none';
+    if (saveBtn) saveBtn.style.display = 'none';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (photoControls) photoControls.style.display = 'none';
+    
+    // Mor düzenle butonu sadece admin değilse gizle
+    if (profileEditBtn && !isAdmin) {
+        profileEditBtn.style.display = 'none';
+    }
+    
+    // Tüm inputları disable yap
+    const inputs = document.querySelectorAll('#profile-container input, #profile-container textarea');
+    inputs.forEach(input => {
+        input.disabled = true;
+        input.style.backgroundColor = '#f5f5f5';
+    });
+}
+
+// Read-only modda kimin profilini görüntülediğimizi belirt
+function addViewOnlyIndicator(userEmail) {
+    const header = document.querySelector('.header h1') || document.querySelector('h1');
+    if (header) {
+        const indicator = document.createElement('div');
+        indicator.style.cssText = `
+            background: #e3f2fd;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #1976d2;
+            border-left: 4px solid #2196f3;
+        `;
+        indicator.innerHTML = `📋 <strong>${userEmail}</strong> kullanıcısının profili görüntüleniyor (Salt okunur mod)`;
+        header.parentNode.insertBefore(indicator, header.nextSibling);
+    }
 }

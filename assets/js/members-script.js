@@ -420,4 +420,19 @@ document.addEventListener('DOMContentLoaded', function() {
     window.testWithOguzhanEmail = function() {
         setTestUserEmail('dedeogluoguzhan1603@gmail.com');
     };
+    
+    // Üye profili görüntüleme fonksiyonu
+    window.viewMemberProfile = function(memberId) {
+        console.log('Viewing member profile for ID:', memberId);
+        
+        // Üye bilgilerini bul
+        const member = currentMembers.find(m => m.id === memberId);
+        if (!member) {
+            console.error('Member not found with ID:', memberId);
+            return;
+        }
+        
+        // Profile sayfasına üye ID'si ile yönlendir
+        window.location.href = `profile.html?viewUser=${member.email}&readOnly=true`;
+    };
 });

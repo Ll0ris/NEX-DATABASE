@@ -846,6 +846,31 @@ function selectAdminMode(mode, text) {
     
     // Save admin state
     saveAdminState(mode, text);
+    
+    // Profile sayfasında ise read-only butonları güncelle
+    updateProfileButtonsOnAdminChange(mode);
+}
+
+// Profile sayfasında admin modu değiştiğinde butonları güncelle
+function updateProfileButtonsOnAdminChange(mode) {
+    const isProfilePage = window.location.pathname.includes('profile.html');
+    const urlParams = new URLSearchParams(window.location.search);
+    const isReadOnly = urlParams.get('readOnly') === 'true';
+    
+    if (isProfilePage && isReadOnly) {
+        const profileEditBtn = document.getElementById('profileEditBtn');
+        const isAdmin = mode === 'admin';
+        
+        if (profileEditBtn) {
+            if (isAdmin) {
+                // Admin modunda mor düzenle butonunu göster
+                profileEditBtn.style.display = 'block';
+            } else {
+                // Normal modunda mor düzenle butonunu gizle
+                profileEditBtn.style.display = 'none';
+            }
+        }
+    }
 }
 
 function updateAdminModeIcon(mode) {
