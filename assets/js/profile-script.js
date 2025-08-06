@@ -657,7 +657,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const department = document.getElementById('departmentEdit')?.value || '';
         const status = document.getElementById('statusEdit')?.value || '';
         const phone = document.getElementById('phoneEdit')?.value || '';
-        const email = document.getElementById('emailEdit')?.value || '';
+        // Email is not editable, always use currentUserEmail from localStorage
+        const email = localStorage.getItem('currentUserEmail') || '';
         // Positions (assume comma separated string)
         const positions = document.getElementById('positionsEdit')?.value || '';
         // Add other fields as needed
@@ -720,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function() {
             department,
             status,
             phone,
-            email,
+            // email is not updated here
             positions: positions ? positions.split(',').map(p => p.trim()) : [],
             photoUrl: mainProfilePhoto ? (mainProfilePhoto.querySelector('img')?.src || '') : ''
         });
