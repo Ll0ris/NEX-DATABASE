@@ -256,6 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Başarılı giriş - yükleme ekranını göster
             loadingScreen.style.display = 'flex';
             
+            // Giriş yapan kullanıcının email'ini localStorage'a kaydet
+            localStorage.setItem('currentUserEmail', username);
+            console.log('✅ Kullanıcı email localStorage\'a kaydedildi:', username);
+            
             // 1.5 saniye sonra database sayfasına welcome parametresi ile yönlendir
             setTimeout(() => {
                 window.location.href = 'database.html?welcome=true';

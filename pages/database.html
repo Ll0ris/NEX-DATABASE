@@ -7,9 +7,6 @@
     
     <!-- Theme Loader - Must be first to prevent flash -->
     <script>
-        // Disable session timer for login page
-        window.DISABLE_SESSION_TIMER = true;
-        
         (function() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -377,6 +374,22 @@
 
     <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
+
+    <!-- Session Timer -->
+    <div class="session-timer" id="sessionTimer">
+        <div class="timer-content">
+            <i class="fas fa-clock"></i>
+            <span class="timer-text">40:00</span>
+        </div>
+    </div>
+
+    <!-- Session Warning Notification -->
+    <div class="session-warning-notification" id="sessionWarning">
+        <div class="warning-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span class="warning-text">Oturum 5 dakika içinde sona erecek!</span>
+        </div>
+    </div>
 
     <!-- Welcome Bubble -->
     <div class="welcome-bubble" id="welcomeBubble">

@@ -1,180 +1,408 @@
-// Members Page Script
+// Members Page Script with Firestore Integration
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Sample member data (in real application, this would come from a database)
-    const membersData = [
-        { id: 1, name: "Prof. Dr. Oğuzhan Dedeoğlu", year: 2018, rank: "Kurucu", status: "active", email: "oguzhan@nex.com", phone: "+90 555 123 4567" },
-        { id: 2, name: "Ahmet Yılmaz", year: 2019, rank: "Başkan", status: "active", email: "ahmet@nex.com", phone: "+90 555 234 5678" },
-        { id: 3, name: "Ayşe Kaya", year: 2020, rank: "Başkan Yardımcısı", status: "active", email: "ayse@nex.com", phone: "+90 555 345 6789" },
-        { id: 4, name: "Mehmet Demir", year: 2021, rank: "Genel Sekreter", status: "active", email: "mehmet@nex.com", phone: "+90 555 456 7890" },
-        { id: 5, name: "Fatma Özkan", year: 2022, rank: "Mali İşler", status: "active", email: "fatma@nex.com", phone: "+90 555 567 8901" },
-        { id: 6, name: "Ali Çelik", year: 2023, rank: "Proje Koordinatörü", status: "active", email: "ali@nex.com", phone: "+90 555 678 9012" },
-        { id: 7, name: "Zeynep Şahin", year: 2024, rank: "Üye", status: "active", email: "zeynep@nex.com", phone: "+90 555 789 0123" },
-        { id: 8, name: "Emre Koç", year: 2025, rank: "Üye", status: "active", email: "emre@nex.com", phone: "+90 555 890 1234" },
-        { id: 9, name: "Selin Arslan", year: 2020, rank: "Eski Başkan", status: "alumni", email: "selin@alumni.com", phone: "+90 555 901 2345" },
-        { id: 10, name: "Burak Taş", year: 2019, rank: "Eski Üye", status: "alumni", email: "burak@alumni.com", phone: "+90 555 012 3456" },
-        { id: 11, name: "Deniz Kara", year: 2021, rank: "Üye", status: "inactive", email: "deniz@nex.com", phone: "+90 555 123 4567" },
-        { id: 12, name: "Ceren Yurt", year: 2022, rank: "Üye", status: "inactive", email: "ceren@nex.com", phone: "+90 555 234 5678" },
-        { id: 13, name: "Kemal Aydın", year: 2018, rank: "Kurucu Üye", status: "alumni", email: "kemal@alumni.com", phone: "+90 555 345 6789" },
-        { id: 14, name: "Gül Erdoğan", year: 2023, rank: "Üye", status: "active", email: "gul@nex.com", phone: "+90 555 456 7890" },
-        { id: 15, name: "Murat Konak", year: 2024, rank: "Üye", status: "active", email: "murat@nex.com", phone: "+90 555 567 8901" }
-    ];
-
-    let currentMembers = [...membersData];
+    let currentMembers = [];
+    let allMembers = [];
     let sortField = 'name';
     let sortDirection = 'asc';
 
     // Initialize the page
     initializeMembersPage();
 
-    function initializeMembersPage() {
-        updateStatistics();
+    // Otomatik email tespiti fonksiyonu
+    function autoDetectUserEmail() {
+        // 1. Profile data'dan email'i al
+        const profileData = localStorage.getItem('profileData');
+        if (profileData) {
+            try {
+                const data = JSON.parse(profileData);
+                if (data.email) {
+                    localStorage.setItem('currentUserEmail', data.email);
+                    console.log('🎯 Auto-detected email from profile data:', data.email);
+                    return data.email;
+                }
+            } catch (e) {
+                console.log('Profile data parse error:', e);
+            }
+        }
+        
+        // 2. Contact formlarından email'i al
+        const emailInput = document.getElementById('email');
+        if (emailInput && emailInput.value) {
+            localStorage.setItem('currentUserEmail', emailInput.value);
+            console.log('🎯 Auto-detected email from form input:', emailInput.value);
+            return emailInput.value;
+        }
+        
+        console.log('❌ Could not auto-detect user email');
+        return null;
+    }
+
+    // Test fonksiyonu - konsol üzerinden çağırabilirsiniz
+    window.setTestUserEmail = function(email) {
+        localStorage.setItem('currentUserEmail', email);
+        console.log('Test user email set to:', email);
+        console.log('Reloading members table...');
         renderMemberTable();
-        initializeEventListeners();
+    };
+
+    // Current user email'i kontrol etme fonksiyonu
+    window.getCurrentUserEmail = function() {
+        const currentEmail = localStorage.getItem('currentUserEmail') || '';
+        console.log('Current user email:', currentEmail);
+        return currentEmail;
+    };
+
+    // Email'i otomatik tespit et ve set et
+    window.autoSetUserEmail = function() {
+        const detectedEmail = autoDetectUserEmail();
+        if (detectedEmail) {
+            console.log('✅ Email otomatik olarak tespit edildi ve ayarlandı');
+            renderMemberTable(); // Tabloyu yeniden render et
+            return detectedEmail;
+        } else {
+            console.log('❌ Email tespit edilemedi');
+            return null;
+        }
+    };
+
+    // Kolay test için hazır email'ler
+    window.testWithArdaEmail = function() {
+        setTestUserEmail('ardamertsot@hotmail.com');
+    };
+
+    window.testWithDenizEmail = function() {
+        setTestUserEmail('dnz@gmail.com');
+    };
+
+    window.testWithOguzhanEmail = function() {
+        setTestUserEmail('dedeogluoguzhan1603@gmail.com');
+    };
+
+    // Giriş yapan kullanıcı email'ini set etme (gerçek giriş simülasyonu)
+    window.setCurrentUserAsOguzhan = function() {
+        localStorage.setItem('currentUserEmail', 'dedeogluoguzhan1603@gmail.com');
+        console.log('✅ Oğuzhan olarak giriş yapıldı');
+        renderMemberTable();
+    };
+
+    // User olarak giriş yapma (pages/index.html için)
+    window.setCurrentUserAsUser = function() {
+        localStorage.setItem('currentUserEmail', 'user');
+        console.log('✅ User olarak giriş yapıldı');
+        renderMemberTable();
+    };
+
+    // Debugging için - hangi giriş sisteminden geldiğini kontrol et
+    window.checkLoginSystem = function() {
+        const userId = localStorage.getItem('currentUserId');
+        const userEmail = localStorage.getItem('currentUserEmail');
+        const adminMode = localStorage.getItem('adminMode');
+        
+        console.log('=== LOGIN SYSTEM DEBUG ===');
+        console.log('currentUserId:', userId);
+        console.log('currentUserEmail:', userEmail);
+        console.log('adminMode:', adminMode);
+        console.log('=========================');
+        
+        if (!userEmail && userId) {
+            console.log('⚠️ UserId var ama email yok - email\'i userId\'den set ediliyor');
+            localStorage.setItem('currentUserEmail', userId);
+            renderMemberTable();
+        }
+    };
+
+    // Debug: Check current localStorage state
+    window.debugLocalStorage = function() {
+        console.log('=== LOCAL STORAGE DEBUG ===');
+        console.log('currentUserId:', localStorage.getItem('currentUserId'));
+        console.log('currentUserEmail:', localStorage.getItem('currentUserEmail'));
+        console.log('profileData:', localStorage.getItem('profileData'));
+        console.log('adminMode:', localStorage.getItem('adminMode'));
+        console.log('mode:', localStorage.getItem('mode'));
+        console.log('========================');
+    };
+
+    async function initializeMembersPage() {
+        try {
+            await loadMembersFromFirestore();
+            updateStatistics();
+            renderMemberTable();
+            initializeEventListeners();
+        } catch (error) {
+            console.error('Üyeler yüklenirken hata:', error);
+            showError('Üyeler yüklenirken bir hata oluştu.');
+        }
+    }
+
+    // Firestore'dan üyeleri yükle (users koleksiyonu)
+    async function loadMembersFromFirestore() {
+        try {
+            const usersSnapshot = await db.collection('users').get();
+            currentMembers = [];
+            usersSnapshot.forEach((doc) => {
+                const userData = doc.data();
+                currentMembers.push({
+                    id: doc.id,
+                    name: userData.name || '',
+                    email: userData.email || '',
+                    phone: userData.phone || '',
+                    photoUrl: userData.photoUrl || null,
+                    joinDate: userData.createdAt || userData.joinDate || '',
+                    membershipType: userData.role || userData.membershipType || '',
+                    rank: userData.rank || '',
+                    isAdmin: userData.isAdmin || false,
+                    positions: userData.positions || [],
+                    fsacMembership: userData.fsacMembership || '',
+                    fsacMembershipType: userData.fsacMembershipType || '',
+                    institution: userData.institution || '',
+                    department: userData.department || '',
+                    status: userData.status || ''
+                });
+            });
+            allMembers = [...currentMembers];
+        } catch (error) {
+            console.error('Firestore\'dan üyeler yüklenirken hata:', error);
+            throw error;
+        }
     }
 
     function updateStatistics() {
-        const totalMembers = membersData.length;
-        const activeMembers = membersData.filter(member => member.status === 'active').length;
-        const activeAlumni = membersData.filter(member => member.status === 'alumni').length;
+        const totalMembers = currentMembers.length;
+        const activeMembers = currentMembers.filter(member => member.membershipType === 'aktif').length;
+        const passiveMembers = currentMembers.filter(member => member.membershipType === 'pasif').length;
 
         document.getElementById('totalMembers').textContent = totalMembers;
         document.getElementById('activeMembers').textContent = activeMembers;
-        document.getElementById('activeAlumni').textContent = activeAlumni;
+        document.getElementById('activeAlumni').textContent = passiveMembers;
     }
 
     function renderMemberTable() {
         const tbody = document.getElementById('memberTableBody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
+        // Admin mode kontrolü
+        const isAdminMode = localStorage.getItem('mode') === 'admin';
+        document.body.classList.toggle('admin-mode', isAdminMode);
+
+        // Mevcut kullanıcı email bilgisi localStorage'dan al
+        let currentUserEmail = localStorage.getItem('currentUserEmail') || '';
+        
+        // Eğer email boşsa, otomatik tespit etmeye çalış
+        if (!currentUserEmail) {
+            console.log('⚠️ currentUserEmail boş, otomatik tespit ediliyor...');
+            const profileData = localStorage.getItem('profileData');
+            if (profileData) {
+                try {
+                    const data = JSON.parse(profileData);
+                    if (data.email) {
+                        currentUserEmail = data.email;
+                        localStorage.setItem('currentUserEmail', currentUserEmail);
+                        console.log('✅ Email otomatik tespit edildi:', currentUserEmail);
+                    }
+                } catch (e) {
+                    console.log('Profile data parse hatası:', e);
+                }
+            }
+        }
+        
+        // Debug: Konsola giriş yapan kullanıcı email bilgisini yazdır
+        console.log('=== MEMBERS LIST DEBUG ===');
+        console.log('Current user email from localStorage:', currentUserEmail);
+        console.log('Admin mode:', isAdminMode);
+        console.log('Total members:', currentMembers.length);
+
+        if (currentMembers.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="${isAdminMode ? '7' : '6'}" style="text-align: center; padding: 20px;">
+                        <i class="fas fa-users" style="font-size: 48px; color: #ccc; margin-bottom: 10px; display: block;"></i>
+                        Henüz kayıtlı üye bulunmuyor.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
         currentMembers.forEach(member => {
-            const row = createMemberRow(member);
+            const statusClass = getStatusClass(member.membershipType);
+            const rankBadge = getRankBadge(member.rank);
+            const isCurrentUser = member.email && currentUserEmail && member.email.toLowerCase() === currentUserEmail.toLowerCase();
+            
+            // Debug: Her üye için email karşılaştırmasını konsola yazdır
+            console.log(`Member: ${member.name}`);
+            console.log(`  - Member email: "${member.email}"`);
+            console.log(`  - Current user email: "${currentUserEmail}"`);
+            console.log(`  - Is current user: ${isCurrentUser}`);
+            if (isCurrentUser) {
+                console.log(`  🎯 ICON WILL BE ADDED for ${member.name}`);
+            }
+            console.log('  ---');
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="member-cell" onclick="viewMemberProfile('${member.id}')">
+                        <div class="member-avatar">
+                            ${member.photoUrl ? 
+                                `<img src="${member.photoUrl}" alt="${member.name}">` : 
+                                `<i class="fas fa-user"></i>`
+                            }
+                        </div>
+                        <div class="member-name-section">
+                            <div class="member-name">
+                                ${member.name}
+                                ${isCurrentUser ? '<i class="fas fa-user-circle" style="color: #800020; margin-left: 8px; font-size: 16px;" title="Bu sizsiniz"></i>' : ''}
+                                ${isAdminMode && member.isAdmin ? '<i class="fas fa-cog admin-icon" title="Admin"></i>' : ''}
+                            </div>
+                            <div class="member-title">${member.institution || 'Kurum belirtilmemiş'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="join-year">${getJoinYear(member.joinDate)}</span></td>
+                <td>${rankBadge}</td>
+                <td><span class="status-badge ${statusClass}">${member.membershipType}</span></td>
+                <td>
+                    <div class="position-list">
+                        ${getPositionBadges(member.positions || [])}
+                    </div>
+                </td>
+                <td>
+                    <div class="contact-buttons">
+                        ${member.phone ? `<button class="contact-btn phone" onclick="showContactModal('phone', '${member.phone}', '${member.name}')" title="Telefon"><i class="fas fa-phone"></i></button>` : ''}
+                        ${member.email ? `<button class="contact-btn email" onclick="showContactModal('email', '${member.email}', '${member.name}')" title="E-posta"><i class="fas fa-envelope"></i></button>` : ''}
+                    </div>
+                </td>
+                ${isAdminMode ? `
+                <td class="admin-only">
+                    <button class="manage-btn" onclick="manageMember('${member.id}')" title="Üyeyi Yönet">
+                        <i class="fas fa-cog"></i>
+                        Yönet
+                    </button>
+                </td>
+                ` : ''}
+            `;
             tbody.appendChild(row);
         });
     }
 
-    function createMemberRow(member) {
-        const row = document.createElement('tr');
-        row.classList.add('member-row');
+    function getStatusClass(membershipType) {
+        switch(membershipType) {
+            case 'aktif': return 'status-active';
+            case 'pasif': return 'status-inactive';
+            case 'fahri': return 'status-honorary';
+            case 'aktif mezun': return 'status-active-alumni';
+            case 'pasif mezun': return 'status-passive-alumni';
+            default: return 'status-unknown';
+        }
+    }
+
+    function getRankBadge(rank) {
+        const rankColors = {
+            'Cadet Second Class': 'rank-cadet-2',
+            'Cadet First Class': 'rank-cadet-1', 
+            'Scholar': 'rank-scholar',
+            'Accomplished Scientist': 'rank-scientist',
+            'Transcendent': 'rank-transcendent'
+        };
         
-        // Add status class for styling
-        row.classList.add(`status-${member.status}`);
-
-        row.innerHTML = `
-            <td class="member-name">
-                <div class="member-info">
-                    <div class="member-avatar">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div class="member-details">
-                        <div class="name">${member.name}</div>
-                        <div class="member-id">ID: #${member.id.toString().padStart(3, '0')}</div>
-                    </div>
-                </div>
-            </td>
-            <td class="member-year">${member.year}</td>
-            <td class="member-rank">
-                <span class="rank-badge rank-${member.rank.toLowerCase().replace(/\s+/g, '-')}">${member.rank}</span>
-            </td>
-            <td class="member-status">
-                <span class="status-badge status-${member.status}">
-                    <i class="fas ${getStatusIcon(member.status)}"></i>
-                    ${getStatusText(member.status)}
-                </span>
-            </td>
-            <td class="member-contact">
-                <div class="contact-buttons">
-                    <a href="mailto:${member.email}" class="contact-btn email" title="E-posta">
-                        <i class="fas fa-envelope"></i>
-                    </a>
-                    <a href="tel:${member.phone}" class="contact-btn phone" title="Telefon">
-                        <i class="fas fa-phone"></i>
-                    </a>
-                </div>
-            </td>
-        `;
-
-        return row;
+        const colorClass = rankColors[rank] || 'rank-default';
+        return `<span class="rank-badge ${colorClass}">${rank}</span>`;
     }
 
-    function getStatusIcon(status) {
-        switch(status) {
-            case 'active': return 'fa-check-circle';
-            case 'inactive': return 'fa-pause-circle';
-            case 'alumni': return 'fa-graduation-cap';
-            default: return 'fa-question-circle';
+    function getJoinYear(joinDate) {
+        if (!joinDate) return 'Bilinmiyor';
+        
+        // Firestore timestamp veya string formatını handle et
+        let date;
+        if (joinDate.seconds) {
+            // Firestore timestamp
+            date = new Date(joinDate.seconds * 1000);
+        } else if (typeof joinDate === 'string') {
+            date = new Date(joinDate);
+        } else {
+            date = joinDate;
         }
+        
+        return date.getFullYear().toString();
     }
 
-    function getStatusText(status) {
-        switch(status) {
-            case 'active': return 'Aktif';
-            case 'inactive': return 'Pasif';
-            case 'alumni': return 'Mezun';
-            default: return 'Bilinmiyor';
+    function getPositionBadges(positions) {
+        if (!positions || positions.length === 0) {
+            return '<span style="color: #999; font-size: 12px;">Henüz atanmamış</span>';
         }
+        
+        return positions.map(position => 
+            `<span class="position-item">${position}</span>`
+        ).join('');
+    }
+
+    function getFSACBadge(fsacMembership) {
+        const fsacClass = fsacMembership === 'Aktif' ? 'fsac-active' : 'fsac-passive';
+        return `<span class="fsac-badge ${fsacClass}">${fsacMembership}</span>`;
     }
 
     function initializeEventListeners() {
-        // Search functionality
-        const searchInput = document.getElementById('memberSearch');
-        searchInput.addEventListener('input', handleSearch);
+        // Arama işlevi
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                filterMembers(this.value);
+            });
+        }
 
-        // Filter functionality
+        // Filtre işlevleri
         const statusFilter = document.getElementById('statusFilter');
-        statusFilter.addEventListener('change', handleFilter);
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                filterMembersByStatus(this.value);
+            });
+        }
 
-        // Sort functionality
-        const sortableHeaders = document.querySelectorAll('.sortable');
-        sortableHeaders.forEach(header => {
-            header.addEventListener('click', () => handleSort(header.dataset.sort));
+        // Sıralama işlevleri
+        const sortButtons = document.querySelectorAll('.sort-btn');
+        sortButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const field = this.dataset.sort;
+                sortMembers(field);
+            });
         });
-    }
 
-    function handleSearch(event) {
-        const searchTerm = event.target.value.toLowerCase();
-        
-        currentMembers = membersData.filter(member => 
-            member.name.toLowerCase().includes(searchTerm) ||
-            member.rank.toLowerCase().includes(searchTerm) ||
-            member.email.toLowerCase().includes(searchTerm)
-        );
-
-        // Apply current filter
-        const currentFilter = document.getElementById('statusFilter').value;
-        if (currentFilter !== 'all') {
-            currentMembers = currentMembers.filter(member => member.status === currentFilter);
+        // Yeni üye ekleme butonu
+        const addMemberBtn = document.getElementById('addMemberBtn');
+        if (addMemberBtn) {
+            addMemberBtn.addEventListener('click', function() {
+                openAddMemberModal();
+            });
         }
-
-        sortMembers();
-        renderMemberTable();
     }
 
-    function handleFilter(event) {
-        const filterValue = event.target.value;
-        const searchTerm = document.getElementById('memberSearch').value.toLowerCase();
-
-        // Start with search results
-        if (searchTerm) {
-            currentMembers = membersData.filter(member => 
-                member.name.toLowerCase().includes(searchTerm) ||
-                member.rank.toLowerCase().includes(searchTerm) ||
-                member.email.toLowerCase().includes(searchTerm)
-            );
+    function filterMembers(searchTerm) {
+        if (!searchTerm.trim()) {
+            currentMembers = [...allMembers];
         } else {
-            currentMembers = [...membersData];
+            currentMembers = allMembers.filter(member => 
+                member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                member.institution.toLowerCase().includes(searchTerm.toLowerCase())
+            );
         }
-
-        // Apply filter
-        if (filterValue !== 'all') {
-            currentMembers = currentMembers.filter(member => member.status === filterValue);
-        }
-
-        sortMembers();
         renderMemberTable();
+        updateStatistics();
     }
 
-    function handleSort(field) {
+    function filterMembersByStatus(status) {
+        if (status === 'all') {
+            currentMembers = [...allMembers];
+        } else {
+            currentMembers = allMembers.filter(member => member.membershipType === status);
+        }
+        renderMemberTable();
+        updateStatistics();
+    }
+
+    function sortMembers(field) {
         if (sortField === field) {
             sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
@@ -182,46 +410,132 @@ document.addEventListener('DOMContentLoaded', function() {
             sortDirection = 'asc';
         }
 
-        // Update sort icons
-        updateSortIcons();
-        
-        sortMembers();
-        renderMemberTable();
-    }
-
-    function sortMembers() {
         currentMembers.sort((a, b) => {
-            let aValue = a[sortField];
-            let bValue = b[sortField];
-
-            // Handle different data types
-            if (sortField === 'year') {
-                aValue = parseInt(aValue);
-                bValue = parseInt(bValue);
-            } else if (typeof aValue === 'string') {
-                aValue = aValue.toLowerCase();
-                bValue = bValue.toLowerCase();
+            let aVal = a[field] || '';
+            let bVal = b[field] || '';
+            
+            if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
             }
 
             if (sortDirection === 'asc') {
-                return aValue > bValue ? 1 : -1;
+                return aVal > bVal ? 1 : -1;
             } else {
-                return aValue < bValue ? 1 : -1;
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+
+        renderMemberTable();
+        updateSortIndicators();
+    }
+
+    function updateSortIndicators() {
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.classList.remove('sort-asc', 'sort-desc');
+            if (btn.dataset.sort === sortField) {
+                btn.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
             }
         });
     }
 
-    function updateSortIcons() {
-        // Reset all sort icons
-        document.querySelectorAll('.sortable i').forEach(icon => {
-            icon.className = 'fas fa-sort';
-        });
+    function showError(message) {
+        alert('Hata: ' + message);
+    }
 
-        // Update current sort icon
-        const currentHeader = document.querySelector(`[data-sort="${sortField}"]`);
-        if (currentHeader) {
-            const icon = currentHeader.querySelector('i');
-            icon.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+    // Global fonksiyonlar
+    window.viewMemberProfile = function(memberId) {
+        const member = currentMembers.find(m => m.id === memberId);
+        if (member) {
+            // Profil sayfasına yönlendirme - şimdilik konsola yazdır
+            console.log('Profil sayfasına yönlendir:', member);
+            alert(`${member.name} profiline yönlendirilecek (henüz eklenmedi)`);
         }
+    };
+
+    window.showContactModal = function(type, value, memberName) {
+        const modal = document.getElementById('contactModal');
+        const title = document.getElementById('contactModalTitle');
+        const label = document.getElementById('contactLabel');
+        const valueElement = document.getElementById('contactValue');
+        const copyBtn = document.getElementById('copyBtn');
+        
+        title.textContent = `${memberName} - İletişim`;
+        
+        if (type === 'phone') {
+            label.textContent = 'Telefon:';
+            valueElement.textContent = value;
+        } else if (type === 'email') {
+            label.textContent = 'E-posta:';
+            valueElement.textContent = value;
+        }
+        
+        // Kopyala butonuna event listener ekle
+        copyBtn.onclick = function() {
+            navigator.clipboard.writeText(value).then(() => {
+                const originalIcon = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.style.background = '#4CAF50';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalIcon;
+                    copyBtn.style.background = '';
+                }, 1000);
+            }).catch(err => {
+                console.error('Kopyalama hatası:', err);
+            });
+        };
+        
+        modal.classList.add('show');
+    };
+
+    window.manageMember = function(memberId) {
+        const member = currentMembers.find(m => m.id === memberId);
+        if (member) {
+            console.log('Üye yönetimi:', member);
+            alert(`${member.name} yönetim paneli açılacak (henüz eklenmedi)`);
+        }
+    };
+
+    // Modal kapatma
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('contactModal');
+        const closeBtn = document.getElementById('contactModalClose');
+        
+        closeBtn.addEventListener('click', function() {
+            modal.classList.remove('show');
+        });
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    });
+    window.viewMember = function(memberId) {
+        window.viewMemberProfile(memberId);
+    };
+
+    window.editMember = function(memberId) {
+        window.manageMember(memberId);
+    };
+
+    window.deleteMember = async function(memberId) {
+        if (confirm('Bu üyeyi silmek istediğinizden emin misiniz?')) {
+            try {
+                await db.collection('users').doc(memberId).delete();
+                await loadMembersFromFirestore();
+                updateStatistics();
+                renderMemberTable();
+                console.log('Üye silindi:', memberId);
+            } catch (error) {
+                console.error('Üye silinirken hata:', error);
+                showError('Üye silinirken bir hata oluştu.');
+            }
+        }
+    };
+
+    function openAddMemberModal() {
+        console.log('Yeni üye ekleme modalı açılacak');
     }
 });

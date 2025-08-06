@@ -23,6 +23,10 @@
     <link rel="stylesheet" href="../assets/css/database-style.css">
     <link rel="stylesheet" href="../assets/css/members-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase App (core) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <!-- Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
     <!-- Top Panel -->
@@ -191,9 +195,9 @@
                     <thead>
                         <tr>
                             <th class="sortable" data-sort="name">
-                                İsim <i class="fas fa-sort"></i>
+                                Üye <i class="fas fa-sort"></i>
                             </th>
-                            <th class="sortable" data-sort="year">
+                            <th class="sortable" data-sort="joinYear">
                                 Giriş Yılı <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="rank">
@@ -202,7 +206,9 @@
                             <th class="sortable" data-sort="status">
                                 Durum <i class="fas fa-sort"></i>
                             </th>
+                            <th>Pozisyon</th>
                             <th>İletişim</th>
+                            <th class="admin-only">Yönetim</th>
                         </tr>
                     </thead>
                     <tbody id="memberTableBody">
@@ -246,6 +252,43 @@
     <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
 
+    <!-- Contact Modal -->
+    <div class="contact-modal" id="contactModal">
+        <div class="contact-modal-content">
+            <div class="contact-modal-header">
+                <h3 id="contactModalTitle">İletişim Bilgileri</h3>
+                <button class="contact-modal-close" id="contactModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="contact-modal-body">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <span class="contact-label" id="contactLabel">E-posta:</span>
+                        <span class="contact-value" id="contactValue">example@email.com</span>
+                        <button class="copy-btn" id="copyBtn" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
+          authDomain: "nex-database.firebaseapp.com",
+          projectId: "nex-database",
+          storageBucket: "nex-database.appspot.com",
+          messagingSenderId: "532729129753",
+          appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
+        };
+        // Başlat
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
     <script src="../assets/js/global-features.js"></script>
     <script src="../assets/js/members-script.js"></script>
 </body>

@@ -1,14 +1,31 @@
 // Profile Page Script
 
+// Global variables - declare at top to prevent hoisting issues
+let originalFormData = {}; // Store original data for cancel functionality
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Firebase to be available
+    const checkFirebase = () => {
+        if (typeof firebase !== 'undefined' && firebase.firestore && typeof db !== 'undefined') {
+            console.log('Firebase initialized successfully');
+            // Load profile data after Firebase is ready
+            loadProfileFromFirebase();
+        } else {
+            console.log('Waiting for Firebase...');
+            setTimeout(checkFirebase, 100);
+        }
+    };
+    
+    // Check Firebase availability
+    setTimeout(checkFirebase, 100);
+    
     // Elements
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidePanel = document.getElementById('profileSidePanel');
     const mainContent = document.getElementById('mainContent');
-    const themeToggle = document.getElementById('themeToggle');
     const profileSection = document.getElementById('profileSection');
     const profileDropdown = document.getElementById('profileDropdown');
-    const editProfileBtn = document.getElementById('editProfileBtn');
+    const profileEditBtn = document.getElementById('profileEditBtn'); // ID düzeltildi
     const profileEditingPanel = document.getElementById('profileEditingPanel');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     const photoUpload = document.getElementById('photoUpload');
@@ -16,6 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Section Navigation
     function switchSection(sectionName) {
+        console.log('Switching to section:', sectionName); // Debug
+        
         // Hide all sections
         const allSections = document.querySelectorAll('.content-section');
         allSections.forEach(section => {
@@ -29,9 +48,15 @@ document.addEventListener('DOMContentLoaded', function() {
             targetSection.style.display = 'block';
             targetSection.classList.add('active');
             
+            console.log('Target section found and shown:', sectionName + 'Content'); // Debug
+            
             // Initialize profile editing if switching to profile section
             if (sectionName === 'profile') {
-                setTimeout(initProfileEditing, 100);
+                console.log('Initializing profile editing...'); // Debug
+                // Use longer timeout to ensure DOM is ready
+                setTimeout(() => {
+                    initProfileEditing();
+                }, 200);
             }
             
             // Initialize education system if switching to education section
@@ -51,6 +76,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(initContactSystem, 100);
                 setTimeout(initContactEditing, 100);
             }
+        } else {
+            console.error('Target section not found:', sectionName + 'Content'); // Debug
         }
 
         // Update navigation active state
@@ -62,6 +89,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const activeNavItem = document.querySelector(`[data-section="${sectionName}"]`);
         if (activeNavItem) {
             activeNavItem.classList.add('active');
+            console.log('Navigation item activated:', sectionName); // Debug
+        } else {
+            console.error('Navigation item not found for section:', sectionName); // Debug
         }
     }
 
@@ -78,9 +108,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize with profile section active
     switchSection('profile');
 
-    // Load profile data from Firebase on page load
-    loadProfileFromFirebase();
-
+    // Firebase initialization and profile loading handled in checkFirebase function above
+    
     // Global toggle function for purple edit button
     window.toggleBlueEditButton = function() {
         const editButton = document.getElementById('editBasicInfoBtn');
@@ -104,6 +133,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Firebase functions for profile data
     function saveProfileToFirebase(profileData) {
+        if (typeof db === 'undefined') {
+            console.warn('Firebase not yet initialized, skipping save');
+            return;
+        }
+        
         const userId = localStorage.getItem('currentUserId') || 'current-user';
         
         db.collection("profiles").doc(userId).set(profileData)
@@ -117,6 +151,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loadProfileFromFirebase() {
+        if (typeof db === 'undefined') {
+            console.warn('Firebase not yet initialized, skipping load');
+            return;
+        }
+        
         const userId = localStorage.getItem('currentUserId') || 'current-user';
         
         db.collection("profiles").doc(userId).get()
@@ -133,26 +172,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const departmentElement = document.querySelector('.department');
                 const statusElement = document.querySelector('.status');
                 
-                if (titlePrefixElement) titlePrefixElement.textContent = data.titlePrefix || 'Prof. Dr.';
-                if (fullNameElement) fullNameElement.textContent = data.fullName || 'Oğuzhan Dedeoğlu';
-                if (institutionElement) institutionElement.textContent = data.institution || 'Yıldız Teknik Üniversitesi';
-                if (facultyElement) facultyElement.textContent = data.faculty || 'Fen Fakültesi';
-                if (departmentElement) departmentElement.textContent = data.department || 'Matematik Mühendisliği Bölümü';
-                if (statusElement) statusElement.textContent = data.status || 'Aktif Öğretim Üyesi';
+                if (titlePrefixElement) titlePrefixElement.textContent = data.titlePrefix || '';
+                if (fullNameElement) fullNameElement.textContent = data.fullName || '';
+                if (institutionElement) institutionElement.textContent = data.institution || '';
+                if (facultyElement) facultyElement.textContent = data.faculty || '';
+                if (departmentElement) departmentElement.textContent = data.department || '';
+                if (statusElement) statusElement.textContent = data.status || '';
                 
                 // Update side panel information
                 const sideProfileTitle = document.querySelector('.side-profile-title');
                 const sideProfileName = document.querySelector('.side-profile-name');
                 const sideProfileInstitution = document.querySelector('.side-profile-institution');
                 
-                if (sideProfileTitle) sideProfileTitle.textContent = data.titlePrefix || 'Prof. Dr.';
-                if (sideProfileName) sideProfileName.textContent = data.fullName || 'Oğuzhan Dedeoğlu';
-                if (sideProfileInstitution) sideProfileInstitution.textContent = data.institution || 'Yıldız Teknik Üniversitesi';
+                if (sideProfileTitle) sideProfileTitle.textContent = data.titlePrefix || '';
+                if (sideProfileName) sideProfileName.textContent = data.fullName || '';
+                if (sideProfileInstitution) sideProfileInstitution.textContent = data.institution || '';
                 
                 // Update top panel name
                 const topProfileName = document.querySelector('.profile-name');
                 if (topProfileName) {
-                    topProfileName.textContent = data.fullName || 'Oğuzhan Dedeoğlu';
+                    topProfileName.textContent = data.fullName || '';
                 }
                 
                 // Restore photo if exists
@@ -161,16 +200,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (mainProfilePhoto) {
                         mainProfilePhoto.innerHTML = data.photoHTML;
                         
-                        // Re-attach event listeners
-                        const photoUpload = document.getElementById('photoUpload');
-                        if (photoUpload) {
-                            photoUpload.addEventListener('change', handlePhotoUpload);
-                        }
-                        
-                        const photoRemoveBtn = document.getElementById('photoRemoveBtn');
-                        if (photoRemoveBtn) {
-                            photoRemoveBtn.addEventListener('click', removeProfilePhoto);
-                        }
+                        // Re-attach event listeners after loading from Firebase
+                        setTimeout(() => {
+                            initPhotoUploadListeners();
+                        }, 100);
                         
                         // Update side panel photo
                         const mainPhotoImg = document.querySelector('#mainProfilePhoto img');
@@ -182,7 +215,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } else {
-                console.log("Firebase'de profil bulunamadı, varsayılan değerler kullanılacak.");
+                // Elementleri tekrar tanımla (undefined hatası engellenir)
+                const titlePrefixElement = document.querySelector('.title-prefix');
+                const fullNameElement = document.querySelector('.full-name');
+                const institutionElement = document.querySelector('.institution');
+                const facultyElement = document.querySelector('.faculty');
+                const departmentElement = document.querySelector('.department');
+                const statusElement = document.querySelector('.status');
+                const sideProfileTitle = document.querySelector('.side-profile-title');
+                const sideProfileName = document.querySelector('.side-profile-name');
+                const sideProfileInstitution = document.querySelector('.side-profile-institution');
+                const topProfileName = document.querySelector('.profile-name');
+                // Hiçbir default bilgi gösterilmesin
+                if (titlePrefixElement) titlePrefixElement.textContent = '';
+                if (fullNameElement) fullNameElement.textContent = '';
+                if (institutionElement) institutionElement.textContent = '';
+                if (facultyElement) facultyElement.textContent = '';
+                if (departmentElement) departmentElement.textContent = '';
+                if (statusElement) statusElement.textContent = '';
+                if (sideProfileTitle) sideProfileTitle.textContent = '';
+                if (sideProfileName) sideProfileName.textContent = '';
+                if (sideProfileInstitution) sideProfileInstitution.textContent = '';
+                if (topProfileName) topProfileName.textContent = '';
             }
         })
         .catch((error) => {
@@ -191,65 +245,144 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Profile Editing Functions
-    let originalFormData = {}; // Store original data for cancel functionality
-    
     function initProfileEditing() {
-        const profileEditBtn = document.getElementById('profileEditBtn');
-        const editBtn = document.getElementById('editBasicInfoBtn');
-        const saveBtn = document.getElementById('saveBasicInfoBtn');
-        const cancelBtn = document.getElementById('cancelBasicInfoBtn');
-        const photoUpload = document.getElementById('photoUpload');
+        console.log('initProfileEditing called'); // Debug
         
-        // Main edit button (mor button) shows only the blue edit button for basic info
+        const profileEditBtn = document.getElementById('profileEditBtn');
+        const cancelBtn = document.getElementById('cancelBasicInfoBtn');
+        const saveBtn = document.getElementById('saveBasicInfoBtn');
+        const editBasicInfoBtn = document.getElementById('editBasicInfoBtn');
+        
+        console.log('profileEditBtn found:', profileEditBtn); // Debug
+        console.log('cancelBtn found:', cancelBtn); // Debug
+        console.log('saveBtn found:', saveBtn); // Debug
+        
+        // Initialize originalFormData to prevent access errors
+        originalFormData = {};
+        
+        // Mavi düzenle butonunu tamamen gizle
+        if (editBasicInfoBtn) {
+            editBasicInfoBtn.style.display = 'none';
+        }
+        
+        // Mor düzenle butonuna event listener eklemeden önce eskiyi temizle
         if (profileEditBtn) {
-            let blueEditVisible = false;
-            profileEditBtn.addEventListener('click', function() {
-                // Toggle blue edit button visibility
-                const editButton = document.getElementById('editBasicInfoBtn');
-                if (editButton) {
-                    blueEditVisible = !blueEditVisible;
-                    editButton.style.display = blueEditVisible ? 'flex' : 'none';
-                    if (blueEditVisible) {
-                        editButton.style.animation = 'pulse 1s ease-in-out 3';
-                        editButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+            // Remove all existing event listeners
+            const newProfileEditBtn = profileEditBtn.cloneNode(true);
+            profileEditBtn.parentNode.replaceChild(newProfileEditBtn, profileEditBtn);
+            
+            // Add new event listener to the new element - with toggle functionality
+            newProfileEditBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Purple edit button clicked!'); // Debug
+                
+                // Check if edit mode is currently open
+                const editMode = document.getElementById('infoEditMode');
+                const viewMode = document.getElementById('infoViewMode');
+                
+                if (editMode && editMode.style.display === 'block') {
+                    // Edit mode is open, close it (gizli iptal)
+                    console.log('Closing edit mode (hidden cancel)'); // Debug
+                    cancelEdit();
+                } else {
+                    // Edit mode is closed, open it
+                    console.log('Opening edit mode'); // Debug
+                    openProfileEditMode();
                 }
             });
+            
+            console.log('Purple edit button event listener attached with toggle functionality'); // Debug
         }
-
-        if (editBtn) {
-            editBtn.addEventListener('click', toggleEditMode);
-        }
-
-        if (saveBtn) {
-            saveBtn.addEventListener('click', saveBasicInfo);
-        }
-
+        
+        // İptal tuşuna event listener ekle
         if (cancelBtn) {
-            cancelBtn.addEventListener('click', cancelEdit);
+            cancelBtn.onclick = null;
+            cancelBtn.removeEventListener('click', cancelEdit);
+            cancelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Cancel button clicked!'); // Debug
+                cancelEdit();
+            });
         }
-
+        
+        // Kaydet tuşuna event listener ekle
+        if (saveBtn) {
+            saveBtn.onclick = null;
+            saveBtn.removeEventListener('click', saveBasicInfo);
+            saveBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Save button clicked!'); // Debug
+                saveBasicInfo();
+            });
+        }
+        
+        // Initialize photo upload event listeners
+        initPhotoUploadListeners();
+        
+        console.log('initProfileEditing completed'); // Debug
+    }
+    
+    function initPhotoUploadListeners() {
+        // Initialize photo upload event listeners
+        const photoUpload = document.getElementById('photoUpload');
+        const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+        
         if (photoUpload) {
+            photoUpload.removeEventListener('change', handlePhotoUpload);
             photoUpload.addEventListener('change', handlePhotoUpload);
         }
-
-        // Photo remove button
-        const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+        
         if (photoRemoveBtn) {
+            photoRemoveBtn.removeEventListener('click', removeProfilePhoto);
             photoRemoveBtn.addEventListener('click', removeProfilePhoto);
         }
-
-        // Show photo upload overlay on hover in edit mode
-        const mainProfilePhoto = document.getElementById('mainProfilePhoto');
-        if (mainProfilePhoto) {
-            mainProfilePhoto.addEventListener('mouseenter', showPhotoUpload);
-            mainProfilePhoto.addEventListener('mouseleave', hidePhotoUpload);
-        }
-
-        // Initially hide the blue edit button
-        const editButton = document.getElementById('editBasicInfoBtn');
-        if (editButton) {
-            editButton.style.display = 'none';
+    }
+    
+    // Özlük bilgileri düzenleme modunu açan fonksiyon
+    function openProfileEditMode() {
+        console.log('openProfileEditMode called'); // Debug
+        
+        const viewMode = document.getElementById('infoViewMode');
+        const editMode = document.getElementById('infoEditMode');
+        const photoOverlay = document.getElementById('photoUploadOverlay');
+        
+        console.log('viewMode:', viewMode); // Debug
+        console.log('editMode:', editMode); // Debug
+        console.log('photoOverlay:', photoOverlay); // Debug
+        
+        if (viewMode && editMode) {
+            // Görüntüleme modunu gizle
+            viewMode.style.display = 'none';
+            // Düzenleme modunu göster
+            editMode.style.display = 'block';
+            
+            console.log('View mode hidden, edit mode shown'); // Debug
+            
+            // Fotoğraf yükleme overlay'ini göster
+            if (photoOverlay) {
+                photoOverlay.style.display = 'flex';
+                console.log('Photo overlay shown'); // Debug
+            } else {
+                console.warn('Photo overlay not found'); // Debug
+            }
+            
+            // Mevcut verileri forma yükle
+            loadCurrentDataToForm();
+            
+            console.log('Edit mode opened successfully!'); // Debug
+        } else {
+            console.error('Could not find view/edit mode elements!'); // Debug
+            console.error('viewMode element:', viewMode);
+            console.error('editMode element:', editMode);
+            
+            // Try to find elements with more specific selectors
+            const allViewModes = document.querySelectorAll('[id*="View"], [id*="view"]');
+            const allEditModes = document.querySelectorAll('[id*="Edit"], [id*="edit"]');
+            console.log('All elements with "view" in ID:', allViewModes);
+            console.log('All elements with "edit" in ID:', allEditModes);
         }
     }
     
@@ -277,8 +410,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const editMode = document.getElementById('infoEditMode');
         const photoOverlay = document.getElementById('photoUploadOverlay');
         
-        // Restore original form data
-        if (originalFormData) {
+        // Restore original form data - with null check
+        if (originalFormData && typeof originalFormData === 'object') {
             const titleSelect = document.getElementById('titlePrefixEdit');
             const nameInput = document.getElementById('fullNameEdit');
             const institutionInput = document.getElementById('institutionEdit');
@@ -300,15 +433,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     mainProfilePhoto.innerHTML = originalFormData.photoHTML;
                     
                     // Re-attach event listeners after restoring HTML
-                    const photoUpload = document.getElementById('photoUpload');
-                    if (photoUpload) {
-                        photoUpload.addEventListener('change', handlePhotoUpload);
-                    }
-                    
-                    const photoRemoveBtn = document.getElementById('photoRemoveBtn');
-                    if (photoRemoveBtn) {
-                        photoRemoveBtn.addEventListener('click', removeProfilePhoto);
-                    }
+                    setTimeout(() => {
+                        initPhotoUploadListeners();
+                    }, 10);
                 }
                 
                 // Also restore side panel photo to match
@@ -332,11 +459,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (photoOverlay) {
                 photoOverlay.style.display = 'none';
             }
-            // Do NOT hide the blue edit button - let it stay visible
+            
+            // Hide the blue edit button after canceling
+            const editButton = document.getElementById('editBasicInfoBtn');
+            if (editButton) {
+                editButton.style.display = 'none';
+            }
+            
+            // Update the toggle state
+            if (typeof window.hideBlueEditButton === 'function') {
+                window.hideBlueEditButton();
+            }
         }
     }
     
     function loadCurrentDataToForm() {
+        // Initialize originalFormData if not already done
+        if (!originalFormData) {
+            originalFormData = {};
+        }
+        
         // Get current data from display and store as original
         const titlePrefix = document.querySelector('.title-prefix')?.textContent.trim() || '';
         const fullName = document.querySelector('.full-name')?.textContent.trim() || '';
@@ -377,6 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (facultyInput) facultyInput.value = faculty;
         if (departmentInput) departmentInput.value = department;
         if (statusSelect) statusSelect.value = status;
+        
+        // Re-initialize photo upload listeners after form load
+        setTimeout(() => {
+            initPhotoUploadListeners();
+        }, 100);
     }
     
     function saveBasicInfo() {
@@ -396,17 +543,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const departmentElement = document.querySelector('.department');
         const statusElement = document.querySelector('.status');
         
-        if (titlePrefixElement) titlePrefixElement.textContent = titlePrefix;
-        if (fullNameElement) fullNameElement.textContent = fullName;
-        if (institutionElement) institutionElement.textContent = institution;
-        if (facultyElement) facultyElement.textContent = faculty;
-        if (departmentElement) departmentElement.textContent = department;
-        if (statusElement) statusElement.textContent = status;
+        if (titlePrefixElement) titlePrefixElement.textContent = titlePrefix || '';
+        if (fullNameElement) fullNameElement.textContent = fullName || '';
+        if (institutionElement) institutionElement.textContent = institution || '';
+        if (facultyElement) facultyElement.textContent = faculty || '';
+        if (departmentElement) departmentElement.textContent = department || '';
+        if (statusElement) statusElement.textContent = status || '';
         
         // Update top panel name
         const topProfileName = document.querySelector('.profile-name');
-        if (topProfileName && fullName) {
-            topProfileName.textContent = fullName;
+        if (topProfileName) {
+            topProfileName.textContent = fullName || '';
         }
         
         // Update side panel information
@@ -414,9 +561,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const sideProfileName = document.querySelector('.side-profile-name');
         const sideProfileInstitution = document.querySelector('.side-profile-institution');
         
-        if (sideProfileTitle) sideProfileTitle.textContent = titlePrefix;
-        if (sideProfileName) sideProfileName.textContent = fullName;
-        if (sideProfileInstitution) sideProfileInstitution.textContent = institution;
+        if (sideProfileTitle) sideProfileTitle.textContent = titlePrefix || '';
+        if (sideProfileName) sideProfileName.textContent = fullName || '';
+        if (sideProfileInstitution) sideProfileInstitution.textContent = institution || '';
         
         // Update original form data with current saved values (including photo)
         const mainProfilePhoto = document.getElementById('mainProfilePhoto');
@@ -445,7 +592,30 @@ document.addEventListener('DOMContentLoaded', function() {
         showSuccessMessage('Profil başarıyla güncellendi!');
         
         // Switch back to view mode
-        cancelEdit();
+        const viewMode = document.getElementById('infoViewMode');
+        const editMode = document.getElementById('infoEditMode');
+        const photoOverlay = document.getElementById('photoUploadOverlay');
+        
+        if (viewMode && editMode) {
+            viewMode.style.display = 'block';
+            editMode.style.display = 'none';
+            
+            // Hide photo upload overlay
+            if (photoOverlay) {
+                photoOverlay.style.display = 'none';
+            }
+            
+            // Hide the blue edit button after saving
+            const editButton = document.getElementById('editBasicInfoBtn');
+            if (editButton) {
+                editButton.style.display = 'none';
+            }
+            
+            // Update the toggle state
+            if (typeof window.hideBlueEditButton === 'function') {
+                window.hideBlueEditButton();
+            }
+        }
     }
     
     function showPhotoUpload() {
@@ -505,16 +675,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            // Re-attach event listeners
-            const newPhotoUpload = document.getElementById('photoUpload');
-            if (newPhotoUpload) {
-                newPhotoUpload.addEventListener('change', handlePhotoUpload);
-            }
-            
-            const newPhotoRemoveBtn = document.getElementById('photoRemoveBtn');
-            if (newPhotoRemoveBtn) {
-                newPhotoRemoveBtn.addEventListener('click', removeProfilePhoto);
-            }
+            // Re-attach event listeners immediately
+            setTimeout(() => {
+                initPhotoUploadListeners();
+            }, 10);
         }
         
         // Update side panel photo as well
@@ -546,11 +710,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            // Re-attach event listener
-            const newPhotoUpload = document.getElementById('photoUpload');
-            if (newPhotoUpload) {
-                newPhotoUpload.addEventListener('change', handlePhotoUpload);
-            }
+            // Re-attach event listener immediately
+            setTimeout(() => {
+                initPhotoUploadListeners();
+            }, 10);
         }
         
         // Reset side panel photo as well
@@ -644,10 +807,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Profile section click event
+    // Profile section click event - sadece bir kez tanımla ve user dropdown işlevselliği ekle
     if (profileSection) {
         profileSection.addEventListener('click', function(e) {
             e.stopPropagation();
+            console.log('Profile section clicked'); // Debug için
             toggleProfileDropdown();
         });
     }
@@ -658,52 +822,6 @@ document.addEventListener('DOMContentLoaded', function() {
             !profileSection.contains(e.target) && 
             !profileDropdown.contains(e.target)) {
             profileDropdown.classList.remove('active');
-        }
-    });
-
-    // Profile Editing Panel Toggle
-    if (editProfileBtn) {
-        editProfileBtn.addEventListener('click', function() {
-            profileEditingPanel.classList.toggle('open');
-        });
-    }
-
-    // Theme Toggle
-    function updateThemeIcon() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const themeIcon = themeToggle.querySelector('.theme-icon');
-        themeIcon.className = currentTheme === 'dark' ? 'fas fa-moon theme-icon' : 'fas fa-sun theme-icon';
-    }
-
-    // Load saved theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeIcon();
-
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon();
-        });
-    }
-
-    // Profile Dropdown Toggle
-    if (profileSection) {
-        profileSection.addEventListener('click', function(e) {
-            e.stopPropagation();
-            profileDropdown.classList.toggle('show');
-        });
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (profileSection && profileDropdown && 
-            !profileSection.contains(e.target) && 
-            !profileDropdown.contains(e.target)) {
             profileDropdown.classList.remove('show');
         }
     });
@@ -855,43 +973,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // CV Download functionality
-    const downloadCVBtn = document.getElementById('downloadCV');
-    if (downloadCVBtn) {
-        downloadCVBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const cvData = {
-                name: "Admin Kullanıcı",
-                title: "Prof. Dr.",
-                institution: "Yıldız Teknik Üniversitesi",
-                downloadDate: new Date().toLocaleString('tr-TR')
-            };
-            
-            const cvText = `
-=== CV - ${cvData.name} ===
-
-Ünvan: ${cvData.title}
-Ad Soyad: ${cvData.name}
-Kurum: ${cvData.institution}
-
-İndirilme Tarihi: ${cvData.downloadDate}
-
-Bu CV NEX Database sisteminden indirilmiştir.
-            `;
-            
-            const blob = new Blob([cvText], { type: 'text/plain;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `CV_${cvData.name.replace(/\s+/g, '_')}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            alert('CV başarıyla indirildi!');
-        });
-    }
+    // CV Download fonksiyonu kaldırıldı. Artık default bilgi yok.
 
     // Initialize
     loadProfileData();
@@ -902,6 +984,9 @@ Bu CV NEX Database sisteminden indirilmiştir.
             this.classList.toggle('active');
         });
     }
+    
+    // Mor düzenle butonuna tıklandığında direkt edit modunu aç
+    // Zaten yukarıda tanımlı profileEditBtn ile event listener ekleniyor
 });
 
 // Global function for profile dropdown toggle (database-script.js'teki gibi)
@@ -1983,6 +2068,7 @@ function openEditModal(section, sectionTitle) {
 
 function closeEditModal() {
     const modal = document.getElementById('editModal');
+   
     modal.classList.remove('show');
     currentEditingSection = null;
 }
@@ -2094,57 +2180,7 @@ function showAddRemoveButtons(contentSection, sectionType) {
         addPlusButton(title, sectionType);
     });
     
-    // Mevcut öğelere - butonları ekle
-    addMinusButtons(contentSection);
-}
-
-function hideAddRemoveButtons(contentSection) {
-    // Tüm + ve - butonlarını kaldır
-    contentSection.querySelectorAll('.add-btn, .remove-btn').forEach(btn => btn.remove());
-}
-
-function addPlusButton(titleElement, sectionType) {
-    // Zaten varsa ekleme
-    if (titleElement.querySelector('.add-btn')) return;
-    
-    const addBtn = document.createElement('button');
-    addBtn.className = 'add-btn';
-    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
-    addBtn.style.cssText = `
-        background: #10b981;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        margin-left: 10px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        transition: all 0.3s ease;
-    `;
-    
-    addBtn.addEventListener('mouseenter', function() {
-        this.style.background = '#059669';
-        this.style.transform = 'scale(1.1)';
-    });
-    
-    addBtn.addEventListener('mouseleave', function() {
-        this.style.background = '#10b981';
-        this.style.transform = 'scale(1)';
-    });
-    
-    addBtn.addEventListener('click', function() {
-        addNewItem(titleElement, sectionType);
-    });
-    
-    titleElement.appendChild(addBtn);
-}
-
-function addMinusButtons(contentSection) {
-    // Mevcut öğeleri bul ve - butonu ekle, ancak başlık gruplarını ve yer tutucu metinleri hariç tut
+    // Mevcut öğelere - butonları ekle, ancak başlık gruplarını ve yer tutucu metinleri hariç tut
     const items = contentSection.querySelectorAll('p, .education-item, .research-item, .contact-item');
     
     items.forEach(item => {

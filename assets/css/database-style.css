@@ -2126,58 +2126,6 @@ body {
     scrollbar-color: var(--primary-color) #f1f1f1;
 }
 
-/* Session Timer Bubble */
-.session-timer {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 70px;
-    height: 35px;
-    background: var(--primary-color);
-    border-radius: 17.5px; /* Uzun kenarları yarım daire şeklinde */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 11px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 9998;
-    box-shadow: 0 3px 10px rgba(93, 13, 14, 0.3);
-    transition: all 0.3s ease;
-    gap: 6px;
-}
-
-.session-timer:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(93, 13, 14, 0.4);
-}
-
-.session-timer .timer-icon {
-    font-size: 12px;
-}
-
-.session-timer .timer-text {
-    display: none; /* "Oturum" yazısını gizle */
-}
-
-.session-timer .timer-time {
-    font-size: 11px;
-    font-weight: bold;
-}
-
-/* Warning state for last 5 minutes */
-.session-timer.warning {
-    background: #dc3545;
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
 /* Mobile adjustments */
 @media (max-width: 768px) {
     .back-to-top {
@@ -2191,11 +2139,8 @@ body {
     .session-timer {
         bottom: 15px;
         right: 15px;
-        width: 60px;
-        height: 30px;
-        border-radius: 15px;
-        font-size: 10px;
-        gap: 4px;
+        padding: 6px 12px;
+        font-size: 12px;
     }
     
     .session-timer .timer-icon {
@@ -2567,5 +2512,115 @@ body {
     .console-btn {
         min-width: auto;
         width: 100%;
+    }
+}
+
+/* Session Timer */
+.session-timer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 25px;
+    padding: 8px 16px;
+    box-shadow: var(--shadow);
+    z-index: 999;
+    /* Hover animasyonu kaldırıldı */
+}
+
+.session-timer.warning {
+    background: #f44336;
+    border-color: #f44336;
+    animation: timerWarning 1s ease-in-out infinite alternate;
+}
+
+@keyframes timerWarning {
+    0% {
+        box-shadow: 0 2px 10px rgba(244, 67, 54, 0.2);
+    }
+    100% {
+        box-shadow: 0 4px 20px rgba(244, 67, 54, 0.4);
+    }
+}
+
+.timer-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.timer-content i {
+    color: white;
+    font-size: 14px;
+}
+
+.timer-text {
+    color: white;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.session-timer.warning .timer-content i {
+    color: white;
+}
+
+.session-timer.warning .timer-text {
+    color: white;
+}
+
+/* Session Warning Notification */
+.session-warning-notification {
+    position: fixed;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #f44336;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.3);
+    z-index: 10001;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    min-width: 300px;
+    text-align: center;
+}
+
+.session-warning-notification.show {
+    bottom: 30px;
+    animation: warningPulse 2s ease-in-out;
+}
+
+.warning-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.warning-content i {
+    font-size: 16px;
+    animation: warningIcon 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes warningPulse {
+    0%, 100% {
+        transform: translateX(-50%) scale(1);
+    }
+    50% {
+        transform: translateX(-50%) scale(1.02);
+    }
+}
+
+@keyframes warningIcon {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1.1);
     }
 }

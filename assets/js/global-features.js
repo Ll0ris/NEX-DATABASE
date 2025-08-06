@@ -7,10 +7,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initGlobalFeatures() {
     createBackToTopButton();
+    initThemeToggle(); // Tema toggle'ı başlat
     
-    // Don't initialize session timer on login page
-    if (!window.DISABLE_SESSION_TIMER) {
-        createSessionTimer();
+    // Session timer'ı sadece login sayfası değilse başlat
+    const currentPage = window.location.pathname;
+    const isLoginPage = currentPage.includes('index.html') || currentPage === '/' || currentPage.endsWith('/');
+    
+    if (!isLoginPage) {
+        // Initialize session timer (HTML'de zaten varsa kullan, yoksa oluştur)
+        const existingTimer = document.getElementById('sessionTimer');
+        if (!existingTimer) {
+            createSessionTimer();
+        }
+        
         initSessionManagement();
     }
     
@@ -39,12 +48,12 @@ function createBackToTopButton() {
 function createSessionTimer() {
     const sessionTimer = document.createElement('div');
     sessionTimer.className = 'session-timer';
+    sessionTimer.id = 'sessionTimer';
     sessionTimer.innerHTML = `
-        <div class="timer-icon">
+        <div class="timer-content">
             <i class="fas fa-clock"></i>
+            <span class="timer-text">40:00</span>
         </div>
-        <div class="timer-text">Oturum</div>
-        <div class="timer-time" id="sessionTime">10:00</div>
     `;
     sessionTimer.title = 'Kalan Oturum Süresi';
     
@@ -67,8 +76,8 @@ function initScrollDetection() {
 // Session Management
 function initSessionManagement() {
     // Session duration: 40 minutes (2400 seconds)
-    const SESSION_DURATION = 10 * 60; // 10 minutes in seconds
-    const WARNING_TIME = 2 * 60; // Last 2 minutes warning
+    const SESSION_DURATION = 40 * 60; // 40 minutes in seconds
+    const WARNING_TIME = 5 * 60; // Last 5 minutes warning
     
     let remainingTime = SESSION_DURATION;
     let lastActivity = Date.now();
@@ -97,7 +106,7 @@ function initSessionManagement() {
                 warningShown = true;
             }
             
-            // Session expired
+            // Session expired - direkt yönlendir
             if (remainingTime <= 0) {
                 sessionExpired();
             }
@@ -121,7 +130,9 @@ function initSessionManagement() {
         if (warningShown && remainingTime > WARNING_TIME) {
             warningShown = false;
             const sessionTimerEl = document.querySelector('.session-timer');
-            sessionTimerEl.classList.remove('warning');
+            if (sessionTimerEl) {
+                sessionTimerEl.classList.remove('warning');
+            }
         }
     }
     
@@ -130,39 +141,51 @@ function initSessionManagement() {
         const seconds = remainingTime % 60;
         const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         
-        const timeDisplay = document.getElementById('sessionTime');
+        const timeDisplay = document.querySelector('.timer-text');
         if (timeDisplay) {
             timeDisplay.textContent = timeString;
+        }
+        
+        // Update timer color based on remaining time
+        const sessionTimerEl = document.querySelector('.session-timer');
+        if (sessionTimerEl) {
+            if (remainingTime <= WARNING_TIME) {
+                sessionTimerEl.classList.add('warning');
+            } else {
+                sessionTimerEl.classList.remove('warning');
+            }
         }
     }
     
     function showSessionWarning() {
-        const sessionTimerEl = document.querySelector('.session-timer');
-        sessionTimerEl.classList.add('warning');
+        // Show animated warning notification from bottom
+        showWarningNotification();
         
-        // Show notification
+        // Request notification permission if supported
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Oturum Uyarısı', {
-                body: 'Oturumunuz 2 dakika içinde sona erecek. Lütfen sayfada bir işlem yapın.',
-                icon: 'logo.png'
+                body: 'Oturumunuz 5 dakika içinde sona erecek!',
+                icon: '../assets/images/logo.png'
             });
-        } else {
-            // Fallback alert
+        }
+    }
+    
+    function showWarningNotification() {
+        const warningEl = document.getElementById('sessionWarning');
+        if (warningEl) {
+            warningEl.classList.add('show');
+            
+            // Hide after 2 seconds
             setTimeout(() => {
-                if (remainingTime <= WARNING_TIME && remainingTime > 0) {
-                    alert('Oturumunuz 2 dakika içinde sona erecek. Lütfen sayfada bir işlem yapın.');
-                }
-            }, 1000);
+                warningEl.classList.remove('show');
+            }, 2000);
         }
     }
     
     function sessionExpired() {
         clearInterval(sessionTimer);
         
-        // Show session expired message
-        const confirmed = confirm('Oturumunuz sona erdi. Ana sayfaya yönlendirileceksiniz.');
-        
-        // Redirect to login page
+        // Direkt giriş sayfasına yönlendir (uyarı yok)
         window.location.href = 'index.html';
     }
     
