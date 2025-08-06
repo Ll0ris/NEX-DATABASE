@@ -149,91 +149,12 @@
         </nav>
     </div>
 
-    <!-- Profile Editing Panel -->
-    <div class="profile-editing-panel" id="profileEditingPanel">
-        <div class="profile-panel-header">
-            <h3>Profil Düzenleme</h3>
-        </div>
-        
-        <div class="profile-panel-content">
-            <!-- Profil Fotoğrafı -->
-            <div class="profile-photo-section">
-                <div class="profile-photo-container">
-                    <i class="fas fa-user-circle profile-edit-icon"></i>
-                    <div class="photo-overlay">
-                        <label for="photoUpload" class="photo-upload-btn">
-                            <i class="fas fa-camera"></i> Değiştir
-                        </label>
-                        <input type="file" id="photoUpload" accept="image/*" style="display: none;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Akademik Linkler -->
-            <div class="profile-section">
-                <h4>Akademik Linkler</h4>
-                <div class="academic-links">
-                    <div class="link-group">
-                        <label>LinkedIn</label>
-                        <input type="url" id="linkedinLink" placeholder="https://linkedin.com/in/...">
-                    </div>
-                    <div class="link-group">
-                        <label>Web of Science</label>
-                        <input type="url" id="wosLink" placeholder="ResearcherID">
-                    </div>
-                    <div class="link-group">
-                        <label>Scopus</label>
-                        <input type="url" id="scopusLink" placeholder="Scopus Author ID">
-                    </div>
-                    <div class="link-group">
-                        <label>ORCID</label>
-                        <input type="url" id="orcidLink" placeholder="https://orcid.org/...">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kişisel Bilgiler -->
-            <div class="profile-section">
-                <h4>Kişisel Bilgiler</h4>
-                <div class="personal-info">
-                    <div class="info-group">
-                        <label>Ad Soyad</label>
-                        <input type="text" id="fullName" placeholder="Adınız Soyadınız">
-                    </div>
-                    <div class="info-group">
-                        <label>E-posta</label>
-                        <input type="email" id="email" placeholder="email@yildiz.edu.tr">
-                    </div>
-                    <div class="info-group">
-                        <label>Telefon</label>
-                        <input type="tel" id="phone" placeholder="+90 xxx xxx xx xx">
-                    </div>
-                    <div class="info-group">
-                        <label>Bölüm</label>
-                        <input type="text" id="department" placeholder="Fakülte / Bölüm">
-                    </div>
-                    <div class="info-group">
-                        <label>Ünvan</label>
-                        <input type="text" id="title" placeholder="Akademik Ünvan">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kaydet Butonu -->
-            <div class="profile-actions">
-                <button class="save-profile-btn" id="saveProfileBtn">
-                    <i class="fas fa-save"></i> Profili Kaydet
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Content Area -->
     <div class="main-content" id="mainContent">
         <!-- Profil Content -->
         <div class="content-section" id="profileContent">
             <div class="content-header">
-                <button class="edit-mode-btn" id="profileEditBtn">
+                <button class="edit-mode-btn" id="profileEditBtn" onclick="toggleBlueEditButton()">
                     <i class="fas fa-edit"></i>
                     Düzenle
                 </button>
@@ -243,19 +164,98 @@
                 <div class="profile-main-info">
                     <!-- Profil Fotoğrafı ve Temel Bilgiler -->
                     <div class="profile-photo-info">
-                        <div class="main-profile-photo">
+                        <div class="main-profile-photo" id="mainProfilePhoto">
                             <i class="fas fa-user-circle default-photo-icon"></i>
+                            <!-- Photo upload overlay (hidden by default) -->
+                            <div class="photo-upload-overlay" id="photoUploadOverlay" style="display: none;">
+                                <label for="photoUpload" class="photo-upload-btn">
+                                    <i class="fas fa-camera"></i>
+                                    Fotoğraf Değiştir
+                                </label>
+                                <button type="button" class="photo-remove-btn" id="photoRemoveBtn" style="display: none;">
+                                    <i class="fas fa-trash"></i>
+                                    Fotoğrafı Kaldır
+                                </button>
+                                <input type="file" id="photoUpload" accept="image/*" style="display: none;">
+                            </div>
                         </div>
                         <div class="basic-info">
-                            <div class="name-title">
-                                <span class="title-prefix">Prof. Dr.</span>
-                                <span class="full-name">Oğuzhan Dedeoğlu</span>
+                            <!-- View Mode -->
+                            <div class="info-view-mode" id="infoViewMode">
+                                <div class="name-title">
+                                    <span class="title-prefix">Prof. Dr.</span>
+                                    <span class="full-name">Oğuzhan Dedeoğlu</span>
+                                </div>
+                                <div class="institution-info">
+                                    <div class="institution">Yıldız Teknik Üniversitesi</div>
+                                    <div class="faculty">Fen Fakültesi</div>
+                                    <div class="department">Matematik Mühendisliği Bölümü</div>
+                                    <div class="status">Aktif Öğretim Üyesi</div>
+                                </div>
+                                <button class="edit-basic-info-btn" id="editBasicInfoBtn">
+                                    <i class="fas fa-edit"></i>
+                                    Düzenle
+                                </button>
                             </div>
-                            <div class="institution-info">
-                                <div class="institution">Yıldız Teknik Üniversitesi</div>
-                                <div class="faculty">Fen Fakültesi</div>
-                                <div class="department">Matematik Mühendisliği Bölümü</div>
-                                <div class="status">Aktif Öğretim Üyesi</div>
+                            
+                            <!-- Edit Mode -->
+                            <div class="info-edit-mode" id="infoEditMode" style="display: none;">
+                                <div class="edit-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="titlePrefixEdit">Ünvan</label>
+                                            <select id="titlePrefixEdit">
+                                                <option value="">Ünvan Seçin</option>
+                                                <option value="Prof. Dr.">Prof. Dr.</option>
+                                                <option value="Doç. Dr.">Doç. Dr.</option>
+                                                <option value="Dr. Öğr. Üyesi">Dr. Öğr. Üyesi</option>
+                                                <option value="Öğr. Gör.">Öğr. Gör.</option>
+                                                <option value="Arş. Gör.">Arş. Gör.</option>
+                                                <option value="Dr.">Dr.</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="fullNameEdit">Ad Soyad</label>
+                                            <input type="text" id="fullNameEdit" placeholder="Adınız Soyadınız">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="institutionEdit">Kurum</label>
+                                            <input type="text" id="institutionEdit" placeholder="Üniversite/Kurum Adı">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="facultyEdit">Fakülte</label>
+                                            <input type="text" id="facultyEdit" placeholder="Fakülte Adı">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="departmentEdit">Bölüm</label>
+                                            <input type="text" id="departmentEdit" placeholder="Bölüm Adı">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="statusEdit">Durum</label>
+                                            <select id="statusEdit">
+                                                <option value="Aktif Öğretim Üyesi">Aktif Öğretim Üyesi</option>
+                                                <option value="Emekli Öğretim Üyesi">Emekli Öğretim Üyesi</option>
+                                                <option value="Misafir Öğretim Üyesi">Misafir Öğretim Üyesi</option>
+                                                <option value="Araştırma Görevlisi">Araştırma Görevlisi</option>
+                                                <option value="Öğretim Görevlisi">Öğretim Görevlisi</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="edit-actions">
+                                    <button class="save-basic-info-btn" id="saveBasicInfoBtn">
+                                        <i class="fas fa-save"></i>
+                                        Kaydet
+                                    </button>
+                                    <button class="cancel-basic-info-btn" id="cancelBasicInfoBtn">
+                                        <i class="fas fa-times"></i>
+                                        İptal
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

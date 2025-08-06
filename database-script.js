@@ -488,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function enableAdminMode() {
     // Admin özelliklerini aktifleştir
     document.body.classList.add('admin-mode');
+    console.log('Mode changed to: admin');
     console.log('Admin mode enabled');
     
     // Update dropdown icon
@@ -495,6 +496,9 @@ function enableAdminMode() {
     if (modeIcon) {
         modeIcon.className = 'fas fa-cog mode-icon';
     }
+    
+    // Save admin state to localStorage ONLY after password validation
+    saveAdminState('admin', 'Admin Paneli');
     
     // Burada admin özelliklerini açabilirsiniz
     // Örnek: Ek butonları göster, edit modlarını aktif et vs.
@@ -537,6 +541,9 @@ function resetToSafeMode() {
     if (modeIcon) {
         modeIcon.className = 'fas fa-shield-alt mode-icon';
     }
+    
+    // Save safe mode to localStorage
+    saveAdminState('safe', 'Güvenli Mod');
     
     // Enable safe mode
     enableSafeMode();
@@ -608,8 +615,11 @@ function initializeAdminDropdown() {
         modeText.textContent = text;
         updateModeIcon(mode);
         
-        // Save admin state to localStorage
-        saveAdminState(mode, text);
+        // Save admin state to localStorage ONLY for safe mode
+        // Admin mode will be saved only after password validation
+        if (mode === 'safe') {
+            saveAdminState(mode, text);
+        }
         
         // Handle mode change
         handleModeChange(mode);
@@ -627,13 +637,13 @@ function initializeAdminDropdown() {
     }
 
     function handleModeChange(mode) {
-        console.log('Mode changed to:', mode);
-        
+        // Only log and handle after password validation
         if (mode === 'admin') {
-            // Admin paneli için şifre kontrolü
+            // Admin paneli için şifre kontrolü - MODE CHANGE SADECE ŞİFRE DOĞRULANDIKTAN SONRA
             showProtocolModal();
         } else {
             // Güvenli moda geç
+            console.log('Mode changed to:', mode);
             enableSafeMode();
         }
     }

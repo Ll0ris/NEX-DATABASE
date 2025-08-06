@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="nodes.js" defer></script>
+    <!-- Firebase App (core) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <!-- Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
 </head>
 <body>
     <canvas id="nodeCanvas"></canvas>
@@ -92,6 +96,39 @@
                 }
             });
         });
+
+        // Firebase config - buraya kendi kodunuzu ekleyin
+        const firebaseConfig = {
+          apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
+          authDomain: "nex-database.firebaseapp.com",
+          projectId: "nex-database",
+          storageBucket: "nex-database.appspot.com",
+          messagingSenderId: "532729129753",
+          appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
+        };
+        // Başlat
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Örnek: Kullanıcı ekleme
+        function addUser(name, email, role) {
+          db.collection("users").add({
+            name: name,
+            email: email,
+            role: role
+          }).then(() => {
+            alert("Kullanıcı eklendi!");
+          });
+        }
+
+        // Örnek: Kullanıcıları çekme
+        function getUsers() {
+          db.collection("users").get().then(snapshot => {
+            snapshot.forEach(doc => {
+              console.log(doc.data());
+            });
+          });
+        }
     </script>
     <script src="global-features.js"></script>
 </body>

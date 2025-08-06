@@ -1,3 +1,519 @@
+/* Inline Profile Editing Styles */
+.basic-info {
+    position: relative;
+}
+
+.edit-basic-info-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.edit-basic-info-btn:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.info-edit-mode {
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9em;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 0.9em;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.edit-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    justify-content: flex-end;
+}
+
+.save-basic-info-btn,
+.cancel-basic-info-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+}
+
+.save-basic-info-btn {
+    background: #28a745;
+    color: white;
+}
+
+.save-basic-info-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.cancel-basic-info-btn {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.cancel-basic-info-btn:hover {
+    background: #dc3545;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Photo Upload Overlay */
+.main-profile-photo {
+    position: relative;
+    display: inline-block;
+}
+
+.photo-upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.main-profile-photo:hover .photo-upload-overlay {
+    opacity: 1;
+}
+
+.photo-upload-btn {
+    background: var(--primary-color);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8em;
+}
+
+.photo-upload-btn:hover {
+    background: #d63384;
+}
+
+.photo-remove-btn {
+    background: #dc3545;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8em;
+    margin-top: 5px;
+}
+
+.photo-remove-btn:hover {
+    background: #c82333;
+}
+
+/* Content Header */
+.content-header h2 {
+    color: var(--primary-color);
+    margin: 0 0 20px 0;
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+/* Pulse animation for edit button highlight */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+/* Dark theme support */
+[data-theme="dark"] .info-edit-mode {
+    background: #333;
+    border-color: #555;
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select {
+    background: #444;
+    border-color: #666;
+    color: #fff;
+}
+
+[data-theme="dark"] .cancel-basic-info-btn {
+    background: #555;
+    color: #fff;
+}
+
+/* Profile Editing Panel Styles */
+.profile-editing-panel {
+    position: fixed;
+    top: 0;
+    right: -500px;
+    width: 500px;
+    height: 100vh;
+    background: var(--card-bg);
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s ease;
+    z-index: 9999;
+    overflow-y: auto;
+    border-left: 1px solid var(--border-color);
+}
+
+.profile-editing-panel.active {
+    right: 0;
+}
+
+.profile-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--primary-color);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.profile-panel-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.close-panel-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.close-panel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.profile-panel-content {
+    padding: 20px;
+}
+
+.profile-section {
+    margin-bottom: 30px;
+}
+
+.profile-section h4 {
+    margin: 0 0 15px 0;
+    color: var(--primary-color);
+    font-size: 1.1em;
+    font-weight: 600;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 5px;
+}
+
+/* Photo Upload Area */
+.photo-upload-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.photo-preview {
+    text-align: center;
+}
+
+.photo-preview .default-photo-icon {
+    font-size: 80px;
+    color: var(--text-muted);
+}
+
+.photo-preview img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+}
+
+.drag-drop-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 10px;
+    padding: 30px 20px;
+    text-align: center;
+    background: var(--bg-secondary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.drag-drop-area:hover,
+.drag-drop-area.drag-over {
+    border-color: var(--primary-color);
+    background: rgba(240, 145, 146, 0.1);
+}
+
+.drag-drop-area i {
+    font-size: 2em;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.drag-drop-area p {
+    margin: 10px 0 15px 0;
+    color: var(--text-muted);
+    font-size: 0.9em;
+}
+
+.browse-btn {
+    background: var(--primary-color);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: inline-block;
+}
+
+.browse-btn:hover {
+    background: #d63384;
+}
+
+.upload-info {
+    text-align: center;
+}
+
+.upload-info small {
+    color: var(--text-muted);
+    font-size: 0.8em;
+}
+
+/* Form Groups */
+.basic-info-form,
+.contact-info-form,
+.academic-links {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9em;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 0.9em;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(240, 145, 146, 0.1);
+}
+
+/* Profile Actions */
+.profile-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.save-profile-btn,
+.cancel-profile-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.save-profile-btn {
+    background: var(--success-color);
+    color: white;
+}
+
+.save-profile-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.cancel-profile-btn {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.cancel-profile-btn:hover {
+    background: #dc3545;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Dark theme support */
+[data-theme="dark"] .profile-editing-panel {
+    background: #2a2a2a;
+    border-left-color: #444;
+}
+
+[data-theme="dark"] .drag-drop-area {
+    background: #333;
+    border-color: #555;
+}
+
+[data-theme="dark"] .drag-drop-area:hover,
+[data-theme="dark"] .drag-drop-area.drag-over {
+    background: rgba(240, 145, 146, 0.2);
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+}
+
+[data-theme="dark"] .cancel-profile-btn {
+    background: #555;
+    color: #fff;
+}
+
+/* Notification Styles */
+.success-notification,
+.error-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--success-color);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10000;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 400px;
+}
+
+.error-notification {
+    background: #dc3545;
+}
+
+.success-notification.show,
+.error-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.success-notification i,
+.error-notification i {
+    font-size: 1.2em;
+}
+
 /* Profile Sayfası Özel Stilleri */
 
 /* Üyelik Kartları 3D Stil */
@@ -234,9 +750,20 @@
     z-index: 2;
 }
 
+.profile-page .side-profile-photo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px auto;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
 .profile-page .side-profile-photo img {
-    width: 90px;
-    height: 90px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     border: 4px solid rgba(255, 255, 255, 0.8);
     object-fit: cover;
@@ -245,7 +772,7 @@
 }
 
 .profile-page .side-profile-photo .default-profile-icon {
-    font-size: 90px;
+    font-size: 120px;
     color: var(--accent-color);
     display: block;
     text-align: center;

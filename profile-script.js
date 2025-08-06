@@ -78,6 +78,435 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize with profile section active
     switchSection('profile');
 
+    // Global toggle function for purple edit button
+    window.toggleBlueEditButton = function() {
+        const editButton = document.getElementById('editBasicInfoBtn');
+        const editMode = document.getElementById('infoEditMode');
+        
+        if (editButton) {
+            const isVisible = editButton.style.display === 'flex';
+            editButton.style.display = isVisible ? 'none' : 'flex';
+            
+            if (!isVisible) {
+                editButton.style.animation = 'pulse 1s ease-in-out 3';
+                editButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                // If hiding the blue edit button, also close edit mode if open
+                if (editMode && editMode.style.display === 'block') {
+                    cancelEdit();
+                }
+            }
+        }
+    };
+
+    // Profile Editing Functions
+    let originalFormData = {}; // Store original data for cancel functionality
+    
+    function initProfileEditing() {
+        const profileEditBtn = document.getElementById('profileEditBtn');
+        const editBtn = document.getElementById('editBasicInfoBtn');
+        const saveBtn = document.getElementById('saveBasicInfoBtn');
+        const cancelBtn = document.getElementById('cancelBasicInfoBtn');
+        const photoUpload = document.getElementById('photoUpload');
+        
+        // Main edit button (mor button) shows only the blue edit button for basic info
+        if (profileEditBtn) {
+            let blueEditVisible = false;
+            profileEditBtn.addEventListener('click', function() {
+                // Toggle blue edit button visibility
+                const editButton = document.getElementById('editBasicInfoBtn');
+                if (editButton) {
+                    blueEditVisible = !blueEditVisible;
+                    editButton.style.display = blueEditVisible ? 'flex' : 'none';
+                    if (blueEditVisible) {
+                        editButton.style.animation = 'pulse 1s ease-in-out 3';
+                        editButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        }
+
+        if (editBtn) {
+            editBtn.addEventListener('click', toggleEditMode);
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveBasicInfo);
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', cancelEdit);
+        }
+
+        if (photoUpload) {
+            photoUpload.addEventListener('change', handlePhotoUpload);
+        }
+
+        // Photo remove button
+        const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+        if (photoRemoveBtn) {
+            photoRemoveBtn.addEventListener('click', removeProfilePhoto);
+        }
+
+        // Show photo upload overlay on hover in edit mode
+        const mainProfilePhoto = document.getElementById('mainProfilePhoto');
+        if (mainProfilePhoto) {
+            mainProfilePhoto.addEventListener('mouseenter', showPhotoUpload);
+            mainProfilePhoto.addEventListener('mouseleave', hidePhotoUpload);
+        }
+
+        // Initially hide the blue edit button
+        const editButton = document.getElementById('editBasicInfoBtn');
+        if (editButton) {
+            editButton.style.display = 'none';
+        }
+    }
+    
+    function toggleEditMode() {
+        const viewMode = document.getElementById('infoViewMode');
+        const editMode = document.getElementById('infoEditMode');
+        const photoOverlay = document.getElementById('photoUploadOverlay');
+        
+        if (viewMode && editMode) {
+            viewMode.style.display = 'none';
+            editMode.style.display = 'block';
+            
+            // Show photo upload overlay
+            if (photoOverlay) {
+                photoOverlay.style.display = 'flex';
+            }
+            
+            // Load current data into form
+            loadCurrentDataToForm();
+        }
+    }
+    
+    function cancelEdit() {
+        const viewMode = document.getElementById('infoViewMode');
+        const editMode = document.getElementById('infoEditMode');
+        const photoOverlay = document.getElementById('photoUploadOverlay');
+        
+        // Restore original form data
+        if (originalFormData) {
+            const titleSelect = document.getElementById('titlePrefixEdit');
+            const nameInput = document.getElementById('fullNameEdit');
+            const institutionInput = document.getElementById('institutionEdit');
+            const facultyInput = document.getElementById('facultyEdit');
+            const departmentInput = document.getElementById('departmentEdit');
+            const statusSelect = document.getElementById('statusEdit');
+            
+            if (titleSelect) titleSelect.value = originalFormData.titlePrefix || '';
+            if (nameInput) nameInput.value = originalFormData.fullName || '';
+            if (institutionInput) institutionInput.value = originalFormData.institution || '';
+            if (facultyInput) facultyInput.value = originalFormData.faculty || '';
+            if (departmentInput) departmentInput.value = originalFormData.department || '';
+            if (statusSelect) statusSelect.value = originalFormData.status || '';
+            
+            // Restore original photo
+            if (originalFormData.photoHTML) {
+                const mainProfilePhoto = document.getElementById('mainProfilePhoto');
+                if (mainProfilePhoto) {
+                    mainProfilePhoto.innerHTML = originalFormData.photoHTML;
+                    
+                    // Re-attach event listeners after restoring HTML
+                    const photoUpload = document.getElementById('photoUpload');
+                    if (photoUpload) {
+                        photoUpload.addEventListener('change', handlePhotoUpload);
+                    }
+                    
+                    const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+                    if (photoRemoveBtn) {
+                        photoRemoveBtn.addEventListener('click', removeProfilePhoto);
+                    }
+                }
+                
+                // Also restore side panel photo to match
+                const sideProfilePhoto = document.querySelector('.side-profile-photo');
+                const mainPhotoImg = document.querySelector('#mainProfilePhoto img');
+                if (sideProfilePhoto && mainPhotoImg) {
+                    // If main photo has an image, restore side panel image too
+                    const imgSrc = mainPhotoImg.src;
+                    sideProfilePhoto.innerHTML = `<img src="${imgSrc}" alt="Profile Photo">`;
+                } else if (sideProfilePhoto) {
+                    // If no image, restore default icon
+                    sideProfilePhoto.innerHTML = `<i class="fas fa-user-circle default-profile-icon"></i>`;
+                }
+            }
+        }
+        
+        if (viewMode && editMode) {
+            viewMode.style.display = 'block';
+            editMode.style.display = 'none';
+            // Hide photo upload overlay
+            if (photoOverlay) {
+                photoOverlay.style.display = 'none';
+            }
+            // Do NOT hide the blue edit button - let it stay visible
+        }
+    }
+    
+    function loadCurrentDataToForm() {
+        // Get current data from display and store as original
+        const titlePrefix = document.querySelector('.title-prefix')?.textContent.trim() || '';
+        const fullName = document.querySelector('.full-name')?.textContent.trim() || '';
+        const institution = document.querySelector('.institution')?.textContent.trim() || '';
+        const faculty = document.querySelector('.faculty')?.textContent.trim() || '';
+        const department = document.querySelector('.department')?.textContent.trim() || '';
+        const status = document.querySelector('.status')?.textContent.trim() || '';
+        
+        // Get current photo state
+        const mainProfilePhoto = document.getElementById('mainProfilePhoto');
+        let originalPhotoHTML = '';
+        if (mainProfilePhoto) {
+            originalPhotoHTML = mainProfilePhoto.innerHTML;
+        }
+        
+        // Store original data for cancel functionality
+        originalFormData = {
+            titlePrefix,
+            fullName,
+            institution,
+            faculty,
+            department,
+            status,
+            photoHTML: originalPhotoHTML
+        };
+        
+        // Populate form fields
+        const titleSelect = document.getElementById('titlePrefixEdit');
+        const nameInput = document.getElementById('fullNameEdit');
+        const institutionInput = document.getElementById('institutionEdit');
+        const facultyInput = document.getElementById('facultyEdit');
+        const departmentInput = document.getElementById('departmentEdit');
+        const statusSelect = document.getElementById('statusEdit');
+        
+        if (titleSelect) titleSelect.value = titlePrefix;
+        if (nameInput) nameInput.value = fullName;
+        if (institutionInput) institutionInput.value = institution;
+        if (facultyInput) facultyInput.value = faculty;
+        if (departmentInput) departmentInput.value = department;
+        if (statusSelect) statusSelect.value = status;
+    }
+    
+    function saveBasicInfo() {
+        // Get form data
+        const titlePrefix = document.getElementById('titlePrefixEdit')?.value || '';
+        const fullName = document.getElementById('fullNameEdit')?.value || '';
+        const institution = document.getElementById('institutionEdit')?.value || '';
+        const faculty = document.getElementById('facultyEdit')?.value || '';
+        const department = document.getElementById('departmentEdit')?.value || '';
+        const status = document.getElementById('statusEdit')?.value || '';
+        
+        // Update display elements
+        const titlePrefixElement = document.querySelector('.title-prefix');
+        const fullNameElement = document.querySelector('.full-name');
+        const institutionElement = document.querySelector('.institution');
+        const facultyElement = document.querySelector('.faculty');
+        const departmentElement = document.querySelector('.department');
+        const statusElement = document.querySelector('.status');
+        
+        if (titlePrefixElement) titlePrefixElement.textContent = titlePrefix;
+        if (fullNameElement) fullNameElement.textContent = fullName;
+        if (institutionElement) institutionElement.textContent = institution;
+        if (facultyElement) facultyElement.textContent = faculty;
+        if (departmentElement) departmentElement.textContent = department;
+        if (statusElement) statusElement.textContent = status;
+        
+        // Update top panel name
+        const topProfileName = document.querySelector('.profile-name');
+        if (topProfileName && fullName) {
+            topProfileName.textContent = fullName;
+        }
+        
+        // Update side panel information
+        const sideProfileTitle = document.querySelector('.side-profile-title');
+        const sideProfileName = document.querySelector('.side-profile-name');
+        const sideProfileInstitution = document.querySelector('.side-profile-institution');
+        
+        if (sideProfileTitle) sideProfileTitle.textContent = titlePrefix;
+        if (sideProfileName) sideProfileName.textContent = fullName;
+        if (sideProfileInstitution) sideProfileInstitution.textContent = institution;
+        
+        // Update original form data with current saved values (including photo)
+        const mainProfilePhoto = document.getElementById('mainProfilePhoto');
+        if (mainProfilePhoto) {
+            originalFormData.photoHTML = mainProfilePhoto.innerHTML;
+        }
+        originalFormData.titlePrefix = titlePrefix;
+        originalFormData.fullName = fullName;
+        originalFormData.institution = institution;
+        originalFormData.faculty = faculty;
+        originalFormData.department = department;
+        originalFormData.status = status;
+        
+        // Show success message
+        showSuccessMessage('Profil başarıyla güncellendi!');
+        
+        // Switch back to view mode
+        cancelEdit();
+    }
+    
+    function showPhotoUpload() {
+        const editMode = document.getElementById('infoEditMode');
+        const photoOverlay = document.getElementById('photoUploadOverlay');
+        
+        // Only show if in edit mode
+        if (editMode && editMode.style.display === 'block' && photoOverlay) {
+            photoOverlay.style.display = 'flex';
+        }
+    }
+    
+    function hidePhotoUpload() {
+        // Don't hide if we're in edit mode - handled by edit mode toggle
+    }
+    
+    function handlePhotoUpload(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showErrorMessage('Lütfen geçerli bir resim dosyası seçin.');
+                return;
+            }
+            
+            // Validate file size (25MB max)
+            const maxSize = 25 * 1024 * 1024; // 25MB
+            if (file.size > maxSize) {
+                showErrorMessage('Dosya boyutu 25MB\'dan küçük olmalıdır.');
+                return;
+            }
+            
+            // Read and update photo
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                updateProfilePhoto(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    
+    function updateProfilePhoto(imageSrc) {
+        const mainProfilePhoto = document.getElementById('mainProfilePhoto');
+        if (mainProfilePhoto) {
+            mainProfilePhoto.innerHTML = `
+                <img src="${imageSrc}" alt="Profile Photo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
+                <div class="photo-upload-overlay" id="photoUploadOverlay" style="display: flex;">
+                    <label for="photoUpload" class="photo-upload-btn">
+                        <i class="fas fa-camera"></i>
+                        Fotoğraf Değiştir
+                    </label>
+                    <button type="button" class="photo-remove-btn" id="photoRemoveBtn">
+                        <i class="fas fa-trash"></i>
+                        Fotoğrafı Kaldır
+                    </button>
+                    <input type="file" id="photoUpload" accept="image/*" style="display: none;">
+                </div>
+            `;
+            
+            // Re-attach event listeners
+            const newPhotoUpload = document.getElementById('photoUpload');
+            if (newPhotoUpload) {
+                newPhotoUpload.addEventListener('change', handlePhotoUpload);
+            }
+            
+            const newPhotoRemoveBtn = document.getElementById('photoRemoveBtn');
+            if (newPhotoRemoveBtn) {
+                newPhotoRemoveBtn.addEventListener('click', removeProfilePhoto);
+            }
+        }
+        
+        // Update side panel photo as well
+        const sideProfilePhoto = document.querySelector('.side-profile-photo');
+        if (sideProfilePhoto) {
+            // Keep the existing CSS classes and structure, just replace the content
+            sideProfilePhoto.innerHTML = `
+                <img src="${imageSrc}" alt="Profile Photo">
+            `;
+        }
+        
+        // Do NOT update original form data here - only update on save
+        // This allows cancel to revert photo changes
+        
+        showSuccessMessage('Profil fotoğrafı güncellendi!');
+    }
+    
+    function removeProfilePhoto() {
+        const mainProfilePhoto = document.getElementById('mainProfilePhoto');
+        if (mainProfilePhoto) {
+            mainProfilePhoto.innerHTML = `
+                <i class="fas fa-user-circle default-photo-icon"></i>
+                <div class="photo-upload-overlay" id="photoUploadOverlay" style="display: flex;">
+                    <label for="photoUpload" class="photo-upload-btn">
+                        <i class="fas fa-camera"></i>
+                        Fotoğraf Değiştir
+                    </label>
+                    <input type="file" id="photoUpload" accept="image/*" style="display: none;">
+                </div>
+            `;
+            
+            // Re-attach event listener
+            const newPhotoUpload = document.getElementById('photoUpload');
+            if (newPhotoUpload) {
+                newPhotoUpload.addEventListener('change', handlePhotoUpload);
+            }
+        }
+        
+        // Reset side panel photo as well
+        const sideProfilePhoto = document.querySelector('.side-profile-photo');
+        if (sideProfilePhoto) {
+            sideProfilePhoto.innerHTML = `
+                <i class="fas fa-user-circle default-profile-icon"></i>
+            `;
+        }
+        
+        // Do NOT update original form data here - only update on save
+        // This allows cancel to revert photo removal
+        
+        showSuccessMessage('Profil fotoğrafı kaldırıldı!');
+    }
+    
+    function showSuccessMessage(message) {
+        // Create and show success notification
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Show with animation
+        setTimeout(() => notification.classList.add('show'), 100);
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    function showErrorMessage(message) {
+        // Create and show error notification
+        const notification = document.createElement('div');
+        notification.className = 'error-notification';
+        notification.innerHTML = `
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Show with animation
+        setTimeout(() => notification.classList.add('show'), 100);
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
     // Side Panel Toggle (database-script.js'teki gibi)
     function toggleSidePanel() {
         const isActive = sidePanel.classList.contains('active');
