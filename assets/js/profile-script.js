@@ -151,96 +151,101 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loadProfileFromFirebase() {
-        if (typeof db === 'undefined') {
-            console.warn('Firebase not yet initialized, skipping load');
+        // Firestore v9+ ile users koleksiyonundan tüm profil bilgilerini çek
+        let currentUserEmail = localStorage.getItem('currentUserEmail');
+        if (!currentUserEmail) {
+            console.warn('Kullanıcı email yok, profil yüklenemiyor');
             return;
         }
-        
-        const userId = localStorage.getItem('currentUserId') || 'current-user';
-        
-        db.collection("profiles").doc(userId).get()
-        .then((doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                console.log("Profil Firebase'den yüklendi:", data);
-                
-                // Update display elements
+
+        // Firebase hazır olana kadar bekle
+        let attempts = 0;
+        function waitForFirebase(resolve) {
+            if (window.firestoreDb && window.firestoreFunctions) {
+                resolve();
+            } else if (attempts < 50) {
+                attempts++;
+                setTimeout(() => waitForFirebase(resolve), 100);
+            } else {
+                console.error('Firebase bağlantısı kurulamadı');
+            }
+        }
+        new Promise(waitForFirebase).then(async () => {
+            const { collection, query, where, getDocs } = window.firestoreFunctions;
+            const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                const data = snapshot.docs[0].data();
+                // Tüm profil alanlarını doldur
                 const titlePrefixElement = document.querySelector('.title-prefix');
                 const fullNameElement = document.querySelector('.full-name');
                 const institutionElement = document.querySelector('.institution');
                 const facultyElement = document.querySelector('.faculty');
                 const departmentElement = document.querySelector('.department');
                 const statusElement = document.querySelector('.status');
-                
+                const phoneElement = document.querySelector('.phone');
+                const positionElement = document.querySelector('.position');
+
                 if (titlePrefixElement) titlePrefixElement.textContent = data.titlePrefix || '';
-                if (fullNameElement) fullNameElement.textContent = data.fullName || '';
+                if (fullNameElement) fullNameElement.textContent = data.name || '';
                 if (institutionElement) institutionElement.textContent = data.institution || '';
                 if (facultyElement) facultyElement.textContent = data.faculty || '';
                 if (departmentElement) departmentElement.textContent = data.department || '';
                 if (statusElement) statusElement.textContent = data.status || '';
-                
-                // Update side panel information
+                if (phoneElement) phoneElement.textContent = data.phone || '';
+                if (positionElement) positionElement.textContent = (data.positions && data.positions.join(', ')) || '';
+
+                // Side panel
                 const sideProfileTitle = document.querySelector('.side-profile-title');
                 const sideProfileName = document.querySelector('.side-profile-name');
                 const sideProfileInstitution = document.querySelector('.side-profile-institution');
-                
                 if (sideProfileTitle) sideProfileTitle.textContent = data.titlePrefix || '';
-                if (sideProfileName) sideProfileName.textContent = data.fullName || '';
+                if (sideProfileName) sideProfileName.textContent = data.name || '';
                 if (sideProfileInstitution) sideProfileInstitution.textContent = data.institution || '';
-                
-                // Update top panel name
+
+                // Top panel name
                 const topProfileName = document.querySelector('.profile-name');
-                if (topProfileName) {
-                    topProfileName.textContent = data.fullName || '';
-                }
-                
-                // Restore photo if exists
-                if (data.photoHTML) {
+                if (topProfileName) topProfileName.textContent = data.name || '';
+
+                // Fotoğraf
+                if (data.photoUrl) {
                     const mainProfilePhoto = document.getElementById('mainProfilePhoto');
                     if (mainProfilePhoto) {
-                        mainProfilePhoto.innerHTML = data.photoHTML;
-                        
-                        // Re-attach event listeners after loading from Firebase
-                        setTimeout(() => {
-                            initPhotoUploadListeners();
-                        }, 100);
-                        
-                        // Update side panel photo
-                        const mainPhotoImg = document.querySelector('#mainProfilePhoto img');
+                        mainProfilePhoto.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">`;
+                        setTimeout(() => { initPhotoUploadListeners(); }, 100);
                         const sideProfilePhoto = document.querySelector('.side-profile-photo');
-                        if (mainPhotoImg && sideProfilePhoto) {
-                            const imgSrc = mainPhotoImg.src;
-                            sideProfilePhoto.innerHTML = `<img src="${imgSrc}" alt="Profile Photo">`;
+                        if (sideProfilePhoto) {
+                            sideProfilePhoto.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo">`;
                         }
                     }
                 }
             } else {
-                // Elementleri tekrar tanımla (undefined hatası engellenir)
+                // Hiçbir default bilgi gösterilmesin
                 const titlePrefixElement = document.querySelector('.title-prefix');
                 const fullNameElement = document.querySelector('.full-name');
                 const institutionElement = document.querySelector('.institution');
                 const facultyElement = document.querySelector('.faculty');
                 const departmentElement = document.querySelector('.department');
                 const statusElement = document.querySelector('.status');
+                const phoneElement = document.querySelector('.phone');
+                const positionElement = document.querySelector('.position');
                 const sideProfileTitle = document.querySelector('.side-profile-title');
                 const sideProfileName = document.querySelector('.side-profile-name');
                 const sideProfileInstitution = document.querySelector('.side-profile-institution');
                 const topProfileName = document.querySelector('.profile-name');
-                // Hiçbir default bilgi gösterilmesin
                 if (titlePrefixElement) titlePrefixElement.textContent = '';
                 if (fullNameElement) fullNameElement.textContent = '';
                 if (institutionElement) institutionElement.textContent = '';
                 if (facultyElement) facultyElement.textContent = '';
                 if (departmentElement) departmentElement.textContent = '';
                 if (statusElement) statusElement.textContent = '';
+                if (phoneElement) phoneElement.textContent = '';
+                if (positionElement) positionElement.textContent = '';
                 if (sideProfileTitle) sideProfileTitle.textContent = '';
                 if (sideProfileName) sideProfileName.textContent = '';
                 if (sideProfileInstitution) sideProfileInstitution.textContent = '';
                 if (topProfileName) topProfileName.textContent = '';
             }
-        })
-        .catch((error) => {
-            console.error("Profil yükleme hatası:", error);
         });
     }
 
@@ -290,6 +295,55 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Firebase users name güncelleme hatası:', error);
+        }
+    }
+
+    // Update Firebase users collection photoUrl field
+    async function updateFirebaseUserPhoto(photoUrl) {
+        try {
+            const currentUserEmail = localStorage.getItem('currentUserEmail');
+            if (!currentUserEmail) {
+                console.warn('Kullanıcı email bulunamadı, photo güncellemesi yapılamıyor');
+                return;
+            }
+
+            // Wait for Firebase to be available
+            let attempts = 0;
+            while (!window.firestoreDb && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
+            if (window.firestoreDb && window.firestoreFunctions) {
+                const { collection, query, where, getDocs, doc, updateDoc } = window.firestoreFunctions;
+                
+                // Find user by email
+                const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    const userDoc = snapshot.docs[0];
+                    const userRef = doc(window.firestoreDb, "users", userDoc.id);
+                    
+                    // Update photoUrl field
+                    await updateDoc(userRef, {
+                        photoUrl: photoUrl
+                    });
+                    
+                    console.log('✅ Firebase users collection photoUrl güncellendi:', photoUrl);
+                    
+                    // Update global user display (both name and photo)
+                    if (typeof updateUserNameDisplay === 'function') {
+                        updateUserNameDisplay();
+                    }
+                } else {
+                    console.warn('Kullanıcı email ile eşleşen kullanıcı bulunamadı:', currentUserEmail);
+                }
+            } else {
+                console.warn('Firebase bağlantısı henüz hazır değil');
+            }
+        } catch (error) {
+            console.error('Firebase users photoUrl güncelleme hatası:', error);
         }
     }
 
@@ -744,6 +798,9 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
+        // Update Firebase with new photo URL
+        updateFirebaseUserPhoto(imageSrc);
+        
         // Do NOT update original form data here - only update on save
         // This allows cancel to revert photo changes
         
@@ -777,6 +834,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <i class="fas fa-user-circle default-profile-icon"></i>
             `;
         }
+        
+        // Remove photo from Firebase (set to null)
+        updateFirebaseUserPhoto(null);
         
         // Do NOT update original form data here - only update on save
         // This allows cancel to revert photo removal

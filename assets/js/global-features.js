@@ -27,7 +27,7 @@ function initGlobalFeatures() {
     initScrollDetection();
 }
 
-// Update user name display from localStorage or database
+// Update user name and photo display from localStorage or database
 async function updateUserNameDisplay() {
     const currentUserEmail = localStorage.getItem('currentUserEmail');
     if (!currentUserEmail) return;
@@ -47,25 +47,61 @@ async function updateUserNameDisplay() {
             if (!snapshot.empty) {
                 const userData = snapshot.docs[0].data();
                 const userName = userData.name || '';
+                const userPhoto = userData.photoUrl || null;
+                
+                // Kullanıcı adını güncelle
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
                 profileNameElements.forEach(element => {
                     element.textContent = userName;
                 });
-                console.log('✅ Kullanıcı adı güncellendi:', userName);
+                
+                // Profil fotoğrafını güncelle
+                updateProfilePhoto(userPhoto);
+                
+                console.log('✅ Kullanıcı bilgileri güncellendi:', userName, userPhoto);
             } else {
                 // Kullanıcı bulunamazsa alanlar boş kalsın
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
                 profileNameElements.forEach(element => {
                     element.textContent = '';
                 });
+                updateProfilePhoto(null);
             }
         }
     } catch (error) {
-        console.log('Kullanıcı adı güncellenirken hata:', error);
+        console.log('Kullanıcı bilgileri güncellenirken hata:', error);
         const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
         profileNameElements.forEach(element => {
             element.textContent = '';
         });
+        updateProfilePhoto(null);
+    }
+}
+
+// Update profile photo in all profile sections
+function updateProfilePhoto(photoUrl) {
+    // Top panel profile avatar
+    const topProfileIcon = document.querySelector('.top-profile-icon');
+    const profileAvatar = document.querySelector('.profile-avatar');
+    
+    if (photoUrl) {
+        // Eğer fotoğraf varsa
+        if (topProfileIcon) {
+            topProfileIcon.outerHTML = `<img src="${photoUrl}" alt="Profile" class="top-profile-photo" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">`;
+        }
+        if (profileAvatar) {
+            profileAvatar.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">`;
+        }
+    } else {
+        // Eğer fotoğraf yoksa default icon'u göster
+        if (profileAvatar && !profileAvatar.querySelector('.top-profile-icon')) {
+            profileAvatar.innerHTML = '<i class="fas fa-user-circle top-profile-icon"></i>';
+        }
+        // Top panel'daki fotoğraf elementi varsa icon'a çevir
+        const topProfilePhoto = document.querySelector('.top-profile-photo');
+        if (topProfilePhoto) {
+            topProfilePhoto.outerHTML = '<i class="fas fa-user-circle top-profile-icon"></i>';
+        }
     }
 }
 
