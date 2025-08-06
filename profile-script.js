@@ -78,6 +78,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize with profile section active
     switchSection('profile');
 
+    // Load profile data from Firebase on page load
+    loadProfileFromFirebase();
+
     // Global toggle function for purple edit button
     window.toggleBlueEditButton = function() {
         const editButton = document.getElementById('editBasicInfoBtn');
@@ -98,6 +101,94 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
+
+    // Firebase functions for profile data
+    function saveProfileToFirebase(profileData) {
+        const userId = localStorage.getItem('currentUserId') || 'current-user';
+        
+        db.collection("profiles").doc(userId).set(profileData)
+        .then(() => {
+            console.log("Profil Firebase'e kaydedildi!");
+        })
+        .catch((error) => {
+            console.error("Profil kaydetme hatası:", error);
+            showErrorMessage('Profil kaydedilemedi!');
+        });
+    }
+
+    function loadProfileFromFirebase() {
+        const userId = localStorage.getItem('currentUserId') || 'current-user';
+        
+        db.collection("profiles").doc(userId).get()
+        .then((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                console.log("Profil Firebase'den yüklendi:", data);
+                
+                // Update display elements
+                const titlePrefixElement = document.querySelector('.title-prefix');
+                const fullNameElement = document.querySelector('.full-name');
+                const institutionElement = document.querySelector('.institution');
+                const facultyElement = document.querySelector('.faculty');
+                const departmentElement = document.querySelector('.department');
+                const statusElement = document.querySelector('.status');
+                
+                if (titlePrefixElement) titlePrefixElement.textContent = data.titlePrefix || 'Prof. Dr.';
+                if (fullNameElement) fullNameElement.textContent = data.fullName || 'Oğuzhan Dedeoğlu';
+                if (institutionElement) institutionElement.textContent = data.institution || 'Yıldız Teknik Üniversitesi';
+                if (facultyElement) facultyElement.textContent = data.faculty || 'Fen Fakültesi';
+                if (departmentElement) departmentElement.textContent = data.department || 'Matematik Mühendisliği Bölümü';
+                if (statusElement) statusElement.textContent = data.status || 'Aktif Öğretim Üyesi';
+                
+                // Update side panel information
+                const sideProfileTitle = document.querySelector('.side-profile-title');
+                const sideProfileName = document.querySelector('.side-profile-name');
+                const sideProfileInstitution = document.querySelector('.side-profile-institution');
+                
+                if (sideProfileTitle) sideProfileTitle.textContent = data.titlePrefix || 'Prof. Dr.';
+                if (sideProfileName) sideProfileName.textContent = data.fullName || 'Oğuzhan Dedeoğlu';
+                if (sideProfileInstitution) sideProfileInstitution.textContent = data.institution || 'Yıldız Teknik Üniversitesi';
+                
+                // Update top panel name
+                const topProfileName = document.querySelector('.profile-name');
+                if (topProfileName) {
+                    topProfileName.textContent = data.fullName || 'Oğuzhan Dedeoğlu';
+                }
+                
+                // Restore photo if exists
+                if (data.photoHTML) {
+                    const mainProfilePhoto = document.getElementById('mainProfilePhoto');
+                    if (mainProfilePhoto) {
+                        mainProfilePhoto.innerHTML = data.photoHTML;
+                        
+                        // Re-attach event listeners
+                        const photoUpload = document.getElementById('photoUpload');
+                        if (photoUpload) {
+                            photoUpload.addEventListener('change', handlePhotoUpload);
+                        }
+                        
+                        const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+                        if (photoRemoveBtn) {
+                            photoRemoveBtn.addEventListener('click', removeProfilePhoto);
+                        }
+                        
+                        // Update side panel photo
+                        const mainPhotoImg = document.querySelector('#mainProfilePhoto img');
+                        const sideProfilePhoto = document.querySelector('.side-profile-photo');
+                        if (mainPhotoImg && sideProfilePhoto) {
+                            const imgSrc = mainPhotoImg.src;
+                            sideProfilePhoto.innerHTML = `<img src="${imgSrc}" alt="Profile Photo">`;
+                        }
+                    }
+                }
+            } else {
+                console.log("Firebase'de profil bulunamadı, varsayılan değerler kullanılacak.");
+            }
+        })
+        .catch((error) => {
+            console.error("Profil yükleme hatası:", error);
+        });
+    }
 
     // Profile Editing Functions
     let originalFormData = {}; // Store original data for cancel functionality
@@ -338,6 +429,17 @@ document.addEventListener('DOMContentLoaded', function() {
         originalFormData.faculty = faculty;
         originalFormData.department = department;
         originalFormData.status = status;
+        
+        // Save to Firebase
+        saveProfileToFirebase({
+            titlePrefix,
+            fullName,
+            institution,
+            faculty,
+            department,
+            status,
+            photoHTML: mainProfilePhoto ? mainProfilePhoto.innerHTML : ''
+        });
         
         // Show success message
         showSuccessMessage('Profil başarıyla güncellendi!');
