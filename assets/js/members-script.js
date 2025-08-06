@@ -183,34 +183,40 @@ document.addEventListener('DOMContentLoaded', function() {
             allMembers = [...currentMembers];
         } catch (error) {
             console.error('Firestore\'dan üyeler yüklenirken hata:', error);
+        try {
+            // Firebase v9+ modular SDK kullanım
+            if (!window.firestoreDb || !window.firestoreFunctions) {
+                console.error('Firebase bağlantısı henüz hazır değil');
+                return;
+            }
+            const { collection, getDocs } = window.firestoreFunctions;
+            const usersSnapshot = await getDocs(collection(window.firestoreDb, 'users'));
+            currentMembers = [];
+            usersSnapshot.forEach((doc) => {
+                const userData = doc.data();
+                currentMembers.push({
+                    id: doc.id,
+                    name: userData.name || '',
+                    email: userData.email || '',
+                    phone: userData.phone || '',
+                    photoUrl: userData.photoUrl || null,
+                    joinDate: userData.createdAt || userData.joinDate || '',
+                    membershipType: userData.role || userData.membershipType || '',
+                    rank: userData.rank || '',
+                    isAdmin: userData.isAdmin || false,
+                    positions: userData.positions || [],
+                    fsacMembership: userData.fsacMembership || '',
+                    fsacMembershipType: userData.fsacMembershipType || '',
+                    institution: userData.institution || '',
+                    department: userData.department || '',
+                    status: userData.status || ''
+                });
+            });
+            allMembers = [...currentMembers];
+        } catch (error) {
+            console.error('Firestore\'dan üyeler yüklenirken hata:', error);
             throw error;
         }
-    }
-
-    function updateStatistics() {
-        const totalMembers = currentMembers.length;
-        const activeMembers = currentMembers.filter(member => member.membershipType === 'aktif').length;
-        const passiveMembers = currentMembers.filter(member => member.membershipType === 'pasif').length;
-
-        document.getElementById('totalMembers').textContent = totalMembers;
-        document.getElementById('activeMembers').textContent = activeMembers;
-        document.getElementById('activeAlumni').textContent = passiveMembers;
-    }
-
-    function renderMemberTable() {
-        const tbody = document.getElementById('memberTableBody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        // Admin mode kontrolü
-        const isAdminMode = localStorage.getItem('mode') === 'admin';
-        document.body.classList.toggle('admin-mode', isAdminMode);
-
-        // Mevcut kullanıcı email bilgisi localStorage'dan al
-        let currentUserEmail = localStorage.getItem('currentUserEmail') || '';
-        
-        // Eğer email boşsa, otomatik tespit etmeye çalış
-        if (!currentUserEmail) {
             console.log('⚠️ currentUserEmail boş, otomatik tespit ediliyor...');
             const profileData = localStorage.getItem('profileData');
             if (profileData) {
