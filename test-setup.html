@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Setup</title>
+</head>
+<body>
+    <h1>Test Setup</h1>
+    <button onclick="setupTestUser()">Setup Test User</button>
+    <button onclick="checkCurrentUser()">Check Current User</button>
+    <div id="result"></div>
+
+    <script>
+        function setupTestUser() {
+            localStorage.setItem('currentUserEmail', 'test@example.com');
+            document.getElementById('result').innerHTML = '<p style="color: green;">Test user email set to: test@example.com</p>';
+        }
+
+        function checkCurrentUser() {
+            const email = localStorage.getItem('currentUserEmail');
+            document.getElementById('result').innerHTML = `<p>Current user email: ${email || 'Not set'}</p>`;
+        }
+    </script>
+</body>
+</html>

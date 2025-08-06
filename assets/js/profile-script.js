@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateUserNameDisplay();
                     }
                 } else {
-                    console.warn('Kullanıcı email ile eşleşen kullanıcı bulunamadı');
+                    console.warn('Kullanıcı email ile eşleşen kullanıcı bulunamadı:', currentUserEmail);
                 }
             } else {
                 console.warn('Firebase bağlantısı henüz hazır değil');

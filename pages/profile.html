@@ -24,9 +24,35 @@
     <link rel="stylesheet" href="../assets/css/profile-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase App (v8 - compatible with namespaced syntax) -->
+    <!-- Firebase v9+ Modular SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, updateDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
+            authDomain: "nex-database.firebaseapp.com",
+            projectId: "nex-database",
+            storageBucket: "nex-database.appspot.com",
+            messagingSenderId: "532729129753",
+            appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        window.firebaseApp = app;
+        window.firestoreDb = db;
+        window.firestoreFunctions = {
+            collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, updateDoc
+        };
+        
+        console.log('Firebase initialized for profile page!');
+    </script>
+    
+    <!-- Firebase App (v8 - compatible with namespaced syntax) - Legacy for backward compatibility -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <!-- Firestore -->
+    <!-- Firestore - Legacy for backward compatibility -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body class="profile-page">
@@ -868,20 +894,6 @@
         </div>
     </div>
 
-    <script>
-        // Firebase config
-        const firebaseConfig = {
-          apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
-          authDomain: "nex-database.firebaseapp.com",
-          projectId: "nex-database",
-          storageBucket: "nex-database.appspot.com",
-          messagingSenderId: "532729129753",
-          appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
-        };
-        // Başlat
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-    </script>
     <script src="../assets/js/global-features.js"></script>
     <script src="../assets/js/profile-script.js"></script>
 </body>
