@@ -5,18 +5,21 @@ let originalFormData = {}; // Store original data for cancel functionality
 
 document.addEventListener('DOMContentLoaded', function() {
     // Wait for Firebase to be available
+    let firebaseWaitAttempts = 0;
     const checkFirebase = () => {
-        if (typeof firebase !== 'undefined' && firebase.firestore && typeof db !== 'undefined') {
-            console.log('Firebase initialized successfully');
-            // Load profile data after Firebase is ready
+        if (window.firestoreDb && window.firestoreFunctions) {
+            if (firebaseWaitAttempts > 0) {
+                console.log('Firebase initialized successfully');
+            }
             loadProfileFromFirebase();
         } else {
-            console.log('Waiting for Firebase...');
+            if (firebaseWaitAttempts % 10 === 0) {
+                console.log('Waiting for Firebase...');
+            }
+            firebaseWaitAttempts++;
             setTimeout(checkFirebase, 100);
         }
     };
-    
-    // Check Firebase availability
     setTimeout(checkFirebase, 100);
     
     // Elements
@@ -133,20 +136,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Firebase functions for profile data
     function saveProfileToFirebase(profileData) {
-        if (typeof db === 'undefined') {
-            console.warn('Firebase not yet initialized, skipping save');
+        // Firestore v9+ ile users koleksiyonuna kaydet
+        let currentUserEmail = localStorage.getItem('currentUserEmail');
+        if (!currentUserEmail) {
+            console.warn('Kullanıcı email yok, profil kaydedilemiyor');
             return;
         }
-        
-        const userId = localStorage.getItem('currentUserId') || 'current-user';
-        
-        db.collection("profiles").doc(userId).set(profileData)
-        .then(() => {
-            console.log("Profil Firebase'e kaydedildi!");
-        })
-        .catch((error) => {
-            console.error("Profil kaydetme hatası:", error);
-            showErrorMessage('Profil kaydedilemedi!');
+        // Firebase hazır olana kadar bekle
+        let attempts = 0;
+        function waitForFirebase(resolve) {
+            if (window.firestoreDb && window.firestoreFunctions) {
+                resolve();
+            } else if (attempts < 50) {
+                attempts++;
+                setTimeout(() => waitForFirebase(resolve), 100);
+            } else {
+                console.error('Firebase bağlantısı kurulamadı');
+            }
+        }
+        new Promise(waitForFirebase).then(async () => {
+            const { collection, query, where, getDocs, doc, updateDoc } = window.firestoreFunctions;
+            const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                const userDoc = snapshot.docs[0];
+                const userRef = doc(window.firestoreDb, "users", userDoc.id);
+                await updateDoc(userRef, profileData);
+                console.log("Profil Firebase'e kaydedildi!");
+            } else {
+                console.error("Kullanıcı bulunamadı, profil kaydedilemedi!");
+                showErrorMessage('Profil kaydedilemedi!');
+            }
         });
     }
 
@@ -176,39 +196,38 @@ document.addEventListener('DOMContentLoaded', function() {
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
                 const data = snapshot.docs[0].data();
-                // Tüm profil alanlarını doldur
+                // Sadece Firestore'dan gelen verileri DOM'a yaz
                 const titlePrefixElement = document.querySelector('.title-prefix');
+                if (titlePrefixElement) titlePrefixElement.textContent = (typeof data.titlePrefix !== 'undefined') ? data.titlePrefix : '';
                 const fullNameElement = document.querySelector('.full-name');
+                if (fullNameElement) fullNameElement.textContent = (typeof data.name !== 'undefined') ? data.name : '';
                 const institutionElement = document.querySelector('.institution');
+                if (institutionElement) institutionElement.textContent = (typeof data.institution !== 'undefined') ? data.institution : '';
                 const facultyElement = document.querySelector('.faculty');
+                if (facultyElement) facultyElement.textContent = (typeof data.faculty !== 'undefined') ? data.faculty : '';
                 const departmentElement = document.querySelector('.department');
+                if (departmentElement) departmentElement.textContent = (typeof data.department !== 'undefined') ? data.department : '';
                 const statusElement = document.querySelector('.status');
+                if (statusElement) statusElement.textContent = (typeof data.status !== 'undefined') ? data.status : '';
                 const phoneElement = document.querySelector('.phone');
+                if (phoneElement) phoneElement.textContent = (typeof data.phone !== 'undefined') ? data.phone : '';
                 const positionElement = document.querySelector('.position');
-
-                if (titlePrefixElement) titlePrefixElement.textContent = data.titlePrefix || '';
-                if (fullNameElement) fullNameElement.textContent = data.name || '';
-                if (institutionElement) institutionElement.textContent = data.institution || '';
-                if (facultyElement) facultyElement.textContent = data.faculty || '';
-                if (departmentElement) departmentElement.textContent = data.department || '';
-                if (statusElement) statusElement.textContent = data.status || '';
-                if (phoneElement) phoneElement.textContent = data.phone || '';
-                if (positionElement) positionElement.textContent = (data.positions && data.positions.join(', ')) || '';
+                if (positionElement) positionElement.textContent = (Array.isArray(data.positions)) ? data.positions.join(', ') : '';
 
                 // Side panel
                 const sideProfileTitle = document.querySelector('.side-profile-title');
+                if (sideProfileTitle) sideProfileTitle.textContent = (typeof data.titlePrefix !== 'undefined') ? data.titlePrefix : '';
                 const sideProfileName = document.querySelector('.side-profile-name');
+                if (sideProfileName) sideProfileName.textContent = (typeof data.name !== 'undefined') ? data.name : '';
                 const sideProfileInstitution = document.querySelector('.side-profile-institution');
-                if (sideProfileTitle) sideProfileTitle.textContent = data.titlePrefix || '';
-                if (sideProfileName) sideProfileName.textContent = data.name || '';
-                if (sideProfileInstitution) sideProfileInstitution.textContent = data.institution || '';
+                if (sideProfileInstitution) sideProfileInstitution.textContent = (typeof data.institution !== 'undefined') ? data.institution : '';
 
                 // Top panel name
                 const topProfileName = document.querySelector('.profile-name');
-                if (topProfileName) topProfileName.textContent = data.name || '';
+                if (topProfileName) topProfileName.textContent = (typeof data.name !== 'undefined') ? data.name : '';
 
                 // Fotoğraf
-                if (data.photoUrl) {
+                if (typeof data.photoUrl !== 'undefined' && data.photoUrl) {
                     const mainProfilePhoto = document.getElementById('mainProfilePhoto');
                     if (mainProfilePhoto) {
                         mainProfilePhoto.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">`;
@@ -220,30 +239,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } else {
-                // Hiçbir default bilgi gösterilmesin
+                // Hiçbir veri yoksa alanlar boş kalsın
                 const titlePrefixElement = document.querySelector('.title-prefix');
-                const fullNameElement = document.querySelector('.full-name');
-                const institutionElement = document.querySelector('.institution');
-                const facultyElement = document.querySelector('.faculty');
-                const departmentElement = document.querySelector('.department');
-                const statusElement = document.querySelector('.status');
-                const phoneElement = document.querySelector('.phone');
-                const positionElement = document.querySelector('.position');
-                const sideProfileTitle = document.querySelector('.side-profile-title');
-                const sideProfileName = document.querySelector('.side-profile-name');
-                const sideProfileInstitution = document.querySelector('.side-profile-institution');
-                const topProfileName = document.querySelector('.profile-name');
                 if (titlePrefixElement) titlePrefixElement.textContent = '';
+                const fullNameElement = document.querySelector('.full-name');
                 if (fullNameElement) fullNameElement.textContent = '';
+                const institutionElement = document.querySelector('.institution');
                 if (institutionElement) institutionElement.textContent = '';
+                const facultyElement = document.querySelector('.faculty');
                 if (facultyElement) facultyElement.textContent = '';
+                const departmentElement = document.querySelector('.department');
                 if (departmentElement) departmentElement.textContent = '';
+                const statusElement = document.querySelector('.status');
                 if (statusElement) statusElement.textContent = '';
+                const phoneElement = document.querySelector('.phone');
                 if (phoneElement) phoneElement.textContent = '';
+                const positionElement = document.querySelector('.position');
                 if (positionElement) positionElement.textContent = '';
+                const sideProfileTitle = document.querySelector('.side-profile-title');
                 if (sideProfileTitle) sideProfileTitle.textContent = '';
+                const sideProfileName = document.querySelector('.side-profile-name');
                 if (sideProfileName) sideProfileName.textContent = '';
+                const sideProfileInstitution = document.querySelector('.side-profile-institution');
                 if (sideProfileInstitution) sideProfileInstitution.textContent = '';
+                const topProfileName = document.querySelector('.profile-name');
                 if (topProfileName) topProfileName.textContent = '';
             }
         });
@@ -1020,32 +1039,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save Profile Data
     function saveProfileData() {
+        // Tüm profil alanlarını topla ve Firestore'a kaydet
         const profileData = {
+            name: document.getElementById('fullName')?.value || '',
+            email: document.getElementById('email')?.value || '',
+            phone: document.getElementById('phone')?.value || '',
+            department: document.getElementById('department')?.value || '',
+            titlePrefix: document.getElementById('titlePrefix')?.value || '',
+            institution: document.getElementById('institution')?.value || '',
+            faculty: document.getElementById('faculty')?.value || '',
+            status: document.getElementById('status')?.value || '',
+            positions: document.getElementById('positions')?.value ? document.getElementById('positions').value.split(',').map(p=>p.trim()) : [],
             linkedinLink: document.getElementById('linkedinLink')?.value || '',
             wosLink: document.getElementById('wosLink')?.value || '',
             scopusLink: document.getElementById('scopusLink')?.value || '',
             orcidLink: document.getElementById('orcidLink')?.value || '',
-            fullName: document.getElementById('fullName')?.value || '',
-            email: document.getElementById('email')?.value || '',
-            phone: document.getElementById('phone')?.value || '',
-            department: document.getElementById('department')?.value || '',
-            title: document.getElementById('title')?.value || '',
             lastUpdated: new Date().toISOString()
         };
-        
         localStorage.setItem('profileData', JSON.stringify(profileData));
-        
+        saveProfileToFirebase(profileData);
         // Reload contact data if contact section is active
         const contactSection = document.getElementById('contactContent');
         if (contactSection && contactSection.style.display !== 'none') {
             loadContactData();
         }
-        
         // Show save confirmation
         if (saveProfileBtn) {
             saveProfileBtn.textContent = '✅ Kaydedildi!';
             saveProfileBtn.style.background = '#28a745';
-            
             setTimeout(() => {
                 saveProfileBtn.textContent = '💾 Profili Kaydet';
                 saveProfileBtn.style.background = '';
