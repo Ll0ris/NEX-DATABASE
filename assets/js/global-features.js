@@ -32,6 +32,13 @@ async function updateUserNameDisplay() {
     const currentUserEmail = localStorage.getItem('currentUserEmail');
     if (!currentUserEmail) return;
 
+    // Firebase hazır olana kadar bekle
+    let attempts = 0;
+    while (!window.firestoreDb && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+
     try {
         if (window.firestoreDb && window.firestoreFunctions) {
             const { collection, query, where, getDocs } = window.firestoreFunctions;
