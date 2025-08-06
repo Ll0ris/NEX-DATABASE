@@ -479,13 +479,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function openProfileEditMode() {
         console.log('openProfileEditMode called'); // Debug
         
-        const viewMode = document.getElementById('infoViewMode');
-        const editMode = document.getElementById('infoEditMode');
-        const photoOverlay = document.getElementById('photoUploadOverlay');
-        
-        console.log('viewMode:', viewMode); // Debug
-        console.log('editMode:', editMode); // Debug
-        console.log('photoOverlay:', photoOverlay); // Debug
+        // DOM hazır olmasını bekle
+        setTimeout(() => {
+            const viewMode = document.getElementById('infoViewMode');
+            const editMode = document.getElementById('infoEditMode');
+            let photoControls = document.getElementById('photoControls'); // Yeni: photoControls
+            
+            // Eğer ID ile bulunamazsa class ile dene
+            if (!photoControls) {
+                photoControls = document.querySelector('.photo-controls');
+                console.log('Photo controls found by class selector:', photoControls);
+            }
+            
+            console.log('viewMode:', viewMode); // Debug
+            console.log('editMode:', editMode); // Debug
+            console.log('photoControls:', photoControls); // Debug
         
         if (viewMode && editMode) {
             // Görüntüleme modunu gizle
@@ -495,12 +503,36 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('View mode hidden, edit mode shown'); // Debug
             
-            // Fotoğraf yükleme overlay'ini göster
-            if (photoOverlay) {
-                photoOverlay.style.display = 'flex';
-                console.log('Photo overlay shown'); // Debug
+            // Fotoğraf kontrol butonlarını göster (düzenleme modunda)
+            if (photoControls) {
+                photoControls.style.display = 'flex';
+                photoControls.classList.add('show-controls'); // CSS class ekle
+                console.log('✅ Photo controls shown - display set to flex and class added'); // Debug
+                
+                // CSS class da ekleyelim güvenlik için
+                if (editMode) {
+                    editMode.classList.add('info-edit-mode');
+                    console.log('✅ info-edit-mode class added to editMode'); // Debug
+                }
+                
+                // Photo remove butonunu göster eğer fotoğraf varsa
+                const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+                const mainPhotoImg = document.querySelector('#mainProfilePhoto img');
+                if (photoRemoveBtn && mainPhotoImg) {
+                    photoRemoveBtn.style.display = 'flex';
+                    console.log('✅ Photo remove button shown (image exists)'); // Debug
+                } else if (photoRemoveBtn) {
+                    photoRemoveBtn.style.display = 'none';
+                    console.log('⚠️ Photo remove button hidden (no image)'); // Debug
+                }
             } else {
-                console.warn('Photo overlay not found'); // Debug
+                console.warn('❌ Photo controls element not found!'); // Debug
+                // Element bulunamadıysa tüm photo-controls elementlerini ara
+                const allPhotoControls = document.querySelectorAll('.photo-controls');
+                console.log('🔍 All photo-controls elements found:', allPhotoControls.length);
+                allPhotoControls.forEach((el, index) => {
+                    console.log(`Element ${index}:`, el);
+                });
             }
             
             // Mevcut verileri forma yükle
@@ -518,6 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('All elements with "view" in ID:', allViewModes);
             console.log('All elements with "edit" in ID:', allEditModes);
         }
+        }, 50); // setTimeout kapatması
     }
     
     function toggleEditMode() {
@@ -542,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function cancelEdit() {
         const viewMode = document.getElementById('infoViewMode');
         const editMode = document.getElementById('infoEditMode');
-        const photoOverlay = document.getElementById('photoUploadOverlay');
+        const photoControls = document.getElementById('photoControls'); // Yeni: photoControls
         
         // Restore original form data - with null check
         if (originalFormData && typeof originalFormData === 'object') {
@@ -589,9 +622,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (viewMode && editMode) {
             viewMode.style.display = 'block';
             editMode.style.display = 'none';
-            // Hide photo upload overlay
-            if (photoOverlay) {
-                photoOverlay.style.display = 'none';
+            editMode.classList.remove('info-edit-mode'); // Class'ı kaldır
+            
+            // Hide photo controls
+            if (photoControls) {
+                photoControls.style.display = 'none';
+                photoControls.classList.remove('show-controls'); // Class'ı kaldır
+                console.log('✅ Photo controls hidden and class removed'); // Debug
             }
             
             // Hide the blue edit button after canceling

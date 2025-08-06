@@ -113,6 +113,7 @@
                 e.preventDefault();
                 const email = document.getElementById('username').value.trim(); // input id değişmediği için
                 const password = document.getElementById('password').value.trim();
+                const rememberMe = document.getElementById('remember').checked;
 
                 // Firestore'da email ile arama
                 checkUserByEmailInFirebase(email, password)
@@ -120,7 +121,18 @@
                     if (isValid) {
                         // Generate authentication token
                         const authToken = generateAuthToken(email);
-                        const tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+                        
+                        // "Beni hatırla" seçeneğine göre token süresi belirleme
+                        let tokenExpiry;
+                        if (rememberMe) {
+                            // Beni hatırla aktifse 30 gün
+                            tokenExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 gün
+                            console.log('✅ Beni hatırla aktif - Token 30 gün geçerli');
+                        } else {
+                            // Beni hatırla kapalıysa 24 saat
+                            tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
+                            console.log('⚠️ Beni hatırla kapalı - Token 24 saat geçerli');
+                        }
                         
                         // Store authentication data
                         localStorage.setItem('currentUserId', email);
@@ -129,11 +141,36 @@
                         localStorage.setItem('tokenExpiry', tokenExpiry.toString());
                         localStorage.setItem('isAuthenticated', 'true');
                         
+                        // "Beni hatırla" seçeneği kontrolü
+                        if (rememberMe) {
+                            localStorage.setItem('rememberMe', 'true');
+                            localStorage.setItem('rememberMeExpiry', (Date.now() + (30 * 24 * 60 * 60 * 1000)).toString()); // 30 gün sonra
+                            console.log('✅ Beni hatırla seçeneği aktif - 30 gün kalıcı token');
+                        } else {
+                            localStorage.removeItem('rememberMe');
+                            localStorage.removeItem('rememberMeExpiry');
+                            console.log('⚠️ Beni hatırla seçili değil - 24 saat geçici token');
+                        }
+                        
+                        // localStorage verilerini kontrol et
+                        console.log('📊 Giriş sonrası localStorage:', {
+                            authToken: localStorage.getItem('authToken') ? 'kaydedildi' : 'YOK',
+                            tokenExpiry: localStorage.getItem('tokenExpiry'),
+                            isAuthenticated: localStorage.getItem('isAuthenticated'),
+                            currentUserId: localStorage.getItem('currentUserId')
+                        });
+                        
                         console.log('✅ Firestore giriş - Kullanıcı email ve token localStorage\'a kaydedildi:', email);
                         document.getElementById('loadingScreen').style.display = 'flex';
+                        
+                        // Daha uzun bekleme ve localStorage'ı tekrar kontrol
                         setTimeout(function() {
+                            // Son kontrol
+                            const finalCheck = localStorage.getItem('authToken');
+                            console.log('🔍 Yönlendirme öncesi son localStorage kontrolü:', finalCheck ? 'VAR' : 'YOK');
+                            
                             window.location.href = 'database.html';
-                        }, 1200);
+                        }, 1500); // 1200'den 1500'e çıkardık
                     } else {
                         errorBubble.style.display = 'flex';
                         setTimeout(function() {
@@ -191,12 +228,8 @@
             if (authToken && tokenExpiry && isAuthenticated === 'true') {
                 const currentTime = Date.now();
                 if (currentTime < parseInt(tokenExpiry)) {
-                    // Token is still valid, redirect to main page
-                    console.log('✅ Geçerli token bulundu, ana sayfaya yönlendiriliyor...');
-                    document.getElementById('loadingScreen').style.display = 'flex';
-                    setTimeout(function() {
-                        window.location.href = 'database.html';
-                    }, 500);
+                    // Token is still valid
+                    console.log('✅ Geçerli token bulundu');
                     return true;
                 } else {
                     // Token expired, clear auth data
@@ -226,11 +259,36 @@
         document.addEventListener('DOMContentLoaded', function() {
             resetToSafeMode();
             
-            // Check if user is already authenticated
-            if (!checkExistingAuth()) {
-                // User is not authenticated, show login form
-                console.log('Kullanıcı giriş yapmamış, giriş formu gösteriliyor');
+            // Check if user is already authenticated and remember me is enabled
+            if (checkExistingAuth()) {
+                const rememberMe = localStorage.getItem('rememberMe');
+                const rememberMeExpiry = localStorage.getItem('rememberMeExpiry');
+                
+                if (rememberMe === 'true') {
+                    // "Beni hatırla" aktif ama süresini kontrol et
+                    if (rememberMeExpiry && Date.now() < parseInt(rememberMeExpiry)) {
+                        // Beni hatırla süresi henüz dolmamış - direkt siteye yönlendir
+                        const remainingDays = Math.ceil((parseInt(rememberMeExpiry) - Date.now()) / (24 * 60 * 60 * 1000));
+                        console.log(`✅ Beni hatırla aktif - ${remainingDays} gün kaldı, direkt siteye yönlendiriliyor`);
+                        document.getElementById('loadingScreen').style.display = 'flex';
+                        setTimeout(function() {
+                            window.location.href = 'database.html';
+                        }, 800);
+                        return;
+                    } else {
+                        // Beni hatırla süresi dolmuş - temizle
+                        console.log('⚠️ Beni hatırla süresi dolmuş - veriler temizleniyor');
+                        clearAuthData();
+                    }
+                } else {
+                    // Beni hatırla aktif değil - token'ı temizle ve giriş formu göster
+                    console.log('⚠️ Beni hatırla aktif değil - token temizleniyor');
+                    clearAuthData();
+                }
             }
+            
+            // Eğer buraya geldiyse, kullanıcı giriş yapmamış veya beni hatırla süresi dolmuş
+            console.log('Kullanıcı giriş yapmamış veya beni hatırla süresi dolmuş, giriş formu gösteriliyor');
         });
     </script>
     <script src="../assets/js/global-features.js"></script>

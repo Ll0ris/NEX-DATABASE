@@ -60,6 +60,8 @@ body {
     width: 400px;
     max-width: 90%;
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
 }
 
 .header {
@@ -94,8 +96,8 @@ body {
 }
 
 .logo {
-    width: 180px;
-    height: 180px;
+    width: 156px;
+    height: 156px;
     margin-bottom: 15px;
     object-fit: contain;
     filter: drop-shadow(0 0 2px #caa354);
@@ -103,16 +105,17 @@ body {
 
 .header h1 {
     color: #ffffff;
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .subtitle {
     color: #F5F5DC;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin-bottom: 0;
+    opacity: 0.9;
 }
 
 .login-form {
@@ -141,13 +144,14 @@ body {
 .form-group input[type="text"],
 .form-group input[type="password"] {
     width: 100%;
-    padding: 12px 15px 12px 45px; /* Sol padding artırıldı icon için */
+    padding: 14px 15px 14px 45px;
     border: none;
-    border-radius: 0;
+    border-radius: 8px;
     background-color: #caa354;
     color: #000000;
     font-size: 16px;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
 }
 
 .form-group input[type="text"]:focus,
@@ -187,23 +191,23 @@ body {
     color: #ffffff;
     border: none;
     padding: 15px;
-    border-radius: 0;
+    border-radius: 8px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
+    width: 100%;
 }
 
 .login-btn:hover {
     background: #7a1315;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(93, 13, 14, 0.4);
+    box-shadow: 0 2px 8px rgba(93, 13, 14, 0.3);
 }
 
 .login-btn:active {
-    transform: translateY(0);
+    background: #5d0d0e;
 }
 
 /* Copyright Footer */

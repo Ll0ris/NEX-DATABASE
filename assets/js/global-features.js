@@ -2,7 +2,10 @@
 // This file should be included in all pages
 
 document.addEventListener('DOMContentLoaded', function() {
-    initGlobalFeatures();
+    // Giriş sayfasından yönlendirme sonrası localStorage'ın hazır olması için kısa bir bekleme
+    setTimeout(() => {
+        initGlobalFeatures();
+    }, 100); // 100ms bekleme localStorage için yeterli
 });
 
 function initGlobalFeatures() {
@@ -89,9 +92,53 @@ function showPageContent() {
 
 // Check authentication token
 function checkAuthentication() {
+    // Kısa bir bekleme ile localStorage'ın hazır olmasını sağla
     const authToken = localStorage.getItem('authToken');
     const tokenExpiry = localStorage.getItem('tokenExpiry');
     const isAuthenticated = localStorage.getItem('isAuthenticated');
+    const rememberMe = localStorage.getItem('rememberMe');
+    
+    // Debug log
+    console.log('🔍 Auth kontrol:', {
+        hasToken: !!authToken,
+        hasExpiry: !!tokenExpiry,
+        isAuth: isAuthenticated,
+        rememberMe: rememberMe,
+        currentTime: Date.now(),
+        expiryTime: tokenExpiry ? parseInt(tokenExpiry) : null,
+        url: window.location.href
+    });
+    
+    // Eğer localStorage tamamen boşsa, biraz daha bekle
+    if (!authToken && !tokenExpiry && !isAuthenticated) {
+        console.log('⏳ LocalStorage verileri henüz yüklenmemiş, tekrar kontrol ediliyor...');
+        
+        // 200ms sonra tekrar kontrol et
+        setTimeout(() => {
+            const retryToken = localStorage.getItem('authToken');
+            const retryExpiry = localStorage.getItem('tokenExpiry');
+            const retryAuth = localStorage.getItem('isAuthenticated');
+            
+            if (!retryToken || !retryExpiry || retryAuth !== 'true') {
+                console.warn('❌ Token bulunamadı (retry sonrası), giriş sayfasına yönlendiriliyor...');
+                redirectToLogin();
+                return false;
+            }
+            
+            const currentTime = Date.now();
+            if (currentTime >= parseInt(retryExpiry)) {
+                console.warn('❌ Token süresi dolmuş (retry sonrası), giriş sayfasına yönlendiriliyor...');
+                clearAuthData();
+                redirectToLogin();
+                return false;
+            }
+            
+            console.log('✅ Geçerli token bulundu (retry sonrası), sayfa yükleniyor...');
+            showPageContent();
+        }, 200);
+        
+        return true; // İlk kontrolde bekle
+    }
     
     if (!authToken || !tokenExpiry || isAuthenticated !== 'true') {
         console.warn('❌ Token bulunamadı, giriş sayfasına yönlendiriliyor...');
@@ -118,12 +165,15 @@ function clearAuthData() {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('currentUserId');
     localStorage.removeItem('currentUserEmail');
+    localStorage.removeItem('rememberMe');
+    localStorage.removeItem('rememberMeExpiry');
+    console.log('🗑️ Auth verileri temizlendi (clearAuthData) - rememberMe ve expiry dahil');
 }
 
 // Logout function
 function logout() {
-    // Clear all authentication data
-    clearAuthData();
+    // Clear all authentication data including rememberMe
+    clearAuthData(); // Bu zaten her şeyi temizliyor artık
     
     // Show logout message
     const loadingOverlay = document.createElement('div');
@@ -182,11 +232,14 @@ function redirectToLogin() {
     const currentPath = window.location.pathname;
     let loginPath = '';
     
+    // Ana dizinde isek index.html'e, pages klasöründeysek index.html'e git
     if (currentPath.includes('/pages/')) {
         loginPath = 'index.html';
     } else {
         loginPath = 'pages/index.html';
     }
+    
+    console.log('🔄 Giriş sayfasına yönlendiriliyor:', loginPath);
     
     // Update loading message before redirect
     const loadingOverlay = document.getElementById('authLoadingOverlay');
@@ -1461,3 +1514,5 @@ function saveAdminState(mode, text) {
     localStorage.setItem('adminMode', mode);
     localStorage.setItem('adminModeText', text);
 }
+
+// Event kaldırıldı - sayfa navigasyonunda auth verileri temizlenmesin
