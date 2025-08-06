@@ -8,9 +8,20 @@
     <!-- Theme Loader -->
     <script src="../assets/js/theme-loader.js"></script>
     
+    <!-- PDF.js for PDF page counting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // PDF.js worker yapılandırması
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    
     <link rel="stylesheet" href="../assets/css/database-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase Configuration (Auth first) -->
+    <script type="module" src="../assets/js/auth.js"></script>
     <!-- Database Firebase Configuration -->
     <script type="module" src="../assets/js/database-firebase.js"></script>
 </head>
@@ -157,19 +168,65 @@
                             <i class="fas fa-info-circle"></i>
                             Hakkında
                         </button>
-                        <button class="btn-read">
+                        <button class="btn-read" onclick="openJournalPdf()">
                             <i class="fas fa-book-open"></i>
                             Oku
                         </button>
-                        <button class="btn-edit admin-only">
+                        <button class="btn-edit admin-only" onclick="showJournalEditForm()">
                             <i class="fas fa-edit"></i>
                             Düzenle
                         </button>
                     </div>
                 </div>
 
-                <!-- Deadline Section -->
-                <div class="journal-deadline">
+                <!-- Journal Edit Section (Hidden by default) -->
+                <div class="journal-edit-section" id="journalEditSection" style="display: none;">
+                    <div class="edit-container">
+                        <h3 class="edit-title">Journal Düzenleme</h3>
+                        <form class="journal-edit-form" id="journalEditForm">
+                            <div class="form-group">
+                                <label for="journalName">Journal Adı:</label>
+                                <input type="text" id="journalName" name="journalName" placeholder="Journal adını girin..." required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="journalAuthors">Yazarlar:</label>
+                                <textarea id="journalAuthors" name="journalAuthors" placeholder="Yazarları girin (virgülle ayırın)..." rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="journalYear">Yıl:</label>
+                                <input type="number" id="journalYear" name="journalYear" min="1900" max="2030" placeholder="2024" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="journalPdf">PDF Yükle:</label>
+                                <div class="file-upload-area">
+                                    <input type="file" id="journalPdf" name="journalPdf" accept=".pdf" style="display: none;">
+                                    <div class="file-upload-button" onclick="document.getElementById('journalPdf').click();">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>PDF dosyası seçin</span>
+                                    </div>
+                                    <div class="file-info" id="fileInfo" style="display: none;">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <span id="fileName"></span>
+                                        <button type="button" class="remove-file" onclick="removeFile()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-buttons">
+                                <button type="button" class="btn btn-cancel" onclick="cancelJournalEdit()">İptal</button>
+                                <button type="submit" class="btn btn-save">Kaydet</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Deadline Section (Hidden when editing) -->
+                <div class="journal-deadline" id="journalDeadline">
                     <div class="deadline-container">
                         <h3 class="deadline-title">Deadline</h3>
                         <div class="deadline-counter" id="deadlineCounter">180d</div>
@@ -250,6 +307,39 @@
                     </button>
                     <button class="console-btn" onclick="getAllUsers()">
                         <i class="fas fa-users"></i> Tüm Kullanıcıları Göster
+                    </button>
+                </div>
+            </div>
+            
+            <div class="console-section">
+                <h3>Journal İşlemleri</h3>
+                <div class="console-buttons">
+                    <button class="console-btn" onclick="getAllJournals()">
+                        <i class="fas fa-book"></i> Tüm Journalları Göster
+                    </button>
+                    <button class="console-btn" onclick="showJournalStats()">
+                        <i class="fas fa-chart-bar"></i> Journal İstatistikleri
+                    </button>
+                    <button class="console-btn" onclick="testFirebaseConnection()">
+                        <i class="fas fa-plug"></i> Firebase Bağlantı Testi
+                    </button>
+                    <button class="console-btn" onclick="checkStorageStatus()">
+                        <i class="fas fa-cloud"></i> Storage Durumu
+                    </button>
+                    <button class="console-btn" onclick="debugPdfUrls()">
+                        <i class="fas fa-file-pdf"></i> PDF URL Debug
+                    </button>
+                    <button class="console-btn" onclick="testDirectPdfAccess()">
+                        <i class="fas fa-folder"></i> Storage Dosya Listesi
+                    </button>
+                    <button class="console-btn" onclick="manualPdfTest()">
+                        <i class="fas fa-vial"></i> Manuel PDF Test
+                    </button>
+                    <button class="console-btn" onclick="testPdfAccess()">
+                        <i class="fas fa-microscope"></i> PDF Erişim Testi
+                    </button>
+                    <button class="console-btn" onclick="fixStorageRules()">
+                        <i class="fas fa-wrench"></i> Storage Rules Düzelt
                     </button>
                 </div>
             </div>

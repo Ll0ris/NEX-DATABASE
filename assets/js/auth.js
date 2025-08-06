@@ -1,13 +1,14 @@
 // Firebase Authentication and Backend Logic
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, serverTimestamp, orderBy } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js';
 
 // Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
     authDomain: "nex-database.firebaseapp.com",
     projectId: "nex-database",
-    storageBucket: "nex-database.appspot.com",
+    storageBucket: "nex-database.firebasestorage.app",
     messagingSenderId: "532729129753",
     appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
 };
@@ -15,10 +16,12 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Make functions global for use in other scripts
 window.firebaseApp = app;
 window.firestoreDb = db;
+window.firebaseStorage = storage;
 window.firestoreFunctions = {
     collection,
     doc,
@@ -27,8 +30,27 @@ window.firestoreFunctions = {
     addDoc,
     getDocs,
     query,
-    where
+    where,
+    serverTimestamp,
+    orderBy
 };
+window.storageFunctions = {
+    ref,
+    uploadBytes,
+    getDownloadURL,
+    deleteObject,
+    listAll
+};
+
+// Firebase hazır olduğunu bildir
+console.log('🔥 Firebase initialized successfully');
+window.firebaseInitialized = true;
+
+// Firebase hazır olduğu event'ini tetikle
+setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('firebaseReady'));
+    console.log('🔥 Firebase ready event dispatched');
+}, 100);
 
 // Firebase kullanıcı kontrolü
 function checkUserByEmailInFirebase(email, password) {

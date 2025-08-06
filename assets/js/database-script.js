@@ -87,21 +87,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function animateProgressBar() {
+        // Firebase verisi yüklenmeden önce placeholder göster
         const progressFill = document.querySelector('.progress-fill');
         const progressText = document.querySelector('.progress-text');
         
+        console.log('📊 Progress bar placeholder başlatıldı - Firebase verisi bekleniyor...');
+        
         if (progressFill && progressText) {
-            // Örnek progress değeri (gerçek sistemde backend'den gelecek)
-            const currentPages = 0;
-            const totalPages = 40;
-            const progressPercentage = (currentPages / totalPages) * 100;
-            
-            // Animasyonlu progress bar
-            setTimeout(() => {
-                progressFill.style.width = `${progressPercentage}%`;
-            }, 500);
-            
-            progressText.textContent = `${currentPages}/${totalPages} sayfa hazırlandı`;
+            // Firebase yüklenene kadar loading animasyonu ekle
+            progressFill.style.transition = 'width 0.3s ease-in-out';
         }
     }
 
@@ -113,6 +107,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnRead = document.querySelector('.btn-read');
     const btnEdit = document.querySelector('.btn-edit');
 
+    console.log('🔍 Buton kontrolü:', {
+        btnAbout: !!btnAbout,
+        btnRead: !!btnRead,
+        btnEdit: !!btnEdit,
+        currentJournalPdfUrl: currentJournalPdfUrl
+    });
+
     if (btnAbout) {
         btnAbout.addEventListener('click', function() {
             // Hakkında modalı veya sayfası açılacak
@@ -121,19 +122,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Oku butonu HTML'de onclick ile hallediliyor, JavaScript event listener gerekmiyor
     if (btnRead) {
-        btnRead.addEventListener('click', function() {
-            // Dergiyi okuma sayfası açılacak
-            console.log('Oku butonuna tıklandı');
-            // window.open('journal-reader.html', '_blank');
-        });
+        console.log('✅ Oku butonu bulundu. HTML onclick kullanılıyor.');
+    } else {
+        console.warn('⚠️ Oku butonu bulunamadı! Selector: .btn-read');
     }
 
     if (btnEdit) {
         btnEdit.addEventListener('click', function() {
-            // Düzenleme sayfası açılacak
-            console.log('Düzenle butonuna tıklandı');
-            // window.location.href = 'journal-editor.html';
+            // Düzenleme formunu göster
+            showJournalEditForm();
         });
     }
 
@@ -1091,3 +1090,1133 @@ function getAllUsers() {
         addToConsoleOutput(`✗ Hata: ${error.message}`, 'error');
     });
 }
+
+// Journal düzenleme fonksiyonları
+function showJournalEditForm() {
+    const editSection = document.getElementById('journalEditSection');
+    const deadlineSection = document.getElementById('journalDeadline');
+    const journalInfo = document.querySelector('.journal-info');
+    
+    if (editSection && deadlineSection && journalInfo) {
+        // Journal info (isim, yazar, butonlar) ve deadline bölümünü gizle
+        journalInfo.style.display = 'none';
+        deadlineSection.style.display = 'none';
+        
+        // Düzenleme formunu göster ve genişlet
+        editSection.style.display = 'block';
+        editSection.classList.add('expanded');
+        
+        // Mevcut journal verilerini yükle (örnek veriler)
+        loadCurrentJournalData();
+    }
+}
+
+function loadCurrentJournalData() {
+    // Sayfadaki mevcut verilerden yükle
+    document.getElementById('journalName').value = 'NEX ANNUAL SCIENCE';
+    document.getElementById('journalAuthors').value = 'C. Ertuğrul ERDOĞAN, NEX';
+    document.getElementById('journalYear').value = '2024';
+}
+
+function cancelJournalEdit() {
+    const editSection = document.getElementById('journalEditSection');
+    const deadlineSection = document.getElementById('journalDeadline');
+    const journalInfo = document.querySelector('.journal-info');
+    
+    if (editSection && deadlineSection && journalInfo) {
+        // Düzenleme formunu gizle ve expanded sınıfını kaldır
+        editSection.style.display = 'none';
+        editSection.classList.remove('expanded');
+        
+        // Journal info (isim, yazar, butonlar) ve deadline bölümünü göster
+        journalInfo.style.display = 'flex';
+        deadlineSection.style.display = 'block';
+        
+        // Formu temizle
+        document.getElementById('journalEditForm').reset();
+        hideFileInfo();
+    }
+}
+
+function removeFile() {
+    const fileInput = document.getElementById('journalPdf');
+    const fileInfo = document.getElementById('fileInfo');
+    const uploadButton = document.querySelector('.file-upload-button');
+    
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    uploadButton.style.display = 'flex';
+}
+
+function hideFileInfo() {
+    const fileInfo = document.getElementById('fileInfo');
+    const uploadButton = document.querySelector('.file-upload-button');
+    
+    if (fileInfo && uploadButton) {
+        fileInfo.style.display = 'none';
+        uploadButton.style.display = 'flex';
+    }
+}
+
+// File input change handler
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('journalPdf');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const uploadButton = document.querySelector('.file-upload-button');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.textContent = file.name;
+                fileInfo.style.display = 'flex';
+                uploadButton.style.display = 'none';
+            }
+        });
+    }
+    
+    // Journal edit form submit handler
+    const journalEditForm = document.getElementById('journalEditForm');
+    if (journalEditForm) {
+        journalEditForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveJournalChanges();
+        });
+    }
+});
+
+function saveJournalChanges() {
+    const formData = {
+        name: document.getElementById('journalName').value,
+        authors: document.getElementById('journalAuthors').value,
+        year: parseInt(document.getElementById('journalYear').value),
+        pdf: document.getElementById('journalPdf').files[0]
+    };
+    
+    // Validasyon
+    if (!formData.name.trim() || !formData.authors.trim() || !formData.year) {
+        alert('Lütfen tüm alanları doldurun!');
+        return;
+    }
+    
+    // Loading durumu göster
+    const saveButton = document.querySelector('.btn-save');
+    const originalText = saveButton.textContent;
+    saveButton.textContent = 'Kaydediliyor...';
+    saveButton.disabled = true;
+    
+    // PDF varsa sayfa sayısını al
+    if (formData.pdf) {
+        getPdfPageCount(formData.pdf)
+            .then(pageCount => {
+                formData.pageCount = pageCount;
+                console.log(`📄 PDF sayfa sayısı: ${pageCount}`);
+                return saveJournalToFirebase(formData);
+            })
+            .then(() => {
+                alert('Journal başarıyla kaydedildi!');
+                cancelJournalEdit();
+                location.reload();
+            })
+            .catch((error) => {
+                console.error('Journal kaydetme hatası:', error);
+                alert('Journal kaydedilirken bir hata oluştu: ' + error.message);
+            })
+            .finally(() => {
+                saveButton.textContent = originalText;
+                saveButton.disabled = false;
+            });
+    } else {
+        // PDF yoksa varsayılan sayfa sayısı ile kaydet
+        formData.pageCount = 40;
+        saveJournalToFirebase(formData)
+            .then(() => {
+                alert('Journal başarıyla kaydedildi!');
+                cancelJournalEdit();
+                location.reload();
+            })
+            .catch((error) => {
+                console.error('Journal kaydetme hatası:', error);
+                alert('Journal kaydedilirken bir hata oluştu: ' + error.message);
+            })
+            .finally(() => {
+                saveButton.textContent = originalText;
+                saveButton.disabled = false;
+            });
+    }
+}
+
+// PDF sayfa sayısını alma fonksiyonu
+async function getPdfPageCount(file) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        
+        fileReader.onload = function() {
+            const typedarray = new Uint8Array(this.result);
+            
+            // PDF.js ile PDF'i yükle
+            pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                console.log(`📊 PDF yüklendi, toplam sayfa: ${pdf.numPages}`);
+                resolve(pdf.numPages);
+            }).catch(function(error) {
+                console.error('PDF sayfa sayısı alma hatası:', error);
+                // Hata durumunda varsayılan değer dön
+                resolve(40);
+            });
+        };
+        
+        fileReader.onerror = function() {
+            console.error('PDF dosyası okunamadı');
+            resolve(40); // Varsayılan değer
+        };
+        
+        fileReader.readAsArrayBuffer(file);
+    });
+}
+
+async function saveJournalToFirebase(formData) {
+    // Firebase'in hazır olmasını bekle
+    await waitForFirebase();
+    
+    // Destructure ile fonksiyonları al ve kontrol et
+    const { collection, addDoc, serverTimestamp } = window.firestoreFunctions;
+    const { ref, uploadBytes, getDownloadURL } = window.storageFunctions;
+    
+    // Fonksiyonların mevcut olduğundan emin ol
+    if (!serverTimestamp) {
+        throw new Error('serverTimestamp fonksiyonu yüklenmemiş. Firebase henüz tam olarak hazır değil.');
+    }
+    
+    if (!collection || !addDoc) {
+        throw new Error('Firestore fonksiyonları yüklenmemiş. Firebase henüz tam olarak hazır değil.');
+    }
+    
+    console.log('✅ Tüm Firebase fonksiyonları hazır');
+    
+    let pdfUrl = null;
+    let pdfFileName = null;
+    let storageError = null;
+    
+    try {
+        // PDF dosyası varsa Storage'a yüklemeyi dene
+        if (formData.pdf) {
+            console.log('📎 PDF yükleniyor...');
+            
+            try {
+                // Dosya adını benzersiz yap
+                const timestamp = Date.now();
+                const fileName = `${formData.year}_${formData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.pdf`;
+                pdfFileName = fileName;
+                
+                // Storage referansı oluştur
+                const storageRef = ref(window.firebaseStorage, `journals/${fileName}`);
+                
+                // Dosyayı yükle
+                const snapshot = await uploadBytes(storageRef, formData.pdf);
+                console.log('✅ PDF yüklendi:', snapshot);
+                
+                // Download URL'i al
+                pdfUrl = await getDownloadURL(storageRef);
+                console.log('✅ PDF URL alındı:', pdfUrl);
+                
+            } catch (uploadError) {
+                console.error('⚠️ PDF yükleme hatası:', uploadError);
+                storageError = uploadError;
+                
+                // CORS veya Storage hatalarını kontrol et
+                if (uploadError.code === 'storage/bucket-not-found' || 
+                    uploadError.message.includes('CORS') ||
+                    uploadError.message.includes('preflight')) {
+                    
+                    console.warn('⚠️ Firebase Storage henüz etkinleştirilmemiş veya CORS sorunu var');
+                    alert('⚠️ Firebase Storage etkinleştirilmemiş!\n\nJournal verisi Firestore\'a kaydedilecek ancak PDF yüklenemedi.\n\nÇözüm: Firebase Console > Storage > Get Started');
+                } else {
+                    throw uploadError; // Diğer hatalar için exception fırlat
+                }
+            }
+        }
+        
+        // Firestore'a journal verisini kaydet
+        console.log('📝 Journal verisi Firestore\'a kaydediliyor...');
+        
+        const journalData = {
+            name: formData.name.trim(),
+            authors: formData.authors.trim(),
+            year: formData.year,
+            pageCount: formData.pageCount || 40, // PDF'den alınan sayfa sayısı veya varsayılan
+            pdfUrl: pdfUrl,
+            pdfFileName: pdfFileName,
+            pdfUploadError: storageError ? storageError.message : null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            status: 'draft' // draft, published, archived gibi durumlar
+        };
+        
+        const docRef = await addDoc(collection(window.firestoreDb, 'journals'), journalData);
+        console.log('✅ Journal Firestore\'a kaydedildi, ID:', docRef.id);
+        
+        // Kullanıcıya durum bilgisi ver
+        if (storageError) {
+            console.warn('⚠️ Journal kaydedildi ancak PDF yüklenemedi');
+        } else if (pdfUrl) {
+            console.log('✅ Journal ve PDF başarıyla kaydedildi');
+        } else {
+            console.log('✅ Journal kaydedildi (PDF yüklenmedi)');
+        }
+        
+        return docRef.id;
+        
+    } catch (error) {
+        console.error('❌ Firebase kaydetme hatası:', error);
+        throw error;
+    }
+}
+
+function waitForFirebase() {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 100; // 10 saniye timeout
+        
+        function checkFirebase() {
+            // Daha detaylı kontrol
+            const hasFirestore = window.firestoreDb && window.firestoreFunctions;
+            const hasStorage = window.firebaseStorage && window.storageFunctions;
+            const hasAllFunctions = window.firestoreFunctions && 
+                window.firestoreFunctions.collection && 
+                window.firestoreFunctions.addDoc && 
+                window.firestoreFunctions.getDocs &&
+                window.firestoreFunctions.serverTimestamp; // serverTimestamp kontrolü ekle
+            
+            console.log(`Firebase kontrol ${attempts + 1}:`, {
+                hasFirestore,
+                hasStorage,
+                hasAllFunctions,
+                firestoreDb: !!window.firestoreDb,
+                firebaseStorage: !!window.firebaseStorage,
+                serverTimestamp: !!window.firestoreFunctions?.serverTimestamp
+            });
+            
+            if (hasFirestore && hasStorage && hasAllFunctions) {
+                console.log('✅ Firebase hazır!');
+                resolve();
+            } else if (attempts < maxAttempts) {
+                attempts++;
+                setTimeout(checkFirebase, 100);
+            } else {
+                console.error('❌ Firebase timeout - Mevcut durumu:', {
+                    firestoreDb: !!window.firestoreDb,
+                    firebaseStorage: !!window.firebaseStorage,
+                    firestoreFunctions: !!window.firestoreFunctions,
+                    storageFunctions: !!window.storageFunctions
+                });
+                reject(new Error('Firebase connection timeout - Firebase scripts may not be loaded properly'));
+            }
+        }
+        
+        checkFirebase();
+    });
+}
+
+// Global fonksiyonları window objesine ekle
+window.showJournalEditForm = showJournalEditForm;
+window.cancelJournalEdit = cancelJournalEdit;
+window.removeFile = removeFile;
+window.saveJournalChanges = saveJournalChanges;
+window.loadJournalsFromFirebase = loadJournalsFromFirebase;
+window.updateJournalDisplay = updateJournalDisplay;
+window.updateDefaultProgressDisplay = updateDefaultProgressDisplay;
+window.getAllJournals = getAllJournals;
+window.showJournalStats = showJournalStats;
+window.testFirebaseConnection = testFirebaseConnection;
+window.checkStorageStatus = checkStorageStatus;
+window.openJournalPdf = openJournalPdf;
+window.debugPdfUrls = debugPdfUrls;
+window.testDirectPdfAccess = testDirectPdfAccess;
+window.manualPdfTest = manualPdfTest;
+window.fixStorageRules = fixStorageRules;
+
+// Firebase bağlantı testi
+async function testFirebaseConnection() {
+    console.log('🔧 Firebase bağlantı testi başlıyor...');
+    
+    try {
+        await waitForFirebase();
+        console.log('✅ Firebase bağlantısı başarılı!');
+        
+        // Basit bir Firestore testi
+        const { collection, getDocs } = window.firestoreFunctions;
+        const testRef = collection(window.firestoreDb, 'journals');
+        const snapshot = await getDocs(testRef);
+        
+        console.log('✅ Firestore testi başarılı, doküman sayısı:', snapshot.size);
+        addToConsoleOutput(`✅ Firestore: ${snapshot.size} doküman bulundu`, 'success');
+        
+        // Storage durumu kontrolü
+        try {
+            const { ref, getDownloadURL } = window.storageFunctions;
+            
+            // Test için sadece referans oluştur (dosya yükleme testi yapma)
+            const storageRef = ref(window.firebaseStorage, 'test/connection-test.txt');
+            console.log('✅ Storage referansı oluşturuldu:', storageRef.name);
+            addToConsoleOutput(`✅ Storage referansı başarılı: ${storageRef.name}`, 'success');
+            
+            // Storage Rules kontrol et
+            addToConsoleOutput('⚠️ Storage etkinleştirilmiş görünüyor, ancak CORS hatası alıyorsanız:', 'warning');
+            addToConsoleOutput('1. Firebase Console > Storage > Rules sekmesine gidin', 'info');
+            addToConsoleOutput('2. Test mode rules ekleyin veya CORS ayarlarını kontrol edin', 'info');
+            
+        } catch (storageError) {
+            console.error('❌ Storage hatası:', storageError);
+            addToConsoleOutput(`❌ Storage hatası: ${storageError.message}`, 'error');
+            
+            if (storageError.code === 'storage/bucket-not-found') {
+                addToConsoleOutput('🔧 Firebase Storage henüz etkinleştirilmemiş!', 'warning');
+                addToConsoleOutput('Çözüm: Firebase Console > Storage > Get Started', 'info');
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Firebase bağlantı testi başarısız:', error);
+        addToConsoleOutput(`❌ Firebase testi başarısız: ${error.message}`, 'error');
+    }
+}
+
+// Sayfa yüklendiğinde journalları yükle
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Database script yüklendi');
+    
+    // Firebase ready event'ini dinle
+    window.addEventListener('firebaseReady', function() {
+        console.log('🔥 Firebase ready event alındı, journallar yükleniyor...');
+        loadJournalsFromFirebase()
+            .then(() => {
+                console.log('✅ Journallar başarıyla yüklendi');
+            })
+            .catch((error) => {
+                console.warn('⚠️ Journallar yüklenemedi:', error.message);
+            });
+    });
+    
+    // Fallback: Firebase event gelmezse 3 saniye sonra dene
+    setTimeout(() => {
+        if (!window.firebaseInitialized) {
+            console.warn('⚠️ Firebase event gelmedi, fallback deneniyor...');
+            loadJournalsFromFirebase()
+                .then(() => {
+                    console.log('✅ Journallar fallback ile yüklendi');
+                })
+                .catch((error) => {
+                    console.warn('⚠️ Fallback ile de yüklenemedi:', error.message);
+                });
+        }
+    }, 3000);
+});
+
+async function loadJournalsFromFirebase() {
+    try {
+        console.log('📚 Journal yükleme başlıyor...');
+        await waitForFirebase();
+        
+        const { collection, getDocs, query, orderBy } = window.firestoreFunctions;
+        
+        console.log('📚 Journallar Firebase\'den yükleniyor...');
+        const journalsRef = collection(window.firestoreDb, 'journals');
+        const q = query(journalsRef, orderBy('year', 'desc'));
+        const querySnapshot = await getDocs(q);
+        
+        const journals = [];
+        querySnapshot.forEach((doc) => {
+            journals.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        console.log('📚 Yüklenen journallar:', journals);
+        
+        // İlk journal'ı sayfada göster (varsa)
+        if (journals.length > 0) {
+            updateJournalDisplay(journals[0]);
+            console.log('📚 İlk journal sayfada gösterildi');
+        } else {
+            console.log('📚 Henüz journal bulunamadı');
+            // Varsayılan değerlerle progress bar'ı güncelle
+            updateDefaultProgressDisplay();
+        }
+        
+        return journals;
+        
+    } catch (error) {
+        console.error('❌ Journallar yüklenirken hata:', error);
+        throw error;
+    }
+}
+
+function updateJournalDisplay(journal) {
+    // Sayfadaki journal bilgilerini güncelle
+    const titleElement = document.querySelector('.journal-title');
+    const authorsElement = document.querySelector('.journal-authors');
+    const progressElement = document.querySelector('.progress-text');
+    const progressFill = document.querySelector('.progress-fill');
+    
+    // Sabit hedef: 40 sayfa, Firebase'den hazırlanmış sayfa sayısını al
+    const targetPages = 40; // Her zaman sabit 40 sayfa hedef
+    const completedPages = journal.pageCount || 0; // Firebase'den gelen pageCount = hazırlanmış sayfa sayısı
+    const progressPercentage = Math.round((completedPages / targetPages) * 100);
+    
+    console.log(`📊 Journal progress güncelleniyor: ${completedPages}/${targetPages} (${progressPercentage}%)`);
+    console.log(`📋 Hedef sayfa sayısı (sabit): ${targetPages}`);
+    console.log(`📋 Hazırlanmış sayfa sayısı (pageCount): ${completedPages}`);
+    
+    // Başlık ve yazar bilgilerini güncelle
+    if (titleElement) titleElement.textContent = journal.name || 'NEX ANNUAL SCIENCE';
+    if (authorsElement) authorsElement.textContent = journal.authors || 'C. Ertuğrul ERDOĞAN, NEX';
+    
+    // Progress text'i güncelle (hazırlanmış/hedef format)
+    if (progressElement) {
+        progressElement.textContent = `${completedPages}/${targetPages} sayfa hazırlandı`;
+    }
+    
+    // Progress bar'ı animasyonlu olarak güncelle
+    if (progressFill) {
+        // Başlangıçta 0% yap
+        progressFill.style.width = '0%';
+        
+        // 500ms sonra animasyonlu olarak gerçek değere geç
+        setTimeout(() => {
+            progressFill.style.width = `${progressPercentage}%`;
+            progressFill.setAttribute('data-progress', progressPercentage);
+        }, 500);
+    }
+    
+    // PDF URL'sini güncelle
+    updateCurrentJournalPdfUrl(journal);
+    
+    console.log(`✅ Journal display güncellendi: ${journal.name} - ${completedPages}/${targetPages} sayfa`);
+}
+
+// Varsayılan progress display (journal bulunamadığında)
+function updateDefaultProgressDisplay() {
+    const titleElement = document.querySelector('.journal-title');
+    const authorsElement = document.querySelector('.journal-authors');
+    const progressElement = document.querySelector('.progress-text');
+    const progressFill = document.querySelector('.progress-fill');
+    
+    console.log('📋 Varsayılan progress display ayarlanıyor...');
+    
+    // Varsayılan değerler
+    const totalPages = 40;
+    const currentProgress = 0;
+    const progressPercentage = 0;
+    
+    // Varsayılan başlık ve yazar
+    if (titleElement) titleElement.textContent = 'NEX ANNUAL SCIENCE';
+    if (authorsElement) authorsElement.textContent = 'C. Ertuğrul ERDOĞAN, NEX';
+    
+    // Progress text'i güncelle
+    if (progressElement) {
+        progressElement.textContent = `${currentProgress}/${totalPages} sayfa hazırlandı`;
+    }
+    
+    // Progress bar'ı güncelle
+    if (progressFill) {
+        progressFill.style.width = '0%';
+        progressFill.setAttribute('data-progress', '0');
+    }
+    
+    console.log(`✅ Varsayılan display ayarlandı: ${totalPages} sayfa hedefi`);
+}
+
+// Konsol için Journal fonksiyonları
+async function getAllJournals() {
+    try {
+        const journals = await loadJournalsFromFirebase();
+        
+        let output = '📚 JOURNAL LİSTESİ\n';
+        output += '─'.repeat(50) + '\n';
+        
+        if (journals.length === 0) {
+            output += 'Henüz journal kaydı bulunmuyor.\n';
+        } else {
+            journals.forEach((journal, index) => {
+                output += `${index + 1}. ${journal.name}\n`;
+                output += `   📝 Yazarlar: ${journal.authors}\n`;
+                output += `   📅 Yıl: ${journal.year}\n`;
+                output += `   📄 Sayfa: ${journal.pageCount || 'Belirlenmemiş'}\n`;
+                output += `   📊 Durum: ${journal.status || 'draft'}\n`;
+                if (journal.pdfUrl) {
+                    output += `   📎 PDF: Mevcut\n`;
+                }
+                output += `   🕒 Oluşturulma: ${journal.createdAt ? journal.createdAt.toDate().toLocaleDateString('tr-TR') : 'Bilinmiyor'}\n`;
+                output += '\n';
+            });
+        }
+        
+        addToConsoleOutput(output, 'info');
+        
+    } catch (error) {
+        addToConsoleOutput(`❌ Journallar yüklenirken hata: ${error.message}`, 'error');
+    }
+}
+
+async function showJournalStats() {
+    try {
+        const journals = await loadJournalsFromFirebase();
+        
+        let output = '📊 JOURNAL İSTATİSTİKLERİ\n';
+        output += '─'.repeat(50) + '\n';
+        
+        output += `📚 Toplam Journal Sayısı: ${journals.length}\n`;
+        
+        // Yıllara göre dağılım
+        const yearStats = {};
+        journals.forEach(journal => {
+            const year = journal.year || 'Bilinmiyor';
+            yearStats[year] = (yearStats[year] || 0) + 1;
+        });
+        
+        output += '\n📅 Yıllara Göre Dağılım:\n';
+        Object.entries(yearStats).sort().forEach(([year, count]) => {
+            output += `   ${year}: ${count} journal\n`;
+        });
+        
+        // Durum istatistikleri
+        const statusStats = {};
+        journals.forEach(journal => {
+            const status = journal.status || 'draft';
+            statusStats[status] = (statusStats[status] || 0) + 1;
+        });
+        
+        output += '\n📊 Duruma Göre Dağılım:\n';
+        Object.entries(statusStats).forEach(([status, count]) => {
+            const statusText = {
+                'draft': 'Taslak',
+                'published': 'Yayınlanmış',
+                'archived': 'Arşivlenmiş'
+            }[status] || status;
+            output += `   ${statusText}: ${count} journal\n`;
+        });
+        
+        // PDF istatistikleri
+        const pdfCount = journals.filter(j => j.pdfUrl).length;
+        output += `\n📎 PDF Yüklü Journal Sayısı: ${pdfCount}/${journals.length}\n`;
+        
+        addToConsoleOutput(output, 'info');
+        
+    } catch (error) {
+        addToConsoleOutput(`❌ İstatistikler yüklenirken hata: ${error.message}`, 'error');
+    }
+}
+
+async function checkStorageStatus() {
+    try {
+        await waitForFirebase();
+        
+        let output = '☁️ FIREBASE STORAGE DURUMU\n';
+        output += '─'.repeat(50) + '\n';
+        
+        const { ref, getDownloadURL, uploadBytes } = window.storageFunctions;
+        
+        try {
+            // Storage referansı oluşturmayı dene
+            const testRef = ref(window.firebaseStorage, 'test/status-check.txt');
+            output += `✅ Storage Bucket: ${window.firebaseStorage.app.options.storageBucket}\n`;
+            output += `✅ Test referansı oluşturuldu: ${testRef.name}\n`;
+            
+            // Küçük bir test dosyası yüklemeyi dene
+            const testBlob = new Blob(['test'], { type: 'text/plain' });
+            const uploadResult = await uploadBytes(testRef, testBlob);
+            output += `✅ Test yükleme başarılı: ${uploadResult.metadata.name}\n`;
+            
+            // Download URL almayı dene
+            const downloadUrl = await getDownloadURL(testRef);
+            output += `✅ Download URL alındı: ${downloadUrl.substring(0, 50)}...\n`;
+            
+            output += '\n✅ Firebase Storage tamamen etkin ve çalışıyor!\n';
+            output += '📝 PDF yükleme işlemleri normal çalışmalı.\n';
+            
+        } catch (storageError) {
+            output += `❌ Storage Hatası: ${storageError.code || 'Bilinmeyen'}\n`;
+            output += `❌ Hata Mesajı: ${storageError.message}\n\n`;
+            
+            if (storageError.code === 'storage/bucket-not-found') {
+                output += '🔧 ÇÖZÜM: Firebase Storage henüz etkinleştirilmemiş!\n';
+                output += '1. Firebase Console > Storage > Get Started\n';
+                output += '2. Test mode seç ve location belirle\n';
+                output += '3. Kurulum tamamlandıktan sonra tekrar dene\n\n';
+            } else if (storageError.message.includes('CORS')) {
+                output += '🔧 ÇÖZÜM: CORS sorunu tespit edildi!\n';
+                output += '1. Firebase Console > Storage > Rules\n';
+                output += '2. Test mode rules ekle\n';
+                output += '3. CORS ayarlarını kontrol et\n\n';
+            }
+            
+            output += '📋 Mevcut Durum:\n';
+            output += `   - Firestore: ✅ Aktif\n`;
+            output += `   - Storage: ❌ Etkin değil veya erişim sorunu\n`;
+            output += `   - PDF Yükleme: ❌ Çalışmıyor\n`;
+            output += `   - Journal Kaydetme: ✅ Çalışıyor (PDF olmadan)\n`;
+        }
+        
+        addToConsoleOutput(output, storageError ? 'warning' : 'success');
+        
+    } catch (error) {
+        addToConsoleOutput(`❌ Storage durumu kontrol edilemedi: ${error.message}`, 'error');
+    }
+}
+
+// PDF okuyucu fonksiyonu
+let currentJournalPdfUrl = null; // Global değişken olarak PDF URL'sini tutacağız
+
+async function openJournalPdf() {
+    console.log('🚀 openJournalPdf fonksiyonu çağrıldı!');
+    
+    try {
+        console.log('🔍 PDF açma isteği başlatıldı...');
+        console.log('📋 Mevcut PDF URL:', currentJournalPdfUrl);
+        
+        // Mevcut journal'ın PDF URL'sini kontrol et
+        if (!currentJournalPdfUrl) {
+            console.log('📚 PDF URL bulunamadı, Firebase\'den journal verileri alınıyor...');
+            
+            // Firebase'den journal verilerini al
+            const journals = await loadJournalsFromFirebase();
+            console.log('📋 Alınan journallar:', journals);
+            
+            if (journals.length > 0) {
+                const currentJournal = journals[0];
+                console.log('📄 Mevcut journal:', currentJournal);
+                
+                if (currentJournal.pdfUrl) {
+                    currentJournalPdfUrl = currentJournal.pdfUrl;
+                    console.log('✅ PDF URL bulundu:', currentJournalPdfUrl);
+                } else {
+                    console.log('⚠️ Journal var ama PDF URL yok');
+                    alert('PDF dosyası bulunamadı!\n\nBu journal için henüz PDF yüklenmemiş.\nPDF yüklemek için düzenleme panelini kullanın.');
+                    return;
+                }
+            } else {
+                console.log('⚠️ Hiç journal bulunamadı');
+                alert('Journal bulunamadı!\n\nÖnce bir journal oluşturun ve PDF yükleyin.');
+                return;
+            }
+        }
+        
+        console.log('📖 PDF açılıyor:', currentJournalPdfUrl);
+        
+        // URL formatını kontrol et
+        if (!currentJournalPdfUrl.startsWith('https://')) {
+            console.error('❌ Geçersiz PDF URL formatı:', currentJournalPdfUrl);
+            alert('PDF URL formatı geçersiz!\n\nURL: ' + currentJournalPdfUrl);
+            return;
+        }
+        
+        // CORS kontrolünü atla - direkt window.open kullan (Test 3 yöntemi)
+        console.log('� Direct window.open ile PDF açılıyor...');
+        
+        try {
+            // Test 3'te başarılı olan yöntemi kullan
+            const newWindow = window.open(currentJournalPdfUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+            
+            if (newWindow) {
+                console.log('✅ PDF başarıyla yeni sekmede açıldı');
+                
+                // Pencere odağını kontrol et
+                try {
+                    newWindow.focus();
+                } catch (focusError) {
+                    console.log('ℹ️ Pencere odağı ayarlanamadı (normal durum)');
+                }
+                
+            } else {
+                throw new Error('Pop-up engellendi veya pencere açılamadı');
+            }
+            
+        } catch (openError) {
+            console.log('⚠️ Direct window.open başarısız, alternatif yöntem deneniyor...');
+            console.error('Window.open hatası:', openError);
+            
+            // Alternatif yöntem: Download link oluştur
+            try {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = currentJournalPdfUrl;
+                downloadLink.target = '_blank';
+                downloadLink.rel = 'noopener noreferrer';
+                downloadLink.style.display = 'none';
+                
+                // Linki geçici olarak DOM'a ekle ve tıkla
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                console.log('✅ Alternatif download linki oluşturuldu');
+                
+            } catch (downloadError) {
+                console.error('❌ Alternatif yöntem de başarısız:', downloadError);
+                
+                // CORS hatası durumunda özel mesaj
+                alert(`🔒 PDF açılamadı!\n\n` +
+                      `Bu sorun genellikle Firebase Storage Rules ile ilgilidir.\n\n` +
+                      `Çözüm için:\n` +
+                      `1. Admin Panel > Console açın\n` +
+                      `2. "Storage Rules Düzelt" butonuna tıklayın\n` +
+                      `3. Talimatları takip edin\n\n` +
+                      `Veya pop-up engelleyicinizi kontrol edin.`);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ PDF açma hatası:', error);
+        alert('PDF açılırken bir hata oluştu!\n\nHata: ' + error.message + '\n\nDetaylar console\'da görülebilir.');
+    }
+}
+
+// Journal verileri güncellendiğinde PDF URL'sini güncelle
+function updateCurrentJournalPdfUrl(journal) {
+    if (journal && journal.pdfUrl) {
+        currentJournalPdfUrl = journal.pdfUrl;
+        console.log('📎 PDF URL güncellendi:', currentJournalPdfUrl);
+    }
+}
+
+// PDF URL debug fonksiyonu
+async function debugPdfUrls() {
+    try {
+        const journals = await loadJournalsFromFirebase();
+        
+        let output = '📄 PDF URL DEBUG BİLGİLERİ\n';
+        output += '─'.repeat(50) + '\n';
+        
+        if (journals.length === 0) {
+            output += 'Henüz journal kaydı bulunmuyor.\n';
+        } else {
+            for (let i = 0; i < journals.length; i++) {
+                const journal = journals[i];
+                output += `${i + 1}. ${journal.name}\n`;
+                output += `   📅 Yıl: ${journal.year}\n`;
+                
+                if (journal.pdfUrl) {
+                    output += `   ✅ PDF URL: ${journal.pdfUrl}\n`;
+                    output += `   🔗 URL Tipi: ${journal.pdfUrl.startsWith('https://') ? 'HTTPS (Doğru)' : 'Geçersiz Format'}\n`;
+                    
+                    // URL erişilebilirlik testi
+                    try {
+                        const response = await fetch(journal.pdfUrl, { method: 'HEAD' });
+                        output += `   📡 Erişim: ${response.ok ? '✅ Başarılı' : '❌ Başarısız'} (${response.status})\n`;
+                    } catch (fetchError) {
+                        output += `   📡 Erişim: ❌ Hata - ${fetchError.message}\n`;
+                    }
+                } else {
+                    output += `   ❌ PDF yüklenmemiş\n`;
+                }
+                
+                if (journal.pdfFileName) {
+                    output += `   📎 Dosya Adı: ${journal.pdfFileName}\n`;
+                }
+                
+                output += '\n';
+            }
+            
+            output += '🔧 SORUN GİDERME:\n';
+            output += '- URL https:// ile başlıyorsa: ✅ Format doğru\n';
+            output += '- Erişim başarılıysa: ✅ PDF mevcut\n';
+            output += '- 404 hatası: ❌ PDF Storage\'da yok\n';
+            output += '- CORS hatası: ❌ Storage rules sorunu\n';
+        }
+        
+        addToConsoleOutput(output, 'info');
+        
+    } catch (error) {
+        addToConsoleOutput(`❌ PDF debug hatası: ${error.message}`, 'error');
+    }
+}
+
+// Manuel PDF erişim testi
+async function testDirectPdfAccess() {
+    try {
+        // Firebase Storage'da var olan PDF'leri listelemeyi dene
+        await waitForFirebase();
+        
+        const { ref, listAll } = window.storageFunctions;
+        
+        console.log('📂 Firebase Storage\'da journals klasörü kontrol ediliyor...');
+        const journalsRef = ref(window.firebaseStorage, 'journals/');
+        
+        try {
+            const result = await listAll(journalsRef);
+            
+            let output = '📂 FIREBASE STORAGE JOURNAL KLASÖRÜ\n';
+            output += '─'.repeat(50) + '\n';
+            output += `📊 Toplam dosya sayısı: ${result.items.length}\n\n`;
+            
+            if (result.items.length > 0) {
+                for (let i = 0; i < result.items.length; i++) {
+                    const item = result.items[i];
+                    output += `${i + 1}. ${item.name}\n`;
+                    output += `   📂 Tam yol: ${item.fullPath}\n`;
+                    
+                    try {
+                        const { getDownloadURL } = window.storageFunctions;
+                        const downloadUrl = await getDownloadURL(item);
+                        output += `   🔗 Download URL: ${downloadUrl.substring(0, 80)}...\n`;
+                    } catch (urlError) {
+                        output += `   ❌ URL alma hatası: ${urlError.message}\n`;
+                    }
+                    output += '\n';
+                }
+            } else {
+                output += '📂 journals/ klasörü boş.\n';
+                output += '💡 İlk önce bir PDF yükleyin.\n';
+            }
+            
+            addToConsoleOutput(output, 'info');
+            
+        } catch (listError) {
+            addToConsoleOutput(`❌ Storage listeleme hatası: ${listError.message}`, 'error');
+        }
+        
+    } catch (error) {
+        addToConsoleOutput(`❌ PDF erişim testi hatası: ${error.message}`, 'error');
+    }
+}
+
+// Manuel PDF test (URL ile)
+async function manualPdfTest() {
+    const testUrl = prompt('Test edilecek PDF URL\'sini girin:', 'https://firebasestorage.googleapis.com/v0/b/nex-database.firebasestorage.app/o/journals%2F...');
+    
+    if (!testUrl) return;
+    
+    let output = '🧪 MANUEL PDF URL TESİ\n';
+    output += '─'.repeat(50) + '\n';
+    output += `📎 Test URL: ${testUrl}\n\n`;
+    
+    try {
+        // URL format kontrolü
+        if (!testUrl.startsWith('https://firebasestorage.googleapis.com/')) {
+            output += '❌ Geçersiz Firebase Storage URL formatı\n';
+            output += '✅ Doğru format: https://firebasestorage.googleapis.com/v0/b/bucket/o/path\n';
+        } else {
+            output += '✅ URL formatı doğru\n';
+        }
+        
+        // HTTP HEAD isteği ile dosya kontrolü
+        const response = await fetch(testUrl, { 
+            method: 'HEAD',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        output += `📡 HTTP Status: ${response.status} ${response.statusText}\n`;
+        
+        if (response.ok) {
+            output += '✅ PDF dosyasına erişim başarılı!\n';
+            output += `📊 Content-Type: ${response.headers.get('content-type')}\n`;
+            output += `📊 Content-Length: ${response.headers.get('content-length')} bytes\n`;
+            
+            // PDF'i açmayı dene
+            const openPdf = confirm('PDF dosyasını açmak istiyor musunuz?');
+            if (openPdf) {
+                window.open(testUrl, '_blank');
+            }
+        } else {
+            output += '❌ PDF dosyasına erişim başarısız!\n';
+            
+            if (response.status === 404) {
+                output += '💡 404: Dosya bulunamadı - Storage\'da mevcut değil\n';
+            } else if (response.status === 403) {
+                output += '💡 403: Erişim reddedildi - Storage rules kontrol edin\n';
+            }
+        }
+        
+    } catch (error) {
+        output += `❌ Test hatası: ${error.message}\n`;
+        
+        if (error.message.includes('CORS')) {
+            output += '💡 CORS hatası: Storage rules veya browser ayarları\n';
+        }
+    }
+    
+    addToConsoleOutput(output, 'info');
+}
+
+// Firebase Storage Rules düzeltme önerileri
+async function fixStorageRules() {
+    let output = '🔧 FIREBASE STORAGE CORS HATASI ÇÖZÜMLERİ\n';
+    output += '═'.repeat(60) + '\n\n';
+    
+    output += '❌ Aldığınız Hata: "Cross-Origin Request Blocked"\n';
+    output += 'Bu hata Firebase Storage\'ın güvenlik kuralları nedeniyle oluşuyor.\n\n';
+    
+    output += '� HIZLI ÇÖZÜM (Önerilen):\n';
+    output += '─'.repeat(30) + '\n';
+    output += '1. https://console.firebase.google.com/ adresine gidin\n';
+    output += '2. "nex-database" projenizi seçin\n';
+    output += '3. Sol menüden "Storage" seçin\n';
+    output += '4. Üst menüden "Rules" sekmesine tıklayın\n';
+    output += '5. Aşağıdaki kuralları kopyalayıp yapıştırın:\n\n';
+    
+    output += '📋 KOPYALAYIN VE YAPIŞTIRIN:\n';
+    output += '─'.repeat(30) + '\n';
+    const quickRules = `rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}`;
+    output += quickRules + '\n\n';
+    
+    output += '6. "Publish" butonuna tıklayın\n';
+    output += '7. 2-3 dakika bekleyin\n';
+    output += '8. Bu sayfayı yenileyin ve PDF\'i tekrar test edin\n\n';
+    
+    output += '⏰ ZAMAN SINIRLI ÇÖZÜM (Geliştirme için):\n';
+    output += '─'.repeat(40) + '\n';
+    const tempRules = `rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if request.time < timestamp.date(2025, 12, 31);
+    }
+  }
+}`;
+    output += tempRules + '\n\n';
+    
+    output += '🔧 MANUEL TEST:\n';
+    output += '─'.repeat(15) + '\n';
+    output += 'Bu konsolda "Test PDF Erişimi" butonuna tıklayarak\n';
+    output += 'kuralların çalışıp çalışmadığını kontrol edebilirsiniz.\n\n';
+    
+    output += '⚠️ ÖNEMLİ NOTLAR:\n';
+    output += '─'.repeat(18) + '\n';
+    output += '• Yukarıdaki kurallar GELİŞTİRME amaçlıdır\n';
+    output += '• Prodüksiyonda güvenlik kurallarını düzenleyin\n';
+    output += '• Rules değişikliği 5-10 dakika sürebilir\n';
+    output += '• Hala hata alıyorsanız sayfa önbelleğini temizleyin (Ctrl+F5)\n\n';
+    
+    output += '🆘 YARDIM:\n';
+    output += '─'.repeat(10) + '\n';
+    output += 'Hala sorun yaşıyorsanız:\n';
+    output += '1. Firebase Console > Storage > Usage sekmesini kontrol edin\n';
+    output += '2. Browser Developer Tools > Network sekmesini kontrol edin\n';
+    output += '3. Storage bucket\'ın doğru olduğunu kontrol edin\n\n';
+    
+    addToConsoleOutput(output, 'warning');
+    
+    // Rules metnini panoya kopyalamaya çalış
+    try {
+        await navigator.clipboard.writeText(quickRules);
+        addToConsoleOutput('✅ Storage Rules metni panoya kopyalandı!', 'success');
+        addToConsoleOutput('Firebase Console > Storage > Rules sekmesine yapıştırabilirsiniz.', 'info');
+    } catch (error) {
+        addToConsoleOutput('ℹ️ Rules metnini yukarıdan manuel olarak kopyalayın', 'info');
+    }
+}
+
+// Gelişmiş PDF erişim testi
+async function testPdfAccess() {
+    addToConsoleOutput('🔍 PDF Erişim Testi Başlatılıyor...', 'info');
+    addToConsoleOutput('─'.repeat(40), 'info');
+    
+    try {
+        // Mevcut PDF URL'yi al
+        let pdfUrl = currentJournalPdfUrl;
+        
+        if (!pdfUrl) {
+            addToConsoleOutput('📚 PDF URL bulunamadı, Firebase\'den yükleniyor...', 'warning');
+            const journals = await loadJournalsFromFirebase();
+            
+            if (journals.length > 0 && journals[0].pdfUrl) {
+                pdfUrl = journals[0].pdfUrl;
+                currentJournalPdfUrl = pdfUrl;
+                addToConsoleOutput(`✅ PDF URL bulundu: ${pdfUrl.substring(0, 100)}...`, 'success');
+            } else {
+                addToConsoleOutput('❌ Hiç PDF bulunamadı!', 'error');
+                addToConsoleOutput('Önce bir journal oluşturup PDF yükleyin.', 'info');
+                return;
+            }
+        }
+        
+        addToConsoleOutput(`📋 Test edilen URL: ${pdfUrl.substring(0, 80)}...`, 'info');
+        
+        // Test 1: HEAD Request
+        addToConsoleOutput('🔬 Test 1: HEAD Request (CORS olmadan)', 'info');
+        try {
+            const headResponse = await fetch(pdfUrl, { 
+                method: 'HEAD',
+                mode: 'no-cors'
+            });
+            addToConsoleOutput(`✅ HEAD Request başarılı`, 'success');
+        } catch (headError) {
+            addToConsoleOutput(`❌ HEAD Request başarısız: ${headError.message}`, 'error');
+        }
+        
+        // Test 2: CORS Request
+        addToConsoleOutput('🔬 Test 2: CORS Request', 'info');
+        try {
+            const corsResponse = await fetch(pdfUrl, { 
+                method: 'HEAD',
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            addToConsoleOutput(`✅ CORS Request başarılı: ${corsResponse.status}`, 'success');
+        } catch (corsError) {
+            addToConsoleOutput(`❌ CORS Request başarısız: ${corsError.message}`, 'error');
+            
+            if (corsError.message.includes('NetworkError') || 
+                corsError.message.includes('CORS') ||
+                corsError.message.includes('Origin')) {
+                addToConsoleOutput('🚨 CORS HATASI TESPİT EDİLDİ!', 'error');
+                addToConsoleOutput('Bu hatanın çözümü için "Storage Rules Düzelt" butonuna tıklayın.', 'warning');
+            }
+        }
+        
+        // Test 3: Direct Access Test
+        addToConsoleOutput('🔬 Test 3: Direct Window Open Test', 'info');
+        try {
+            const directResult = confirm('PDF\'i yeni sekmede açmayı test etmek istiyor musunuz?\n\n(Eğer PDF açılırsa testi kapayabilirsiniz)');
+            if (directResult) {
+                const testWindow = window.open(pdfUrl, '_blank', 'width=800,height=600');
+                if (testWindow) {
+                    addToConsoleOutput('✅ Yeni sekme açıldı - PDF\'in yüklenip yüklenmediğini kontrol edin', 'success');
+                    setTimeout(() => {
+                        try {
+                            testWindow.close();
+                        } catch (e) {
+                            // Sekme kapatılamayabilir
+                        }
+                    }, 5000);
+                } else {
+                    addToConsoleOutput('❌ Pop-up engellendi', 'error');
+                }
+            }
+        } catch (directError) {
+            addToConsoleOutput(`❌ Direct access başarısız: ${directError.message}`, 'error');
+        }
+        
+        // Test 4: URL Format Check
+        addToConsoleOutput('🔬 Test 4: URL Format Kontrolü', 'info');
+        const urlChecks = [
+            { check: 'HTTPS', result: pdfUrl.startsWith('https://') },
+            { check: 'Firebase Storage', result: pdfUrl.includes('firebasestorage.googleapis.com') },
+            { check: 'Token', result: pdfUrl.includes('token=') },
+            { check: 'Alt media', result: pdfUrl.includes('alt=media') }
+        ];
+        
+        urlChecks.forEach(({ check, result }) => {
+            addToConsoleOutput(`${result ? '✅' : '❌'} ${check}: ${result ? 'OK' : 'FAIL'}`, result ? 'success' : 'error');
+        });
+        
+        addToConsoleOutput('', 'info');
+        addToConsoleOutput('🔧 TEST SONUCU:', 'warning');
+        addToConsoleOutput('Eğer CORS hatası alıyorsanız Firebase Storage Rules\'ı düzeltmeniz gerekiyor.', 'info');
+        addToConsoleOutput('Çözüm için "Storage Rules Düzelt" butonuna tıklayın.', 'info');
+        
+    } catch (error) {
+        addToConsoleOutput(`❌ Test sırasında hata: ${error.message}`, 'error');
+    }
+}
+
+// Window global fonksiyonları güncelle
+window.testPdfAccess = testPdfAccess;
