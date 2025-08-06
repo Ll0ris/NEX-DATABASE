@@ -11,7 +11,7 @@
     <script type="module">
         // Import Firebase functions
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
         
         // Firebase configuration
         const firebaseConfig = {
@@ -36,7 +36,9 @@
             getDoc,
             setDoc,
             addDoc,
-            getDocs
+            getDocs,
+            query,
+            where
         };
         
         console.log('Firebase initialized successfully!');
