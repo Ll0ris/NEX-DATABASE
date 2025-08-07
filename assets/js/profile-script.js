@@ -577,8 +577,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Özlük bilgileri düzenleme modunu açan fonksiyon
     function openProfileEditMode() {
-        console.log('openProfileEditMode called'); // Debug
-        
         // DOM hazır olmasını bekle
         setTimeout(() => {
             const viewMode = document.getElementById('infoViewMode');
@@ -591,75 +589,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Photo controls found by class selector:', photoControls);
             }
             
-            console.log('viewMode:', viewMode); // Debug
-            console.log('editMode:', editMode); // Debug
-            console.log('photoControls:', photoControls); // Debug
-        
         if (viewMode && editMode) {
             // Görüntüleme modunu gizle
             viewMode.style.display = 'none';
             // Düzenleme modunu göster
             editMode.style.display = 'block';
             
-            console.log('View mode hidden, edit mode shown'); // Debug
-            
             // Fotoğraf kontrol butonlarını göster (düzenleme modunda)
             if (photoControls) {
-                console.log('🔧 PhotoControls element found, showing buttons...'); // Debug
                 photoControls.style.display = 'flex';
                 photoControls.classList.add('show-controls'); // CSS class ekle
-                console.log('✅ Photo controls shown - display set to flex and class added'); // Debug
                 
                 // CSS class da ekleyelim güvenlik için
                 if (editMode) {
                     editMode.classList.add('info-edit-mode');
-                    console.log('✅ info-edit-mode class added to editMode'); // Debug
                 }
                 
                 // Photo upload butonu her zaman gösterilsin
                 const photoUploadBtn = photoControls.querySelector('.photo-upload-btn');
                 if (photoUploadBtn) {
                     photoUploadBtn.style.display = 'flex';
-                    console.log('✅ Photo upload button shown'); // Debug
                 } else {
-                    console.warn('❌ Photo upload button not found in photoControls'); // Debug
+                    console.warn('❌ Photo upload button not found in photoControls');
                 }
                 
                 // Photo remove butonunu sadece fotoğraf varsa göster
                 const photoRemoveBtn = document.getElementById('photoRemoveBtn');
                 const mainPhotoImg = document.querySelector('#mainProfilePhoto img');
-                console.log('🖼️ Photo status check:', {
-                    hasRemoveBtn: !!photoRemoveBtn,
-                    hasMainImage: !!mainPhotoImg,
-                    imageDetails: mainPhotoImg ? {
-                        src: mainPhotoImg.src,
-                        alt: mainPhotoImg.alt
-                    } : null
-                }); // Debug
                 
                 if (photoRemoveBtn) {
                     if (mainPhotoImg) {
                         photoRemoveBtn.style.display = 'flex';
-                        console.log('✅ Photo remove button shown (image exists)'); // Debug
                     } else {
                         photoRemoveBtn.style.display = 'none';
-                        console.log('⚠️ Photo remove button hidden (no image)'); // Debug
                     }
                 } else {
-                    console.warn('❌ Photo remove button not found'); // Debug
+                    console.warn('❌ Photo remove button not found');
                 }
                 
                 // Final verification
-                console.log('🔍 Final photoControls state:', {
-                    display: photoControls.style.display,
-                    classList: Array.from(photoControls.classList),
-                    innerHTML: photoControls.innerHTML
-                }); // Debug
             } else {
-                console.warn('❌ Photo controls element not found!'); // Debug
+                console.warn('❌ Photo controls element not found!');
                 // Element bulunamadıysa tüm photo-controls elementlerini ara
                 const allPhotoControls = document.querySelectorAll('.photo-controls');
-                console.log('🔍 All photo-controls elements found:', allPhotoControls.length);
                 allPhotoControls.forEach((el, index) => {
                     console.log(`Element ${index}:`, el);
                 });
@@ -668,9 +640,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Mevcut verileri forma yükle
             loadCurrentDataToForm();
             
-            console.log('Edit mode opened successfully!'); // Debug
         } else {
-            console.error('Could not find view/edit mode elements!'); // Debug
+            console.error('Could not find view/edit mode elements!');
             console.error('viewMode element:', viewMode);
             console.error('editMode element:', editMode);
             
@@ -681,25 +652,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('All elements with "edit" in ID:', allEditModes);
         }
         }, 50); // setTimeout kapatması
-    }
-    
-    function toggleEditMode() {
-        const viewMode = document.getElementById('infoViewMode');
-        const editMode = document.getElementById('infoEditMode');
-        const photoOverlay = document.getElementById('photoUploadOverlay');
-        
-        if (viewMode && editMode) {
-            viewMode.style.display = 'none';
-            editMode.style.display = 'block';
-            
-            // Show photo upload overlay
-            if (photoOverlay) {
-                photoOverlay.style.display = 'flex';
-            }
-            
-            // Load current data into form
-            loadCurrentDataToForm();
-        }
     }
     
     function cancelEdit() {
@@ -936,19 +888,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function showPhotoUpload() {
-        const editMode = document.getElementById('infoEditMode');
-        const photoOverlay = document.getElementById('photoUploadOverlay');
-        
-        // Only show if in edit mode
-        if (editMode && editMode.style.display === 'block' && photoOverlay) {
-            photoOverlay.style.display = 'flex';
-        }
-    }
-    
-    function hidePhotoUpload() {
-        // Don't hide if we're in edit mode - handled by edit mode toggle
-    }
+
     
     function handlePhotoUpload(e) {
         const file = e.target.files[0];
@@ -1176,7 +1116,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (profileSection) {
         profileSection.addEventListener('click', function(e) {
             e.stopPropagation();
-            console.log('Profile section clicked'); // Debug için
             toggleProfileDropdown();
         });
     }
@@ -1238,31 +1177,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (profilePhoto) profilePhoto.src = savedPhoto;
             const sideProfilePhoto = document.getElementById('sideProfilePhoto');
             if (sideProfilePhoto) sideProfilePhoto.src = savedPhoto;
-        }
-    }
-
-    // Load Profile Data
-    function loadProfileData() {
-        const savedProfileData = localStorage.getItem('profileData');
-        if (savedProfileData) {
-            const data = JSON.parse(savedProfileData);
-            
-            // Load data into form fields
-            document.getElementById('linkedinLink')?.setAttribute('value', data.linkedinLink || '');
-            document.getElementById('wosLink')?.setAttribute('value', data.wosLink || '');
-            document.getElementById('scopusLink')?.setAttribute('value', data.scopusLink || '');
-            document.getElementById('orcidLink')?.setAttribute('value', data.orcidLink || '');
-            document.getElementById('fullName')?.setAttribute('value', data.fullName || '');
-            document.getElementById('email')?.setAttribute('value', data.email || '');
-            document.getElementById('phone')?.setAttribute('value', data.phone || '');
-            document.getElementById('department')?.setAttribute('value', data.department || '');
-            document.getElementById('title')?.setAttribute('value', data.title || '');
-            
-            // Update contact section if it's currently active
-            const contactSection = document.getElementById('contactContent');
-            if (contactSection && contactSection.style.display !== 'none') {
-                loadContactData();
-            }
         }
     }
 
