@@ -43,13 +43,11 @@ window.storageFunctions = {
 };
 
 // Firebase hazır olduğunu bildir
-console.log('🔥 Firebase initialized successfully');
 window.firebaseInitialized = true;
 
 // Firebase hazır olduğu event'ini tetikle
 setTimeout(() => {
     window.dispatchEvent(new CustomEvent('firebaseReady'));
-    console.log('🔥 Firebase ready event dispatched');
 }, 100);
 
 // Firebase kullanıcı kontrolü

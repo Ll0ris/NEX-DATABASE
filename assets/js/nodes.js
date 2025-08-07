@@ -197,7 +197,5 @@ class NodeSystem {
 
 // Sayfa yüklendiğinde başlat
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('NEX Node System starting...');
     const nodeSystem = new NodeSystem();
-    console.log('Node system initialized with', nodeSystem.nodes.length, 'nodes');
 });

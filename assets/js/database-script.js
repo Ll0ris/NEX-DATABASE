@@ -91,8 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const progressFill = document.querySelector('.progress-fill');
         const progressText = document.querySelector('.progress-text');
         
-        console.log('📊 Progress bar placeholder başlatıldı - Firebase verisi bekleniyor...');
-        
         if (progressFill && progressText) {
             // Firebase yüklenene kadar loading animasyonu ekle
             progressFill.style.transition = 'width 0.3s ease-in-out';
@@ -107,25 +105,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnRead = document.querySelector('.btn-read');
     const btnEdit = document.querySelector('.btn-edit');
 
-    console.log('🔍 Buton kontrolü:', {
-        btnAbout: !!btnAbout,
-        btnRead: !!btnRead,
-        btnEdit: !!btnEdit,
-        currentJournalPdfUrl: currentJournalPdfUrl
-    });
-
     if (btnAbout) {
         btnAbout.addEventListener('click', function() {
             // Hakkında modalı veya sayfası açılacak
-            console.log('Hakkında butonuna tıklandı');
             // showAboutModal(); // Bu fonksiyon sonra eklenecek
         });
     }
 
     // Oku butonu HTML'de onclick ile hallediliyor, JavaScript event listener gerekmiyor
-    if (btnRead) {
-        console.log('✅ Oku butonu bulundu. HTML onclick kullanılıyor.');
-    } else {
+    if (!btnRead) {
         console.warn('⚠️ Oku butonu bulunamadı! Selector: .btn-read');
     }
 
@@ -506,7 +494,6 @@ function enableAdminMode() {
 function enableSafeMode() {
     // Güvenli mod özelliklerini aktifleştir
     document.body.classList.remove('admin-mode');
-    console.log('Safe mode enabled');
     
     // Update dropdown icon
     const modeIcon = document.getElementById('modeIcon');
@@ -827,7 +814,6 @@ function initializeFirebase() {
     try {
         if (window.firestoreDb && window.firestoreFunctions && !firebaseInitialized) {
             firebaseInitialized = true;
-            console.log('Firebase başarıyla başlatıldı');
             return true;
         }
         return firebaseInitialized;
@@ -842,7 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Firebase'i başlat
     setTimeout(() => {
         if (initializeFirebase()) {
-            console.log('✓ Firebase ready!');
+            // Firebase ready
         } else {
             setTimeout(initializeFirebase, 1000); // 1 saniye daha bekle
         }
@@ -1388,17 +1374,7 @@ function waitForFirebase() {
                 window.firestoreFunctions.getDocs &&
                 window.firestoreFunctions.serverTimestamp; // serverTimestamp kontrolü ekle
             
-            console.log(`Firebase kontrol ${attempts + 1}:`, {
-                hasFirestore,
-                hasStorage,
-                hasAllFunctions,
-                firestoreDb: !!window.firestoreDb,
-                firebaseStorage: !!window.firebaseStorage,
-                serverTimestamp: !!window.firestoreFunctions?.serverTimestamp
-            });
-            
             if (hasFirestore && hasStorage && hasAllFunctions) {
-                console.log('✅ Firebase hazır!');
                 resolve();
             } else if (attempts < maxAttempts) {
                 attempts++;
@@ -1484,14 +1460,10 @@ async function testFirebaseConnection() {
 
 // Sayfa yüklendiğinde journalları yükle
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Database script yüklendi');
-    
     // Firebase ready event'ini dinle
     window.addEventListener('firebaseReady', function() {
-        console.log('🔥 Firebase ready event alındı, journallar yükleniyor...');
         loadJournalsFromFirebase()
             .then(() => {
-                console.log('✅ Journallar başarıyla yüklendi');
             })
             .catch((error) => {
                 console.warn('⚠️ Journallar yüklenemedi:', error.message);
@@ -1501,10 +1473,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fallback: Firebase event gelmezse 3 saniye sonra dene
     setTimeout(() => {
         if (!window.firebaseInitialized) {
-            console.warn('⚠️ Firebase event gelmedi, fallback deneniyor...');
             loadJournalsFromFirebase()
                 .then(() => {
-                    console.log('✅ Journallar fallback ile yüklendi');
                 })
                 .catch((error) => {
                     console.warn('⚠️ Fallback ile de yüklenemedi:', error.message);
@@ -1515,12 +1485,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadJournalsFromFirebase() {
     try {
-        console.log('📚 Journal yükleme başlıyor...');
         await waitForFirebase();
         
         const { collection, getDocs, query, orderBy } = window.firestoreFunctions;
         
-        console.log('📚 Journallar Firebase\'den yükleniyor...');
         const journalsRef = collection(window.firestoreDb, 'journals');
         const q = query(journalsRef, orderBy('year', 'desc'));
         const querySnapshot = await getDocs(q);
@@ -1533,14 +1501,10 @@ async function loadJournalsFromFirebase() {
             });
         });
         
-        console.log('📚 Yüklenen journallar:', journals);
-        
         // İlk journal'ı sayfada göster (varsa)
         if (journals.length > 0) {
             updateJournalDisplay(journals[0]);
-            console.log('📚 İlk journal sayfada gösterildi');
         } else {
-            console.log('📚 Henüz journal bulunamadı');
             // Varsayılan değerlerle progress bar'ı güncelle
             updateDefaultProgressDisplay();
         }
@@ -1565,10 +1529,6 @@ function updateJournalDisplay(journal) {
     const completedPages = journal.pageCount || 0; // Firebase'den gelen pageCount = hazırlanmış sayfa sayısı
     const progressPercentage = Math.round((completedPages / targetPages) * 100);
     
-    console.log(`📊 Journal progress güncelleniyor: ${completedPages}/${targetPages} (${progressPercentage}%)`);
-    console.log(`📋 Hedef sayfa sayısı (sabit): ${targetPages}`);
-    console.log(`📋 Hazırlanmış sayfa sayısı (pageCount): ${completedPages}`);
-    
     // Başlık ve yazar bilgilerini güncelle
     if (titleElement) titleElement.textContent = journal.name || 'NEX ANNUAL SCIENCE';
     if (authorsElement) authorsElement.textContent = journal.authors || 'C. Ertuğrul ERDOĞAN, NEX';
@@ -1592,8 +1552,6 @@ function updateJournalDisplay(journal) {
     
     // PDF URL'sini güncelle
     updateCurrentJournalPdfUrl(journal);
-    
-    console.log(`✅ Journal display güncellendi: ${journal.name} - ${completedPages}/${targetPages} sayfa`);
 }
 
 // Varsayılan progress display (journal bulunamadığında)
@@ -1602,8 +1560,6 @@ function updateDefaultProgressDisplay() {
     const authorsElement = document.querySelector('.journal-authors');
     const progressElement = document.querySelector('.progress-text');
     const progressFill = document.querySelector('.progress-fill');
-    
-    console.log('📋 Varsayılan progress display ayarlanıyor...');
     
     // Varsayılan değerler
     const totalPages = 40;
@@ -1770,40 +1726,27 @@ async function checkStorageStatus() {
 let currentJournalPdfUrl = null; // Global değişken olarak PDF URL'sini tutacağız
 
 async function openJournalPdf() {
-    console.log('🚀 openJournalPdf fonksiyonu çağrıldı!');
-    
     try {
-        console.log('🔍 PDF açma isteği başlatıldı...');
-        console.log('📋 Mevcut PDF URL:', currentJournalPdfUrl);
-        
         // Mevcut journal'ın PDF URL'sini kontrol et
         if (!currentJournalPdfUrl) {
-            console.log('📚 PDF URL bulunamadı, Firebase\'den journal verileri alınıyor...');
-            
             // Firebase'den journal verilerini al
             const journals = await loadJournalsFromFirebase();
-            console.log('📋 Alınan journallar:', journals);
             
             if (journals.length > 0) {
                 const currentJournal = journals[0];
-                console.log('📄 Mevcut journal:', currentJournal);
                 
                 if (currentJournal.pdfUrl) {
                     currentJournalPdfUrl = currentJournal.pdfUrl;
-                    console.log('✅ PDF URL bulundu:', currentJournalPdfUrl);
                 } else {
-                    console.log('⚠️ Journal var ama PDF URL yok');
                     alert('PDF dosyası bulunamadı!\n\nBu journal için henüz PDF yüklenmemiş.\nPDF yüklemek için düzenleme panelini kullanın.');
                     return;
                 }
             } else {
-                console.log('⚠️ Hiç journal bulunamadı');
                 alert('Journal bulunamadı!\n\nÖnce bir journal oluşturun ve PDF yükleyin.');
                 return;
             }
         }
         
-        console.log('📖 PDF açılıyor:', currentJournalPdfUrl);
         
         // URL formatını kontrol et
         if (!currentJournalPdfUrl.startsWith('https://')) {
@@ -1812,21 +1755,16 @@ async function openJournalPdf() {
             return;
         }
         
-        // CORS kontrolünü atla - direkt window.open kullan (Test 3 yöntemi)
-        console.log('� Direct window.open ile PDF açılıyor...');
-        
         try {
             // Test 3'te başarılı olan yöntemi kullan
             const newWindow = window.open(currentJournalPdfUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
             
             if (newWindow) {
-                console.log('✅ PDF başarıyla yeni sekmede açıldı');
-                
                 // Pencere odağını kontrol et
                 try {
                     newWindow.focus();
                 } catch (focusError) {
-                    console.log('ℹ️ Pencere odağı ayarlanamadı (normal durum)');
+                    // Pencere odağı ayarlanamadı (normal durum)
                 }
                 
             } else {
@@ -1834,7 +1772,6 @@ async function openJournalPdf() {
             }
             
         } catch (openError) {
-            console.log('⚠️ Direct window.open başarısız, alternatif yöntem deneniyor...');
             console.error('Window.open hatası:', openError);
             
             // Alternatif yöntem: Download link oluştur
@@ -1876,7 +1813,6 @@ async function openJournalPdf() {
 function updateCurrentJournalPdfUrl(journal) {
     if (journal && journal.pdfUrl) {
         currentJournalPdfUrl = journal.pdfUrl;
-        console.log('📎 PDF URL güncellendi:', currentJournalPdfUrl);
     }
 }
 

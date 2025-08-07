@@ -1,13 +1,5 @@
 // Profile Page Script
 
-console.log('Profile script loaded');
-
-// Test function for research edit mode
-window.testResearchEdit = function() {
-    console.log('Manual test called');
-    toggleResearchEditMode();
-};
-
 // Global variables - declare at top to prevent hoisting issues
 let originalFormData = {}; // Store original data for cancel functionality
 
@@ -22,14 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let firebaseWaitAttempts = 0;
     const checkFirebase = () => {
         if (window.firestoreDb && window.firestoreFunctions) {
-            if (firebaseWaitAttempts > 0) {
-                console.log('Firebase initialized successfully');
-            }
             loadProfileFromFirebase();
         } else {
-            if (firebaseWaitAttempts % 10 === 0) {
-                console.log('Waiting for Firebase...');
-            }
             firebaseWaitAttempts++;
             setTimeout(checkFirebase, 100);
         }
@@ -50,8 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Section Navigation
     function switchSection(sectionName) {
-        console.log('Switching to section:', sectionName); // Debug
-        
         // Hide all sections
         const allSections = document.querySelectorAll('.content-section');
         allSections.forEach(section => {
@@ -65,11 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
             targetSection.style.display = 'block';
             targetSection.classList.add('active');
             
-            console.log('Target section found and shown:', sectionName + 'Content'); // Debug
-            
             // Initialize profile editing if switching to profile section
             if (sectionName === 'profile') {
-                console.log('Initializing profile editing...'); // Debug
                 // Use longer timeout to ensure DOM is ready
                 setTimeout(() => {
                     initProfileEditing();
@@ -89,7 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Initialize research system if switching to research section
             if (sectionName === 'research') {
-                console.log('Switching to research section - initializing...'); // Debug
                 setTimeout(initResearchSystem, 100);
                 // setTimeout(initResearchEditing, 100); // Removed - conflicts with initResearchSystem
             }
@@ -99,8 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(initContactSystem, 100);
                 setTimeout(initContactEditing, 100);
             }
-        } else {
-            console.error('Target section not found:', sectionName + 'Content'); // Debug
         }
 
         // Update navigation active state
@@ -112,9 +90,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const activeNavItem = document.querySelector(`[data-section="${sectionName}"]`);
         if (activeNavItem) {
             activeNavItem.classList.add('active');
-            console.log('Navigation item activated:', sectionName); // Debug
-        } else {
-            console.error('Navigation item not found for section:', sectionName); // Debug
         }
     }
 
@@ -162,12 +137,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (photoControls) {
             photoControls.style.display = 'none';
             photoControls.classList.remove('show-controls');
-            console.log('✅ Photo controls hidden globally'); // Debug
         }
         
         if (photoOverlay) {
             photoOverlay.style.display = 'none';
-            console.log('✅ Photo overlay hidden globally'); // Debug
         }
     };
 
@@ -225,8 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Güvenlik kontrolü: viewUser varsa sadece readOnly modda açılmalı
         if (viewUserParam && !isReadOnly) {
-            console.warn('🚨 Güvenlik: Başkasının profilini düzenleme modunda açmaya çalışıldı!');
-            console.log('🔄 Kendi profilinize yönlendiriliyorsunuz...');
             // URL'i temizle ve kendi profiline yönlendir
             window.location.href = 'profile.html';
             return;
@@ -236,11 +207,8 @@ document.addEventListener('DOMContentLoaded', function() {
         let targetUserIdentifier = viewUserParam || localStorage.getItem('currentUserEmail');
         
         if (!targetUserIdentifier) {
-            console.warn('Kullanıcı identifier yok, profil yüklenemiyor');
             return;
         }
-        
-        console.log('Loading profile for:', targetUserIdentifier, 'Read-only:', isReadOnly);
         
         // Read-only modda düzenleme butonlarını gizle
         if (isReadOnly) {
@@ -270,17 +238,15 @@ document.addEventListener('DOMContentLoaded', function() {
             let userData;
             
             // viewUserParam bir document ID mi yoksa email mi kontrol et
-            console.log('🔍 Checking viewUserParam:', viewUserParam, 'Length:', viewUserParam ? viewUserParam.length : 0);
             
             if (viewUserParam && viewUserParam.length >= 15 && !viewUserParam.includes('@') && !viewUserParam.includes('.')) {
                 // Document ID gibi görünüyor, direkt doc ile al
-                console.log('🆔 Document ID ile profil yükleniyor:', viewUserParam);
                 try {
                     const docRef = doc(window.firestoreDb, "users", viewUserParam);
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
                         userData = docSnap.data();
-                        console.log('✅ Document ID ile kullanıcı bulundu:', userData.email || userData.name);
+                        // Kullanıcı bulundu
                     } else {
                         console.error('❌ Document ID ile kullanıcı bulunamadı:', viewUserParam);
                         return;
@@ -291,13 +257,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 // Email ile sorgula
-                console.log('📧 Email ile profil yükleniyor:', viewUserParam || localStorage.getItem('currentUserEmail'));
                 const targetEmail = viewUserParam || localStorage.getItem('currentUserEmail');
                 const q = query(collection(window.firestoreDb, "users"), where("email", "==", targetEmail));
                 snapshot = await getDocs(q);
                 if (!snapshot.empty) {
                     userData = snapshot.docs[0].data();
-                    console.log('✅ Email ile kullanıcı bulundu:', userData.email || userData.name);
                 } else {
                     console.error('❌ Email ile kullanıcı bulunamadı:', targetEmail);
                     return;
@@ -395,8 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } else {
-                console.warn('❌ No user data found, showing empty profile');
-                // Hiçbir veri yoksa alanlar boş kalsın
                 const titlePrefixElement = document.querySelector('.title-prefix');
                 if (titlePrefixElement) titlePrefixElement.textContent = '';
                 const fullNameElement = document.querySelector('.full-name');
@@ -436,7 +398,6 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const currentUserEmail = localStorage.getItem('currentUserEmail');
             if (!currentUserEmail) {
-                console.warn('Kullanıcı email bulunamadı, name güncellemesi yapılamıyor');
                 return;
             }
 
@@ -531,16 +492,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Profile Editing Functions
     function initProfileEditing() {
-        console.log('initProfileEditing called'); // Debug
-        
         const profileEditBtn = document.getElementById('profileEditBtn');
         const cancelBtn = document.getElementById('cancelBasicInfoBtn');
         const saveBtn = document.getElementById('saveBasicInfoBtn');
         const editBasicInfoBtn = document.getElementById('editBasicInfoBtn');
-        
-        console.log('profileEditBtn found:', profileEditBtn); // Debug
-        console.log('cancelBtn found:', cancelBtn); // Debug
-        console.log('saveBtn found:', saveBtn); // Debug
         
         // Initialize originalFormData to prevent access errors
         originalFormData = {};
@@ -560,7 +515,6 @@ document.addEventListener('DOMContentLoaded', function() {
             newProfileEditBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Purple edit button clicked!'); // Debug
                 
                 // Check if edit mode is currently open
                 const editMode = document.getElementById('infoEditMode');
@@ -568,16 +522,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (editMode && editMode.style.display === 'block') {
                     // Edit mode is open, close it (gizli iptal)
-                    console.log('Closing edit mode (hidden cancel)'); // Debug
                     cancelEdit();
                 } else {
                     // Edit mode is closed, open it
-                    console.log('Opening edit mode'); // Debug
                     openProfileEditMode();
                 }
             });
-            
-            console.log('Purple edit button event listener attached with toggle functionality'); // Debug
         }
         
         // İptal tuşuna event listener ekle
@@ -587,7 +537,6 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Cancel button clicked!'); // Debug
                 cancelEdit();
             });
         }
@@ -599,7 +548,6 @@ document.addEventListener('DOMContentLoaded', function() {
             saveBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Save button clicked!'); // Debug
                 saveBasicInfo();
             });
         }
@@ -609,8 +557,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Ensure photo controls are hidden initially
         window.hidePhotoControls();
-        
-        console.log('initProfileEditing completed'); // Debug
     }
     
     function initPhotoUploadListeners() {
@@ -2212,17 +2158,11 @@ window.deleteItem = deleteItem;
 
 // Research Areas System
 function initResearchSystem() {
-    console.log('initResearchSystem called!'); // Debug
     
     const researchEditBtn = document.getElementById('researchEditBtn');
     const addWorkAreaBtn = document.getElementById('addWorkAreaBtn');
     const addInterestAreaBtn = document.getElementById('addInterestAreaBtn');
     
-    console.log('Research system elements:', {
-        researchEditBtn: !!researchEditBtn,
-        addWorkAreaBtn: !!addWorkAreaBtn, 
-        addInterestAreaBtn: !!addInterestAreaBtn
-    }); // Debug
     
     // Load existing data from educationData (unified system)
     loadEducationItems();
@@ -2246,9 +2186,7 @@ function initResearchSystem() {
         
         // Add our event listener to the new button
         newBtn.addEventListener('click', toggleResearchEditMode);
-        console.log('Event listener added to research edit button'); // Debug
     } else {
-        console.error('Research edit button not found for event listener!'); // Debug
     }
     
     if (addWorkAreaBtn) {
@@ -2261,16 +2199,12 @@ function initResearchSystem() {
 }
 
 function toggleResearchEditMode() {
-    console.log('toggleResearchEditMode called!'); // Debug
     
     const editBtn = document.getElementById('researchEditBtn');
     const addButtons = document.querySelectorAll('#addWorkAreaBtn, #addInterestAreaBtn');
     
-    console.log('Edit button found:', !!editBtn); // Debug
-    console.log('Add buttons found:', addButtons.length); // Debug
     
     if (!editBtn) {
-        console.error('Research edit button not found!');
         return;
     }
     
@@ -2915,15 +2849,11 @@ function addEditButtons() {
 
 // Education Editing System
 function initEducationEditing() {
-    console.log('🎓 Initializing education editing system...');
-    
     // Load existing education data and render
     loadEducationItems();
     
     const educationEditBtn = document.getElementById('educationEditBtn');
     if (educationEditBtn) {
-        console.log('✅ Education edit button found');
-        
         // Önce eski event'leri temizle
         const newBtn = educationEditBtn.cloneNode(true);
         educationEditBtn.parentNode.replaceChild(newBtn, educationEditBtn);
@@ -2935,7 +2865,6 @@ function initEducationEditing() {
             toggleEducationEditMode();
         });
         
-        console.log('✅ Education edit button event listener added');
     } else {
         console.warn('⚠️ Education edit button not found');
     }
@@ -2946,14 +2875,6 @@ function initEducationEditing() {
     const addLanguageBtn = document.getElementById('addLanguageBtn');
     const addWorkAreaBtn = document.getElementById('addWorkAreaBtn');
     const addInterestAreaBtn = document.getElementById('addInterestAreaBtn');
-
-    console.log('🎯 Found add buttons:', {
-        addEducationBtn: !!addEducationBtn,
-        addThesisBtn: !!addThesisBtn,
-        addLanguageBtn: !!addLanguageBtn,
-        addWorkAreaBtn: !!addWorkAreaBtn,
-        addInterestAreaBtn: !!addInterestAreaBtn
-    });
 
     if (addEducationBtn && !addEducationBtn.hasEventListener) {
         addEducationBtn.hasEventListener = true;

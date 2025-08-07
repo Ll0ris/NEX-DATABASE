@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
             allMembers = [...currentMembers];
-            console.log('✅ Üyeler yüklendi:', currentMembers.length, 'üye');
         } catch (error) {
             console.error('Firestore\'dan üyeler yüklenirken hata:', error);
             throw error;
@@ -99,11 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Giriş yapan kullanıcının email'ini al
         let currentUserEmail = localStorage.getItem('currentUserEmail') || '';
-        
-        console.log('=== MEMBERS LIST DEBUG ===');
-        console.log('Current user email from localStorage:', currentUserEmail);
-        console.log('Admin mode:', isAdminMode);
-        console.log('Total members:', currentMembers.length);
 
         if (currentMembers.length === 0) {
             tbody.innerHTML = `
@@ -319,7 +313,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.viewMemberProfile = function(memberId) {
         const member = currentMembers.find(m => m.id === memberId);
         if (member) {
-            console.log('Profil sayfasına yönlendir:', member);
             alert(`${member.name} profiline yönlendirilecek (henüz eklenmedi)`);
         }
     };
@@ -365,7 +358,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.manageMember = function(memberId) {
         const member = currentMembers.find(m => m.id === memberId);
         if (member) {
-            console.log('Üye yönetimi:', member);
             alert(`${member.name} yönetim paneli açılacak (henüz eklenmedi)`);
         }
     };
@@ -384,7 +376,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 await loadMembersFromFirestore();
                 updateStatistics();
                 renderMemberTable();
-                console.log('Üye silindi:', memberId);
             } catch (error) {
                 console.error('Üye silinirken hata:', error);
                 showError('Üye silinirken bir hata oluştu.');
@@ -423,12 +414,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Üye profili görüntüleme fonksiyonu
     window.viewMemberProfile = function(memberId) {
-        console.log('Viewing member profile for ID:', memberId);
-        
         // Üye bilgilerini bul
         const member = currentMembers.find(m => m.id === memberId);
         if (!member) {
-            console.error('Member not found with ID:', memberId);
             return;
         }
         

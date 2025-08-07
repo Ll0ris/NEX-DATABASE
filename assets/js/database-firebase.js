@@ -1,23 +1,16 @@
 // Database Page Firebase Configuration with Auth Check
 // Hemen localStorage kontrol et
 function quickAuthCheck() {
-    console.log('🔐 Database-firebase.js yüklendi, auth kontrol başlıyor...');
     return new Promise((resolve) => {
         function checkAuth() {
             const authToken = localStorage.getItem('authToken');
             const tokenExpiry = localStorage.getItem('tokenExpiry');
             const isAuthenticated = localStorage.getItem('isAuthenticated');
             
-            console.log('🔐 Auth kontrol:', {
-                hasToken: !!authToken,
-                hasExpiry: !!tokenExpiry,
-                isAuth: isAuthenticated
-            });
             
             if (!authToken || !tokenExpiry || isAuthenticated !== 'true') {
                 // Eğer localStorage boşsa, biraz bekle ve tekrar dene
                 if (Object.keys(localStorage).length === 0) {
-                    console.log('🔐 LocalStorage boş, bekliyor...');
                     setTimeout(checkAuth, 200);
                     return;
                 }
@@ -79,13 +72,12 @@ function initializeFirebase() {
                 // Eğer zaten başlatılmışsa mevcut app'i kullan
                 if (getApps().length > 0) {
                     app = getApp();
-                    console.log('🔥 Mevcut Firebase app kullanılıyor');
                 } else {
                     app = initializeApp(firebaseConfig);
-                    console.log('🔥 Yeni Firebase app başlatıldı');
+                    // Yeni Firebase app başlatıldı
                 }
             } catch (error) {
-                console.log('🔥 Firebase app zaten mevcut, mevcut kullanılıyor');
+                // Firebase app zaten mevcut, mevcut kullanılıyor
                 app = getApp();
             }
             

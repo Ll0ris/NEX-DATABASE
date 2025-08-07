@@ -99,7 +99,7 @@ function checkAuthentication() {
     const rememberMe = localStorage.getItem('rememberMe');
     
     // Debug log
-    console.log('🔍 Auth kontrol:', {
+    const authStatus = {
         hasToken: !!authToken,
         hasExpiry: !!tokenExpiry,
         isAuth: isAuthenticated,
@@ -107,12 +107,10 @@ function checkAuthentication() {
         currentTime: Date.now(),
         expiryTime: tokenExpiry ? parseInt(tokenExpiry) : null,
         url: window.location.href
-    });
+    };
     
     // Eğer localStorage tamamen boşsa, biraz daha bekle
     if (!authToken && !tokenExpiry && !isAuthenticated) {
-        console.log('⏳ LocalStorage verileri henüz yüklenmemiş, tekrar kontrol ediliyor...');
-        
         // 200ms sonra tekrar kontrol et
         setTimeout(() => {
             const retryToken = localStorage.getItem('authToken');
@@ -120,20 +118,17 @@ function checkAuthentication() {
             const retryAuth = localStorage.getItem('isAuthenticated');
             
             if (!retryToken || !retryExpiry || retryAuth !== 'true') {
-                console.warn('❌ Token bulunamadı (retry sonrası), giriş sayfasına yönlendiriliyor...');
                 redirectToLogin();
                 return false;
             }
             
             const currentTime = Date.now();
             if (currentTime >= parseInt(retryExpiry)) {
-                console.warn('❌ Token süresi dolmuş (retry sonrası), giriş sayfasına yönlendiriliyor...');
                 clearAuthData();
                 redirectToLogin();
                 return false;
             }
             
-            console.log('✅ Geçerli token bulundu (retry sonrası), sayfa yükleniyor...');
             showPageContent();
         }, 200);
         
@@ -141,20 +136,17 @@ function checkAuthentication() {
     }
     
     if (!authToken || !tokenExpiry || isAuthenticated !== 'true') {
-        console.warn('❌ Token bulunamadı, giriş sayfasına yönlendiriliyor...');
         redirectToLogin();
         return false;
     }
     
     const currentTime = Date.now();
     if (currentTime >= parseInt(tokenExpiry)) {
-        console.warn('❌ Token süresi dolmuş, giriş sayfasına yönlendiriliyor...');
         clearAuthData();
         redirectToLogin();
         return false;
     }
     
-    console.log('✅ Geçerli token bulundu, sayfa yükleniyor...');
     return true;
 }
 
@@ -167,7 +159,6 @@ function clearAuthData() {
     localStorage.removeItem('currentUserEmail');
     localStorage.removeItem('rememberMe');
     localStorage.removeItem('rememberMeExpiry');
-    console.log('🗑️ Auth verileri temizlendi (clearAuthData) - rememberMe ve expiry dahil');
 }
 
 // Logout function
@@ -291,25 +282,16 @@ async function updateUserNameDisplay() {
                 const currentStoredRole = localStorage.getItem('userRole');
                 if (currentStoredRole !== userRole) {
                     localStorage.setItem('userRole', userRole);
-                    console.log('🔐 Kullanıcı rolü Firebase\'den güncellendi:', userRole);
                 }
-                
-                console.log('🔍 Rol kontrol durumu:', {
-                    userEmail: currentUserEmail,
-                    userRole: userRole,
-                    currentAdminMode: localStorage.getItem('adminMode')
-                });
                 
                 // Admin mode localStorage'ını gerçek role göre zorla
                 if (userRole === 'admin') {
                     // Gerçek admin ise admin moduna izin ver
                     localStorage.setItem('realAdminAccess', 'true');
-                    console.log('✅ Gerçek admin yetkisi verildi');
                 } else {
                     // Normal kullanıcı ise admin modunu zorla kapat
                     const currentAdminMode = localStorage.getItem('adminMode');
                     if (currentAdminMode === 'admin') {
-                        console.log('🚨 Normal kullanıcı admin modunda! Zorla güvenli moda çevriliyor...');
                         localStorage.setItem('adminMode', 'safe');
                         localStorage.setItem('adminModeText', 'Güvenli Mod');
                         
@@ -323,7 +305,6 @@ async function updateUserNameDisplay() {
                         alert('⚠️ Admin yetkisi yok! Güvenli moda çevrildi.');
                     }
                     localStorage.removeItem('realAdminAccess');
-                    console.log('❌ Admin yetkisi kaldırıldı');
                 }
                 
                 // Kullanıcı adını güncelle
@@ -334,8 +315,6 @@ async function updateUserNameDisplay() {
                 
                 // Profil fotoğrafını güncelle
                 updateProfilePhoto(userPhoto);
-                
-                console.log('✅ Kullanıcı bilgileri güncellendi:', userName, userPhoto, 'Role:', userRole);
             } else {
                 // Kullanıcı bulunamazsa alanlar boş kalsın
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
@@ -346,7 +325,6 @@ async function updateUserNameDisplay() {
             }
         }
     } catch (error) {
-        console.log('Kullanıcı bilgileri güncellenirken hata:', error);
         const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
         profileNameElements.forEach(element => {
             element.textContent = '';
@@ -605,8 +583,6 @@ window.extendSession = function() {
         window.sessionManagement.remainingTime = 10 * 60; // Reset to 10 minutes
         window.sessionManagement.warningShown = false;
     }
-    
-    console.log('Session extended by user action');
 };
 
 // Global utility functions
@@ -866,29 +842,16 @@ function closeAdminDropdown() {
 }
 
 function selectAdminMode(mode, text) {
-    // Debug log
-    console.log('🔍 Admin mode değiştirme isteği:', mode, text);
-    
     // Güvenlik kontrolü: Gerçek admin yetkisi var mı?
     const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
     const userRole = localStorage.getItem('userRole') || 'user';
     
-    console.log('🔐 Güvenlik durumu:', {
-        hasRealAdminAccess: hasRealAdminAccess,
-        userRole: userRole,
-        requestedMode: mode
-    });
-    
     if (mode === 'admin' && (!hasRealAdminAccess || userRole !== 'admin')) {
-        console.warn('🚨 Güvenlik: Admin moduna geçiş reddedildi - Yetki yok!');
         alert('⚠️ Admin yetkisi yok!\n\nSadece sistem yöneticileri admin moduna geçebilir.');
         
         // Zorla güvenli moda çevir
         mode = 'safe';
         text = 'Güvenli Mod';
-        console.log('🔄 Zorla güvenli moda çevrildi');
-    } else {
-        console.log('✅ Admin mode değişikliği onaylandı:', mode);
     }
     
     const dropdownOptions = document.querySelectorAll('.dropdown-option');
