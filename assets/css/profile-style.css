@@ -1883,6 +1883,18 @@
     color: white;
 }
 
+.education-item .department {
+    color: #5a9fd4;
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 4px 0 8px 0;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .education-item .department {
+    color: #74c0fc;
+}
+
 .education-item .year {
     color: #666;
     font-weight: 500;
@@ -1930,11 +1942,15 @@
     transition: all 0.3s ease;
     color: var(--primary-color);
     font-weight: 500;
-    display: flex;
+    display: none !important; /* Initially hidden */
     align-items: center;
     justify-content: center;
     gap: 10px;
     margin-top: 15px;
+}
+
+.add-item-btn.show {
+    display: flex !important; /* Show when class is added */
 }
 
 .add-item-btn:hover {

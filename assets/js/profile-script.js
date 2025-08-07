@@ -1,5 +1,13 @@
 // Profile Page Script
 
+console.log('Profile script loaded');
+
+// Test function for research edit mode
+window.testResearchEdit = function() {
+    console.log('Manual test called');
+    toggleResearchEditMode();
+};
+
 // Global variables - declare at top to prevent hoisting issues
 let originalFormData = {}; // Store original data for cancel functionality
 
@@ -70,14 +78,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Initialize education system if switching to education section
             if (sectionName === 'education') {
-                setTimeout(initEducationSystem, 100);
                 setTimeout(initEducationEditing, 100);
+                // Initialize education data rendering
+                setTimeout(() => {
+                    renderEducationItems();
+                    renderThesisItems();
+                    renderLanguageItems();
+                }, 150);
             }
             
             // Initialize research system if switching to research section
             if (sectionName === 'research') {
+                console.log('Switching to research section - initializing...'); // Debug
                 setTimeout(initResearchSystem, 100);
-                setTimeout(initResearchEditing, 100);
+                // setTimeout(initResearchEditing, 100); // Removed - conflicts with initResearchSystem
             }
             
             // Initialize contact system if switching to contact section
@@ -138,6 +152,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+    };
+
+    // Global function to hide photo controls and overlays
+    window.hidePhotoControls = function() {
+        const photoControls = document.getElementById('photoControls');
+        const photoOverlay = document.getElementById('photoUploadOverlay');
+        
+        if (photoControls) {
+            photoControls.style.display = 'none';
+            photoControls.classList.remove('show-controls');
+            console.log('✅ Photo controls hidden globally'); // Debug
+        }
+        
+        if (photoOverlay) {
+            photoOverlay.style.display = 'none';
+            console.log('✅ Photo overlay hidden globally'); // Debug
+        }
+    };
+
+    // Global function to hide blue edit button
+    window.hideBlueEditButton = function() {
+        const editButton = document.getElementById('editBasicInfoBtn');
+        if (editButton) {
+            editButton.style.display = 'none';
+        }
+        // Also hide photo controls when hiding edit button
+        window.hidePhotoControls();
     };
 
     // Firebase functions for profile data
@@ -566,6 +607,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize photo upload event listeners
         initPhotoUploadListeners();
         
+        // Ensure photo controls are hidden initially
+        window.hidePhotoControls();
+        
         console.log('initProfileEditing completed'); // Debug
     }
     
@@ -715,7 +759,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function cancelEdit() {
         const viewMode = document.getElementById('infoViewMode');
         const editMode = document.getElementById('infoEditMode');
-        const photoControls = document.getElementById('photoControls'); // Yeni: photoControls
+        const photoControls = document.getElementById('photoControls');
+        const photoOverlay = document.getElementById('photoUploadOverlay');
         
         // Restore original form data - with null check
         if (originalFormData && typeof originalFormData === 'object') {
@@ -764,12 +809,8 @@ document.addEventListener('DOMContentLoaded', function() {
             editMode.style.display = 'none';
             editMode.classList.remove('info-edit-mode'); // Class'ı kaldır
             
-            // Hide photo controls
-            if (photoControls) {
-                photoControls.style.display = 'none';
-                photoControls.classList.remove('show-controls'); // Class'ı kaldır
-                console.log('✅ Photo controls hidden and class removed'); // Debug
-            }
+            // Hide photo controls using global function
+            window.hidePhotoControls();
             
             // Hide the blue edit button after canceling
             const editButton = document.getElementById('editBasicInfoBtn');
@@ -927,15 +968,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const viewMode = document.getElementById('infoViewMode');
         const editMode = document.getElementById('infoEditMode');
         const photoOverlay = document.getElementById('photoUploadOverlay');
+        const photoControls = document.getElementById('photoControls');
 
         if (viewMode && editMode) {
             viewMode.style.display = 'block';
             editMode.style.display = 'none';
             
-            // Hide photo upload overlay
-            if (photoOverlay) {
-                photoOverlay.style.display = 'none';
-            }
+            // Hide photo controls using global function
+            window.hidePhotoControls();
             
             // Hide the blue edit button after saving
             const editButton = document.getElementById('editBasicInfoBtn');
@@ -1395,7 +1435,9 @@ document.addEventListener('click', function(event) {
 let educationData = {
     education: [],
     thesis: [],
-    languages: []
+    languages: [],
+    workAreas: [],
+    interestAreas: []
 };
 
 // Load data from localStorage on page load
@@ -1403,6 +1445,23 @@ function loadEducationData() {
     const savedData = localStorage.getItem('educationData');
     if (savedData) {
         educationData = JSON.parse(savedData);
+        
+        // Ensure all required properties exist (backward compatibility)
+        if (!educationData.workAreas) {
+            educationData.workAreas = [];
+        }
+        if (!educationData.interestAreas) {
+            educationData.interestAreas = [];
+        }
+        if (!educationData.education) {
+            educationData.education = [];
+        }
+        if (!educationData.thesis) {
+            educationData.thesis = [];
+        }
+        if (!educationData.languages) {
+            educationData.languages = [];
+        }
     }
 }
 
@@ -1417,6 +1476,9 @@ loadEducationData();
 let editMode = false;
 let currentEditItem = null;
 let currentEditType = null;
+
+// Research system variables
+let researchEditMode = false;
 
 function initEducationSystem() {
     // Education Edit Mode Toggle
@@ -1456,19 +1518,28 @@ function initEducationSystem() {
 // Education Edit Mode Toggle
 
 function toggleEducationEditMode() {
+    const educationEditBtn = document.getElementById('educationEditBtn');
     const sections = document.querySelectorAll('.education-section');
     const addBtns = document.querySelectorAll('.add-item-btn');
     
     if (editMode) {
-        educationEditBtn.innerHTML = '<i class="fas fa-check"></i> Bitir';
-        educationEditBtn.style.background = '#28a745';
+        if (educationEditBtn) {
+            educationEditBtn.innerHTML = '<i class="fas fa-check"></i> Bitir';
+            educationEditBtn.style.background = '#28a745';
+        }
         sections.forEach(section => section.classList.add('edit-mode'));
-        addBtns.forEach(btn => btn.style.display = 'flex');
+        addBtns.forEach(btn => {
+            btn.classList.add('show');
+        });
     } else {
-        educationEditBtn.innerHTML = '<i class="fas fa-edit"></i> Düzenle';
-        educationEditBtn.style.background = '#8b5cf6';
+        if (educationEditBtn) {
+            educationEditBtn.innerHTML = '<i class="fas fa-edit"></i> Düzenle';
+            educationEditBtn.style.background = '#8b5cf6';
+        }
         sections.forEach(section => section.classList.remove('edit-mode'));
-        addBtns.forEach(btn => btn.style.display = 'none');
+        addBtns.forEach(btn => {
+            btn.classList.remove('show');
+        });
     }
 }
 
@@ -1479,18 +1550,380 @@ function openModal(type, item = null) {
     currentEditType = type;
     currentEditItem = item;
     
-    const modal = document.getElementById(type + 'Modal');
-    const form = document.getElementById(type + 'Form');
+    console.log(`🚀 Opening modal for type: ${type}`);
     
-    if (item) {
-        // Edit mode - populate form
-        fillForm(form, item);
-    } else {
-        // Add mode - clear form
-        form.reset();
+    // EMERGENCY FIX: If modals don't exist, create them dynamically
+    if (type === 'education') {
+        let educationModal = document.getElementById('educationModal');
+        if (!educationModal) {
+            console.warn(`🔧 EMERGENCY FIX: Creating educationModal dynamically because it's missing from DOM`);
+            createEducationModalDynamically();
+            educationModal = document.getElementById('educationModal');
+            console.log(`✅ Dynamic educationModal created:`, !!educationModal);
+        }
+    } else if (type === 'workArea') {
+        let workAreaModal = document.getElementById('workAreaModal');
+        if (!workAreaModal) {
+            console.warn(`🔧 EMERGENCY FIX: Creating workAreaModal dynamically because it's missing from DOM`);
+            createWorkAreaModalDynamically();
+            workAreaModal = document.getElementById('workAreaModal');
+            console.log(`✅ Dynamic workAreaModal created:`, !!workAreaModal);
+        }
+    } else if (type === 'interestArea') {
+        let interestAreaModal = document.getElementById('interestAreaModal');
+        if (!interestAreaModal) {
+            console.warn(`🔧 EMERGENCY FIX: Creating interestAreaModal dynamically because it's missing from DOM`);
+            createInterestAreaModalDynamically();
+            interestAreaModal = document.getElementById('interestAreaModal');
+            console.log(`✅ Dynamic interestAreaModal created:`, !!interestAreaModal);
+        }
     }
     
-    modal.classList.add('show');
+    // COMPREHENSIVE DOM DEBUGGING FOR EDUCATION MODAL ISSUE
+    if (type === 'education') {
+        console.log(`🔍 DEEP DOM INVESTIGATION FOR EDUCATION MODAL:`);
+        
+        // 1. Check document readiness
+        console.log(`📋 Document state:`, {
+            readyState: document.readyState,
+            bodyExists: !!document.body,
+            htmlExists: !!document.documentElement
+        });
+        
+        // 2. Search for ANY element containing "education" in its ID or class
+        const allElements = document.querySelectorAll('*');
+        const educationRelatedElements = Array.from(allElements).filter(el => 
+            (el.id && el.id.toLowerCase().includes('education')) ||
+            (el.className && el.className.toLowerCase().includes('education'))
+        );
+        
+        console.log(`📋 Elements with 'education' in ID/class:`, educationRelatedElements.map(el => ({
+            tag: el.tagName,
+            id: el.id,
+            className: el.className,
+            visible: el.offsetHeight > 0
+        })));
+        
+        // 3. Check if the educationModal HTML exists in the raw document
+        const fullHTML = document.documentElement.outerHTML;
+        const educationModalInHTML = fullHTML.includes('id="educationModal"');
+        const educationFormInHTML = fullHTML.includes('id="educationForm"');
+        
+        console.log(`📋 Raw HTML check:`, {
+            educationModalInHTML,
+            educationFormInHTML,
+            htmlLength: fullHTML.length
+        });
+        
+        // 4. If HTML exists but DOM element doesn't, there's a parsing issue
+        if (educationModalInHTML && !document.getElementById('educationModal')) {
+            console.error(`🚨 CRITICAL: educationModal exists in HTML but not in DOM! This suggests an HTML parsing error.`);
+            
+            // Find the position of educationModal in HTML
+            const modalIndex = fullHTML.indexOf('id="educationModal"');
+            const beforeModal = fullHTML.substring(Math.max(0, modalIndex - 200), modalIndex);
+            const afterModal = fullHTML.substring(modalIndex, modalIndex + 200);
+            
+            console.log(`📋 HTML context around educationModal:`, {
+                before: beforeModal,
+                after: afterModal
+            });
+        }
+        
+        // 5. Check for any JavaScript errors that might prevent DOM loading
+        console.log(`📋 Window errors:`, window.onerror ? 'Error handler exists' : 'No error handler');
+        
+        // 6. Check if modal is inside a display:none container
+        const allModals = document.querySelectorAll('[id*="Modal"]');
+        console.log(`📋 All modal elements and their visibility:`, Array.from(allModals).map(modal => ({
+            id: modal.id,
+            visible: modal.offsetHeight > 0,
+            display: window.getComputedStyle(modal).display,
+            parentVisible: modal.parentElement ? modal.parentElement.offsetHeight > 0 : 'no parent'
+        })));
+    }
+    
+    // First, let's check what's actually in the DOM
+    console.log(`🔍 DOM Investigation for ${type}Modal:`);
+    
+    // Check if element exists using multiple methods
+    const modalById = document.getElementById(type + 'Modal');
+    const modalBySelector = document.querySelector(`#${type}Modal`);
+    const allModalElements = document.querySelectorAll('[id*="Modal"]');
+    const allEducationElements = document.querySelectorAll('[id*="education"]');
+    
+    console.log(`📋 Element search results:`, {
+        getElementById: !!modalById,
+        querySelector: !!modalBySelector,
+        totalModals: allModalElements.length,
+        totalEducationElements: allEducationElements.length
+    });
+    
+    console.log(`📋 All modal IDs found:`, Array.from(allModalElements).map(el => el.id));
+    console.log(`📋 All education-related IDs:`, Array.from(allEducationElements).map(el => el.id));
+    
+    // Retry mechanism for DOM elements that might not be ready yet
+    function findModalElements(retryCount = 0) {
+        const modal = document.getElementById(type + 'Modal');
+        const form = document.getElementById(type + 'Form');
+        
+        console.log(`🎯 Modal search attempt ${retryCount + 1}:`, {
+            modal: !!modal,
+            form: !!form,
+            modalId: type + 'Modal',
+            formId: type + 'Form'
+        });
+        
+        if (!modal || !form) {
+            if (retryCount < 3) {
+                console.log(`⏳ Elements not found, retrying in 100ms... (attempt ${retryCount + 1}/3)`);
+                setTimeout(() => findModalElements(retryCount + 1), 100);
+                return;
+            } else {
+                console.error(`❌ Failed to find modal elements after 3 attempts:`);
+                console.error(`   - Modal (${type}Modal): ${!!modal}`);
+                console.error(`   - Form (${type}Form): ${!!form}`);
+                
+                // Debug: List all modals that actually exist
+                const allModals = document.querySelectorAll('[id*="Modal"]');
+                console.log(`🔍 Available modals in DOM:`, Array.from(allModals).map(m => m.id));
+                
+                // Special debugging for education modal
+                if (type === 'education') {
+                    console.log(`🔍 Specific education debugging:`);
+                    const educationModalVariants = [
+                        'educationModal',
+                        'education-modal', 
+                        'educationmodal',
+                        'EducationModal'
+                    ];
+                    
+                    educationModalVariants.forEach(variant => {
+                        const element = document.getElementById(variant);
+                        console.log(`   - ${variant}: ${!!element}`);
+                    });
+                    
+                    // Check if there's an HTML structure issue
+                    const bodyHTML = document.body.innerHTML;
+                    const hasEducationModalInHTML = bodyHTML.includes('educationModal');
+                    console.log(`   - educationModal in body HTML: ${hasEducationModalInHTML}`);
+                    
+                    if (hasEducationModalInHTML) {
+                        const educationModalMatch = bodyHTML.match(/id="educationModal"[^>]*>/);
+                        console.log(`   - educationModal HTML fragment:`, educationModalMatch);
+                    }
+                }
+                return;
+            }
+        }
+        
+        // Success - proceed with modal opening
+        if (item) {
+            // Edit mode - populate form
+            console.log(`✏️ Edit mode - filling form with:`, item);
+            fillForm(form, item);
+        } else {
+            // Add mode - clear form
+            console.log(`➕ Add mode - clearing form`);
+            form.reset();
+        }
+        
+        modal.classList.add('show');
+        console.log(`✅ Modal opened successfully: ${type}Modal`);
+    }
+    
+    // Start the search
+    findModalElements();
+}
+
+// Emergency function to create education modal dynamically
+function createEducationModalDynamically() {
+    console.log(`🔧 Creating educationModal dynamically...`);
+    
+    const modalHTML = `
+    <!-- Education Modal (Dynamically Created) -->
+    <div class="modal-overlay" id="educationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Eğitim Bilgisi Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeEducationModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="educationForm">
+                <div class="form-group">
+                    <label>Düzey</label>
+                    <select name="level" required>
+                        <option value="">Seçiniz</option>
+                        <option value="Lise">Lise</option>
+                        <option value="Lisans">Lisans</option>
+                        <option value="Yüksek Lisans">Yüksek Lisans</option>
+                        <option value="Doktora">Doktora</option>
+                        <option value="Yan Dal">Yan Dal</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Kurum</label>
+                    <input type="text" name="institution" required>
+                </div>
+                <div class="form-group">
+                    <label>Birim/Bölüm</label>
+                    <input type="text" name="department" placeholder="ör: Fizik, Bilgisayar Mühendisliği">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Başlangıç Yılı</label>
+                        <input type="number" name="startYear" min="1950" max="2030" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Bitiş Yılı</label>
+                        <input type="number" name="endYear" min="1950" max="2030">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelEducation">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>`;
+    
+    // Insert the modal at the end of body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Set up event listeners for the dynamically created modal
+    const closeBtn = document.getElementById('closeEducationModal');
+    const cancelBtn = document.getElementById('cancelEducation');
+    const form = document.getElementById('educationForm');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => closeModal('education'));
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => closeModal('education'));
+    }
+    
+    // Form submit event listener - EN ÖNEMLİSİ!
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('📝 Dynamic modal form submitted!');
+            saveEducationItem(this);
+        });
+    }
+    
+    console.log(`✅ Dynamic educationModal created successfully with all event listeners`);
+}
+
+// Emergency function to create work area modal dynamically
+function createWorkAreaModalDynamically() {
+    console.log(`🔧 Creating workAreaModal dynamically...`);
+    
+    const modalHTML = `
+    <!-- Work Area Modal (Dynamically Created) -->
+    <div class="modal-overlay" id="workAreaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Çalışma Alanı Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeWorkAreaModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="workAreaForm">
+                <div class="form-group">
+                    <label>Çalışma Alanı Adı</label>
+                    <input type="text" name="areaName" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelWorkArea">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>`;
+    
+    // Insert the modal at the end of body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Set up event listeners for the dynamically created modal
+    const closeBtn = document.getElementById('closeWorkAreaModal');
+    const cancelBtn = document.getElementById('cancelWorkArea');
+    const form = document.getElementById('workAreaForm');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => closeModal('workArea'));
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => closeModal('workArea'));
+    }
+    
+    // Form submit event listener
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('📝 Dynamic workArea modal form submitted!');
+            handleWorkAreaSubmit(e);
+        });
+    }
+    
+    console.log(`✅ Dynamic workAreaModal created successfully with all event listeners`);
+}
+
+// Emergency function to create interest area modal dynamically
+function createInterestAreaModalDynamically() {
+    console.log(`🔧 Creating interestAreaModal dynamically...`);
+    
+    const modalHTML = `
+    <!-- Interest Area Modal (Dynamically Created) -->
+    <div class="modal-overlay" id="interestAreaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>İlgi Alanı Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeInterestAreaModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="modal-form" id="interestAreaForm">
+                <div class="form-group">
+                    <label>İlgi Alanı Adı</label>
+                    <input type="text" name="areaName" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelInterestArea">İptal</button>
+                    <button type="submit" class="btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>`;
+    
+    // Insert the modal at the end of body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Set up event listeners for the dynamically created modal
+    const closeBtn = document.getElementById('closeInterestAreaModal');
+    const cancelBtn = document.getElementById('cancelInterestArea');
+    const form = document.getElementById('interestAreaForm');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => closeModal('interestArea'));
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => closeModal('interestArea'));
+    }
+    
+    // Form submit event listener
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('📝 Dynamic interestArea modal form submitted!');
+            handleInterestAreaSubmit(e);
+        });
+    }
+    
+    console.log(`✅ Dynamic interestAreaModal created successfully with all event listeners`);
 }
 
 function closeModal(type) {
@@ -1582,6 +2015,7 @@ function saveEducationItem(form) {
         id: currentEditItem ? currentEditItem.id : Date.now(),
         level: formData.get('level'),
         institution: formData.get('institution'),
+        department: formData.get('department') || '', // Yeni birim field'ı
         startYear: formData.get('startYear'),
         endYear: formData.get('endYear') || 'Devam ediyor'
     };
@@ -1596,6 +2030,9 @@ function saveEducationItem(form) {
     renderEducationItems();
     closeModal('education');
     saveEducationData(); // Save to localStorage
+    
+    // Eğitim sekmesini aç
+    switchSection('education');
 }
 
 function saveThesisItem(form) {
@@ -1640,15 +2077,41 @@ function saveLanguageItem(form) {
 }
 
 function deleteItem(type, id) {
-    if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
-        educationData[type] = educationData[type].filter(item => item.id !== id);
-        
-        if (type === 'education') renderEducationItems();
-        else if (type === 'thesis') renderThesisItems();
-        else if (type === 'languages') renderLanguageItems();
-        
-        saveEducationData(); // Save to localStorage after deletion
+    // No confirmation needed for better UX
+    
+    // Handle different type names
+    let dataKey = type;
+    if (type === 'workArea') dataKey = 'workAreas';
+    if (type === 'interestArea') dataKey = 'interestAreas';
+    
+    educationData[dataKey] = educationData[dataKey].filter(item => item.id !== id);
+    
+    // Re-render the appropriate list
+    if (type === 'education') renderEducationItems();
+    else if (type === 'thesis') renderThesisItems();
+    else if (type === 'languages') renderLanguageItems();
+    else if (type === 'workArea') {
+        renderWorkAreaItems();
+        // If in research edit mode, show delete buttons after re-render
+        if (researchEditMode) {
+            setTimeout(() => {
+                const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn');
+                deleteButtons.forEach(btn => btn.style.display = 'block');
+            }, 10);
+        }
     }
+    else if (type === 'interestArea') {
+        renderInterestAreaItems();
+        // If in research edit mode, show delete buttons after re-render
+        if (researchEditMode) {
+            setTimeout(() => {
+                const deleteButtons = document.querySelectorAll('#interestAreaItems .delete-btn');
+                deleteButtons.forEach(btn => btn.style.display = 'block');
+            }, 10);
+        }
+    }
+    
+    saveEducationData(); // Save to localStorage after deletion
 }
 
 function renderEducationItems() {
@@ -1658,20 +2121,21 @@ function renderEducationItems() {
     educationData.education.forEach(item => {
         const div = document.createElement('div');
         div.className = 'education-item';
+        
+        // Birim bilgisi varsa göster
+        const departmentInfo = item.department ? `<p class="department">${item.department}</p>` : '';
+        
         div.innerHTML = `
             <button class="delete-btn" onclick="deleteItem('education', ${item.id})">
                 <i class="fas fa-times"></i>
             </button>
             <h4>${item.level}</h4>
             <p><strong>${item.institution}</strong></p>
+            ${departmentInfo}
             <p class="year">${item.startYear} - ${item.endYear}</p>
         `;
         
-        div.addEventListener('click', function() {
-            if (editMode) {
-                openModal('education', item);
-            }
-        });
+        // Edit modal removed for better UX
         
         container.appendChild(div);
     });
@@ -1697,11 +2161,7 @@ function renderThesisItems() {
             <p class="year">${item.year}</p>
         `;
         
-        div.addEventListener('click', function() {
-            if (editMode) {
-                openModal('thesis', item);
-            }
-        });
+        // Edit modal removed for better UX
         
         container.appendChild(div);
     });
@@ -1726,11 +2186,7 @@ function renderLanguageItems() {
             <p class="year">Düzey: ${item.level}</p>
         `;
         
-        div.addEventListener('click', function() {
-            if (editMode) {
-                openModal('language', item);
-            }
-        });
+        // Edit modal removed for better UX
         
         container.appendChild(div);
     });
@@ -1756,15 +2212,43 @@ window.deleteItem = deleteItem;
 
 // Research Areas System
 function initResearchSystem() {
+    console.log('initResearchSystem called!'); // Debug
+    
     const researchEditBtn = document.getElementById('researchEditBtn');
     const addWorkAreaBtn = document.getElementById('addWorkAreaBtn');
     const addInterestAreaBtn = document.getElementById('addInterestAreaBtn');
     
-    // Load existing data
-    loadResearchData();
+    console.log('Research system elements:', {
+        researchEditBtn: !!researchEditBtn,
+        addWorkAreaBtn: !!addWorkAreaBtn, 
+        addInterestAreaBtn: !!addInterestAreaBtn
+    }); // Debug
+    
+    // Load existing data from educationData (unified system)
+    loadEducationItems();
+    
+    // Initially hide add buttons (make sure they start hidden)
+    if (addWorkAreaBtn) addWorkAreaBtn.classList.remove('show');
+    if (addInterestAreaBtn) addInterestAreaBtn.classList.remove('show');
+    
+    // Hide any existing delete buttons
+    const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn, #interestAreaItems .delete-btn');
+    deleteButtons.forEach(btn => btn.style.display = 'none');
+    
+    // Ensure research edit mode is false
+    researchEditMode = false;
     
     if (researchEditBtn) {
-        researchEditBtn.addEventListener('click', toggleResearchEditMode);
+        // Remove any existing event listeners by cloning the button
+        const newBtn = researchEditBtn.cloneNode(true);
+        newBtn.id = 'researchEditBtn'; // Ensure ID is preserved
+        researchEditBtn.parentNode.replaceChild(newBtn, researchEditBtn);
+        
+        // Add our event listener to the new button
+        newBtn.addEventListener('click', toggleResearchEditMode);
+        console.log('Event listener added to research edit button'); // Debug
+    } else {
+        console.error('Research edit button not found for event listener!'); // Debug
     }
     
     if (addWorkAreaBtn) {
@@ -1777,118 +2261,203 @@ function initResearchSystem() {
 }
 
 function toggleResearchEditMode() {
+    console.log('toggleResearchEditMode called!'); // Debug
+    
     const editBtn = document.getElementById('researchEditBtn');
     const addButtons = document.querySelectorAll('#addWorkAreaBtn, #addInterestAreaBtn');
-    const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn, #interestAreaItems .delete-btn');
     
-    const isEditMode = editBtn.textContent.trim() === 'Kaydet';
+    console.log('Edit button found:', !!editBtn); // Debug
+    console.log('Add buttons found:', addButtons.length); // Debug
+    
+    if (!editBtn) {
+        console.error('Research edit button not found!');
+        return;
+    }
+    
+    const isEditMode = editBtn.textContent.trim().includes('Kaydet');
     
     if (isEditMode) {
-        // Exit edit mode
+        // Exit edit mode - save data
         editBtn.innerHTML = '<i class="fas fa-edit"></i> Düzenle';
-        addButtons.forEach(btn => btn.style.display = 'none');
-        deleteButtons.forEach(btn => btn.style.display = 'none');
+        editBtn.style.background = '#8b5cf6';
+        
+        // Hide add buttons
+        addButtons.forEach(btn => {
+            btn.classList.remove('show');
+        });
+        
+        // Hide delete buttons
+        const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn, #interestAreaItems .delete-btn');
+        deleteButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Update research edit mode
+        researchEditMode = false;
+        
+        saveEducationData(); // Save to localStorage
+        console.log('� Research data saved to localStorage');
     } else {
         // Enter edit mode
         editBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
-        addButtons.forEach(btn => btn.style.display = 'flex');
-        deleteButtons.forEach(btn => btn.style.display = 'block');
+        editBtn.style.background = '#28a745';
+        
+        // Update research edit mode first
+        researchEditMode = true;
+        
+        // Show add buttons with CSS class instead of inline style
+        addButtons.forEach(btn => {
+            btn.classList.add('show');
+            console.log('👀 Showing add button:', btn.id, 'Classes:', btn.className);
+        });
+        
+        // Show delete buttons (query them again since they might have been created after render)
+        const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn, #interestAreaItems .delete-btn');
+        deleteButtons.forEach(btn => {
+            btn.style.display = 'block';
+            console.log('👀 Showing delete button');
+        });
+        
+        // Update global edit mode
+        editMode = true;
     }
 }
 
 function handleWorkAreaSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const workAreaData = {
-        id: Date.now(),
+    const item = {
+        id: currentEditItem ? currentEditItem.id : Date.now(),
         name: formData.get('areaName')
     };
     
-    saveWorkAreaData(workAreaData);
+    if (currentEditItem) {
+        const index = educationData.workAreas.findIndex(w => w.id === currentEditItem.id);
+        educationData.workAreas[index] = item;
+    } else {
+        educationData.workAreas.push(item);
+    }
+    
+    renderWorkAreaItems();
+    
+    // If in edit mode, show delete buttons for newly rendered items
+    if (researchEditMode) {
+        const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn');
+        deleteButtons.forEach(btn => btn.style.display = 'block');
+    }
+    
     closeModal('workArea');
-    loadResearchData();
+    saveEducationData(); // Save to localStorage
+    
+    // Eğitim sekmesini aç
+    switchSection('education');
 }
 
 function handleInterestAreaSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const interestAreaData = {
-        id: Date.now(),
+    const item = {
+        id: currentEditItem ? currentEditItem.id : Date.now(),
         name: formData.get('areaName')
     };
     
-    saveInterestAreaData(interestAreaData);
+    if (currentEditItem) {
+        const index = educationData.interestAreas.findIndex(i => i.id === currentEditItem.id);
+        educationData.interestAreas[index] = item;
+    } else {
+        educationData.interestAreas.push(item);
+    }
+    
+    renderInterestAreaItems();
+    
+    // If in edit mode, show delete buttons for newly rendered items
+    if (researchEditMode) {
+        const deleteButtons = document.querySelectorAll('#interestAreaItems .delete-btn');
+        deleteButtons.forEach(btn => btn.style.display = 'block');
+    }
+    
     closeModal('interestArea');
-    loadResearchData();
+    saveEducationData(); // Save to localStorage
+    
+    // Eğitim sekmesini aç
+    switchSection('education');
 }
 
-function saveWorkAreaData(data) {
-    let workAreas = JSON.parse(localStorage.getItem('workAreas')) || [];
-    workAreas.push(data);
-    localStorage.setItem('workAreas', JSON.stringify(workAreas));
-}
-
-function saveInterestAreaData(data) {
-    let interestAreas = JSON.parse(localStorage.getItem('interestAreas')) || [];
-    interestAreas.push(data);
-    localStorage.setItem('interestAreas', JSON.stringify(interestAreas));
-}
-
-function loadResearchData() {
-    loadWorkAreas();
-    loadInterestAreas();
-}
-
-function loadWorkAreas() {
-    const workAreas = JSON.parse(localStorage.getItem('workAreas')) || [];
+// Render functions for work areas and interest areas
+function renderWorkAreaItems() {
     const container = document.getElementById('workAreaItems');
-    
-    if (container) {
-        container.innerHTML = '';
-        workAreas.forEach(area => {
-            const areaElement = createResearchAreaElement(area, 'workArea');
-            container.appendChild(areaElement);
+    container.innerHTML = ''; // Clear all existing content including placeholder
+
+    educationData.workAreas.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'research-item';
+        div.innerHTML = `
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteItem('workArea', ${item.id})" style="display: none;">
+                <i class="fas fa-times"></i>
+            </button>
+            <span>${item.name}</span>
+        `;
+        
+        div.addEventListener('click', function() {
+            if (researchEditMode) {
+                openModal('workArea', item);
+            }
         });
+        
+        container.appendChild(div);
+    });
+
+    // Only add placeholder if no items exist
+    if (educationData.workAreas.length === 0) {
+        const placeholderElement = document.createElement('p');
+        placeholderElement.className = 'placeholder-text';
+        placeholderElement.style.cssText = 'text-align: center; color: #666; font-style: italic;';
+        placeholderElement.textContent = 'Henüz çalışma alanı eklenmemiş.';
+        container.appendChild(placeholderElement);
     }
 }
 
-function loadInterestAreas() {
-    const interestAreas = JSON.parse(localStorage.getItem('interestAreas')) || [];
+function renderInterestAreaItems() {
     const container = document.getElementById('interestAreaItems');
-    
-    if (container) {
-        container.innerHTML = '';
-        interestAreas.forEach(area => {
-            const areaElement = createResearchAreaElement(area, 'interestArea');
-            container.appendChild(areaElement);
+    container.innerHTML = ''; // Clear all existing content including placeholder
+
+    educationData.interestAreas.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'research-item';
+        div.innerHTML = `
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteItem('interestArea', ${item.id})" style="display: none;">
+                <i class="fas fa-times"></i>
+            </button>
+            <span>${item.name}</span>
+        `;
+        
+        div.addEventListener('click', function() {
+            if (researchEditMode) {
+                openModal('interestArea', item);
+            }
         });
+        
+        container.appendChild(div);
+    });
+
+    // Only add placeholder if no items exist
+    if (educationData.interestAreas.length === 0) {
+        const placeholderElement = document.createElement('p');
+        placeholderElement.className = 'placeholder-text';
+        placeholderElement.style.cssText = 'text-align: center; color: #666; font-style: italic;';
+        placeholderElement.textContent = 'Henüz ilgi alanı eklenmemiş.';
+        container.appendChild(placeholderElement);
     }
 }
 
-function createResearchAreaElement(area, type) {
-    const div = document.createElement('div');
-    div.className = 'research-item';
-    div.innerHTML = `
-        <div class="research-info">
-            <div class="research-name">${area.name}</div>
-        </div>
-        <button class="delete-btn" onclick="deleteResearchItem(${area.id}, '${type}')" style="display: none;">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-    return div;
+// Load and render all education items when page loads
+function loadEducationItems() {
+    renderEducationItems();
+    renderThesisItems();
+    renderLanguageItems();
+    renderWorkAreaItems();
+    renderInterestAreaItems();
 }
-
-function deleteResearchItem(id, type) {
-    const storageKey = type === 'workArea' ? 'workAreas' : 'interestAreas';
-    let items = JSON.parse(localStorage.getItem(storageKey)) || [];
-    items = items.filter(item => item.id !== id);
-    localStorage.setItem(storageKey, JSON.stringify(items));
-    loadResearchData();
-}
-
-// Global function for research delete buttons
-window.deleteResearchItem = deleteResearchItem;
 
 // Contact System
 function initContactSystem() {
@@ -2346,13 +2915,79 @@ function addEditButtons() {
 
 // Education Editing System
 function initEducationEditing() {
+    console.log('🎓 Initializing education editing system...');
+    
+    // Load existing education data and render
+    loadEducationItems();
+    
     const educationEditBtn = document.getElementById('educationEditBtn');
     if (educationEditBtn) {
+        console.log('✅ Education edit button found');
+        
         // Önce eski event'leri temizle
         const newBtn = educationEditBtn.cloneNode(true);
         educationEditBtn.parentNode.replaceChild(newBtn, educationEditBtn);
+        
+        // Use original education edit system
         newBtn.addEventListener('click', function() {
-            toggleEditMode('education');
+            console.log('🎓 Education edit button clicked');
+            editMode = !editMode;
+            toggleEducationEditMode();
+        });
+        
+        console.log('✅ Education edit button event listener added');
+    } else {
+        console.warn('⚠️ Education edit button not found');
+    }
+    
+    // Add button event listeners da burada ekle
+    const addEducationBtn = document.getElementById('addEducationBtn');
+    const addThesisBtn = document.getElementById('addThesisBtn');
+    const addLanguageBtn = document.getElementById('addLanguageBtn');
+    const addWorkAreaBtn = document.getElementById('addWorkAreaBtn');
+    const addInterestAreaBtn = document.getElementById('addInterestAreaBtn');
+
+    console.log('🎯 Found add buttons:', {
+        addEducationBtn: !!addEducationBtn,
+        addThesisBtn: !!addThesisBtn,
+        addLanguageBtn: !!addLanguageBtn,
+        addWorkAreaBtn: !!addWorkAreaBtn,
+        addInterestAreaBtn: !!addInterestAreaBtn
+    });
+
+    if (addEducationBtn && !addEducationBtn.hasEventListener) {
+        addEducationBtn.hasEventListener = true;
+        addEducationBtn.addEventListener('click', () => {
+            console.log('➕ Add education clicked');
+            openModal('education');
+        });
+    }
+    if (addThesisBtn && !addThesisBtn.hasEventListener) {
+        addThesisBtn.hasEventListener = true;
+        addThesisBtn.addEventListener('click', () => {
+            console.log('➕ Add thesis clicked');
+            openModal('thesis');
+        });
+    }
+    if (addLanguageBtn && !addLanguageBtn.hasEventListener) {
+        addLanguageBtn.hasEventListener = true;
+        addLanguageBtn.addEventListener('click', () => {
+            console.log('➕ Add language clicked');
+            openModal('language');
+        });
+    }
+    if (addWorkAreaBtn && !addWorkAreaBtn.hasEventListener) {
+        addWorkAreaBtn.hasEventListener = true;
+        addWorkAreaBtn.addEventListener('click', () => {
+            console.log('➕ Add work area clicked');
+            openModal('workArea');
+        });
+    }
+    if (addInterestAreaBtn && !addInterestAreaBtn.hasEventListener) {
+        addInterestAreaBtn.hasEventListener = true;
+        addInterestAreaBtn.addEventListener('click', () => {
+            console.log('➕ Add interest area clicked');
+            openModal('interestArea');
         });
     }
 }
@@ -2399,8 +3034,6 @@ function toggleEditMode(sectionType) {
         editBtn.style.background = '#8b5cf6';
         
         // + ve - butonlarını gizle
-        hideAddRemoveButtons(contentSection);
-        
         console.log(`${sectionType} edit mode: OFF`);
     } else {
         // Enter edit mode
@@ -2410,9 +3043,6 @@ function toggleEditMode(sectionType) {
         
         // Show edit buttons for each section (sadece aktif sekmede)
         addEditButtons();
-        
-        // + ve - butonlarını göster
-        showAddRemoveButtons(contentSection, sectionType);
         
         console.log(`${sectionType} edit mode: ON`);
     }
@@ -2555,14 +3185,100 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // + ve - butonlarını gösterme/gizleme fonksiyonları
+function addPlusButton(titleElement, sectionType) {
+    // Zaten varsa ekleme
+    if (titleElement.querySelector('.add-btn')) return;
+    
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-btn';
+    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+    addBtn.style.cssText = `
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        margin-left: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+        top: -2px;
+    `;
+    
+    addBtn.addEventListener('mouseenter', function() {
+        this.style.background = '#059669';
+        this.style.transform = 'scale(1.1)';
+    });
+    
+    addBtn.addEventListener('mouseleave', function() {
+        this.style.background = '#10b981';
+        this.style.transform = 'scale(1)';
+    });
+    
+    addBtn.addEventListener('click', function() {
+        addNewItem(titleElement, sectionType);
+    });
+    
+    titleElement.appendChild(addBtn);
+}
+
+function hideAddRemoveButtons(contentSection) {
+    // Tüm + ve - butonlarını kaldır
+    const addButtons = contentSection.querySelectorAll('.add-btn');
+    const removeButtons = contentSection.querySelectorAll('.remove-btn');
+    
+    addButtons.forEach(btn => btn.remove());
+    removeButtons.forEach(btn => btn.remove());
+    
+    // Relative positioning'i geri al (group remove butonları için)
+    const groupElements = contentSection.querySelectorAll('[style*="position: relative"]');
+    groupElements.forEach(element => {
+        if (element.style.position === 'relative') {
+            element.style.position = '';
+        }
+    });
+}
+
 function showAddRemoveButtons(contentSection, sectionType) {
     // + butonlarını göster
     contentSection.querySelectorAll('.section-title, .detail-title').forEach(title => {
         addPlusButton(title, sectionType);
     });
     
+    // Work areas ve interest areas için özel handling
+    if (sectionType === 'education') {
+        // Education section için sadece belirli container'larda - butonları göster
+        const workAreaContainer = contentSection.querySelector('#workAreaItems');
+        const interestAreaContainer = contentSection.querySelector('#interestAreaItems');
+        
+        if (workAreaContainer) {
+            // Her bir work area item için bir - butonu ekle (placeholder hariç)
+            workAreaContainer.querySelectorAll('.research-item').forEach(item => {
+                if (!item.querySelector('.remove-btn')) {
+                    addRemoveButtonToItem(item);
+                }
+            });
+        }
+        
+        if (interestAreaContainer) {
+            // Her bir interest area item için bir - butonu ekle (placeholder hariç)
+            interestAreaContainer.querySelectorAll('.research-item').forEach(item => {
+                if (!item.querySelector('.remove-btn')) {
+                    addRemoveButtonToItem(item);
+                }
+            });
+        }
+        
+        return; // Education section için erken çık
+    }
+    
     // Mevcut öğelere - butonları ekle, ancak başlık gruplarını ve yer tutucu metinleri hariç tut
-    const items = contentSection.querySelectorAll('p, .education-item, .research-item, .contact-item');
+    const items = contentSection.querySelectorAll('p:not(.placeholder-text), .education-item, .research-item, .contact-item');
     
     items.forEach(item => {
         if (item.querySelector('.remove-btn')) return; // Zaten varsa ekleme
@@ -2572,6 +3288,8 @@ function showAddRemoveButtons(contentSection, sectionType) {
             'Henüz tez bilgisi eklenmemiş',
             'Henüz yayın eklenmemiş',
             'Henüz proje eklenmemiş',
+            'Henüz çalışma alanı eklenmemiş',
+            'Henüz ilgi alanı eklenmemiş',
             'Bağlantılar içeriği burada olacak',
             'Duyurular içeriği burada olacak',
             'Başarılar içeriği burada olacak',
@@ -2582,6 +3300,11 @@ function showAddRemoveButtons(contentSection, sectionType) {
         
         // Korumalı metinlerden biriyse veya başlık grubu ise silme butonu ekleme
         if (protectedTexts.some(text => itemText.includes(text))) {
+            return;
+        }
+        
+        // Placeholder text class'ına sahipse silme butonu ekleme
+        if (item.classList.contains('placeholder-text')) {
             return;
         }
         
@@ -2597,45 +3320,50 @@ function showAddRemoveButtons(contentSection, sectionType) {
         }
         
         // Normal öğeler için - butonu ekle
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
-        removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
-        removeBtn.style.cssText = `
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            margin-left: 8px;
-            transition: all 0.3s ease;
-            position: relative;
-            top: -2px;
-        `;
-        
-        removeBtn.addEventListener('mouseenter', function() {
-            this.style.background = '#dc2626';
-            this.style.transform = 'scale(1.1)';
-        });
-        
-        removeBtn.addEventListener('mouseleave', function() {
-            this.style.background = '#ef4444';
-            this.style.transform = 'scale(1)';
-        });
-        
-        removeBtn.addEventListener('click', function() {
-            if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
-                item.remove();
-            }
-        });
-        
-        item.appendChild(removeBtn);
+        addRemoveButtonToItem(item);
     });
+}
+
+// Helper function to add remove button to a specific item
+function addRemoveButtonToItem(item) {
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn';
+    removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+    removeBtn.style.cssText = `
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        margin-left: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+        top: -2px;
+    `;
+    
+    removeBtn.addEventListener('mouseenter', function() {
+        this.style.background = '#dc2626';
+        this.style.transform = 'scale(1.1)';
+    });
+    
+    removeBtn.addEventListener('mouseleave', function() {
+        this.style.background = '#ef4444';
+        this.style.transform = 'scale(1)';
+    });
+    
+    removeBtn.addEventListener('click', function() {
+        if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
+            item.remove();
+        }
+    });
+    
+    item.appendChild(removeBtn);
 }
 
 function addGroupRemoveButton(groupElement) {

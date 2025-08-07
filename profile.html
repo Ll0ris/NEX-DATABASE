@@ -369,7 +369,7 @@
                     <div class="education-items" id="educationItems">
                         <!-- Education items will be dynamically generated -->
                     </div>
-                    <div class="add-item-btn" id="addEducationBtn" style="display: none;">
+                    <div class="add-item-btn" id="addEducationBtn">
                         <i class="fas fa-plus"></i>
                         <span>Eğitim Bilgisi Ekle</span>
                     </div>
@@ -384,7 +384,7 @@
                     <div class="education-items" id="thesisItems">
                         <!-- Thesis items will be dynamically generated -->
                     </div>
-                    <div class="add-item-btn" id="addThesisBtn" style="display: none;">
+                    <div class="add-item-btn" id="addThesisBtn">
                         <i class="fas fa-plus"></i>
                         <span>Tez Ekle</span>
                     </div>
@@ -399,7 +399,7 @@
                     <div class="education-items" id="languageItems">
                         <!-- Language items will be dynamically generated -->
                     </div>
-                    <div class="add-item-btn" id="addLanguageBtn" style="display: none;">
+                    <div class="add-item-btn" id="addLanguageBtn">
                         <i class="fas fa-plus"></i>
                         <span>Yabancı Dil Ekle</span>
                     </div>
@@ -425,7 +425,7 @@
                     <div class="research-items" id="workAreaItems">
                         <!-- Work area items will be dynamically generated -->
                     </div>
-                    <div class="add-item-btn" id="addWorkAreaBtn" style="display: none;">
+                    <div class="add-item-btn" id="addWorkAreaBtn">
                         <i class="fas fa-plus"></i>
                         <span>Çalışma Alanı Ekle</span>
                     </div>
@@ -440,7 +440,7 @@
                     <div class="research-items" id="interestAreaItems">
                         <!-- Interest area items will be dynamically generated -->
                     </div>
-                    <div class="add-item-btn" id="addInterestAreaBtn" style="display: none;">
+                    <div class="add-item-btn" id="addInterestAreaBtn">
                         <i class="fas fa-plus"></i>
                         <span>İlgi Alanı Ekle</span>
                     </div>
@@ -684,6 +684,10 @@
                 <div class="form-group">
                     <label>Kurum</label>
                     <input type="text" name="institution" required>
+                </div>
+                <div class="form-group">
+                    <label>Birim/Bölüm</label>
+                    <input type="text" name="department" placeholder="ör: Fizik, Bilgisayar Mühendisliği">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -1004,8 +1008,8 @@
         </div>
     </div>
 
-    <script src="assets/js/profile-script.js"></script>
-    <script src="assets/js/global-features.js"></script>
+    <script src="./assets/js/profile-script.js"></script>
+    <script src="./assets/js/global-features.js"></script>
 </body>
 </html>
 
