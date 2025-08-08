@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Start Live Server",
+			"command": "npx live-server --port=5500 --open=index.html",
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}

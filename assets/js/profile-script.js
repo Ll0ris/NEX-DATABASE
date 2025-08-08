@@ -49,16 +49,23 @@ document.addEventListener('DOMContentLoaded', function() {
             targetSection.style.display = 'block';
             targetSection.classList.add('active');
             
-            // Initialize profile editing if switching to profile section
-            if (sectionName === 'profile') {
+            // Read-only mod kontrolü ve admin kontrolü
+            const urlParams = new URLSearchParams(window.location.search);
+            const isReadOnly = urlParams.get('readOnly') === 'true';
+            const adminMode = localStorage.getItem('adminMode');
+            const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+            const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+            
+            // Initialize profile editing if switching to profile section (read-only değilse veya admin modundaysa)
+            if (sectionName === 'profile' && (!isReadOnly || isAdminMode)) {
                 // Use longer timeout to ensure DOM is ready
                 setTimeout(() => {
                     initProfileEditing();
                 }, 200);
             }
             
-            // Initialize education system if switching to education section
-            if (sectionName === 'education') {
+            // Initialize education system if switching to education section (read-only değilse veya admin modundaysa)
+            if (sectionName === 'education' && (!isReadOnly || isAdminMode)) {
                 setTimeout(initEducationEditing, 100);
                 // Initialize education data rendering
                 setTimeout(() => {
@@ -68,14 +75,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 150);
             }
             
-            // Initialize research system if switching to research section
-            if (sectionName === 'research') {
+            // Initialize research system if switching to research section (read-only değilse veya admin modundaysa)
+            if (sectionName === 'research' && (!isReadOnly || isAdminMode)) {
                 setTimeout(initResearchSystem, 100);
                 // setTimeout(initResearchEditing, 100); // Removed - conflicts with initResearchSystem
             }
             
-            // Initialize contact system if switching to contact section
-            if (sectionName === 'contact') {
+            // Initialize contact system if switching to contact section (read-only değilse veya admin modundaysa)
+            if (sectionName === 'contact' && (!isReadOnly || isAdminMode)) {
                 setTimeout(initContactSystem, 100);
                 setTimeout(initContactEditing, 100);
             }
@@ -110,6 +117,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Global toggle function for purple edit button
     window.toggleBlueEditButton = function() {
+        // Read-only mod kontrolü ve admin kontrolü
+        const urlParams = new URLSearchParams(window.location.search);
+        const isReadOnly = urlParams.get('readOnly') === 'true';
+        const adminMode = localStorage.getItem('adminMode');
+        const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+        const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+        
+        if (isReadOnly && !isAdminMode) {
+            console.log('Edit button disabled in read-only mode');
+            return;
+        }
+        
         const editButton = document.getElementById('editBasicInfoBtn');
         const editMode = document.getElementById('infoEditMode');
         
@@ -155,11 +174,16 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Firebase functions for profile data
-    function saveProfileToFirebase(profileData) {
-        // Firestore v9+ ile users koleksiyonuna kaydet
-        let currentUserEmail = localStorage.getItem('currentUserEmail');
-        if (!currentUserEmail) {
-            console.warn('Kullanıcı email yok, profil kaydedilemiyor');
+    function saveProfileToFirebase(profileData, targetUserIdentifier = null) {
+        // URL parametrelerini kontrol et - hangi kullanıcının profilini düzenlediğimizi belirle
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewUserParam = urlParams.get('viewUser');
+        
+        // Hedef kullanıcıyı belirle: parametre > URL'deki viewUser > mevcut kullanıcı
+        let targetUser = targetUserIdentifier || viewUserParam || localStorage.getItem('currentUserEmail');
+        
+        if (!targetUser) {
+            console.warn('Hedef kullanıcı belirlenemedi, profil kaydedilemiyor');
             return;
         }
         // Firebase hazır olana kadar bekle
@@ -175,17 +199,44 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         new Promise(waitForFirebase).then(async () => {
-            const { collection, query, where, getDocs, doc, updateDoc } = window.firestoreFunctions;
-            const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                const userDoc = snapshot.docs[0];
-                const userRef = doc(window.firestoreDb, "users", userDoc.id);
-                await updateDoc(userRef, profileData);
-                console.log("Profil Firebase'e kaydedildi!");
+            const { collection, query, where, getDocs, doc, updateDoc, getDoc } = window.firestoreFunctions;
+            
+            // Hedef kullanıcıyı document ID veya email ile bul
+            let userDocRef = null;
+            
+            if (targetUser.length >= 15 && !targetUser.includes('@') && !targetUser.includes('.')) {
+                // Document ID gibi görünüyor
+                try {
+                    userDocRef = doc(window.firestoreDb, "users", targetUser);
+                    const docSnap = await getDoc(userDocRef);
+                    if (!docSnap.exists()) {
+                        console.error("❌ Document ID ile kullanıcı bulunamadı:", targetUser);
+                        showErrorMessage('Kullanıcı bulunamadı!');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('🔥 Document ID ile sorgulama hatası:', error);
+                    showErrorMessage('Kullanıcı bulunamadı!');
+                    return;
+                }
             } else {
-                console.error("Kullanıcı bulunamadı, profil kaydedilemedi!");
-                showErrorMessage('Profil kaydedilemedi!');
+                // Email ile sorgula
+                const q = query(collection(window.firestoreDb, "users"), where("email", "==", targetUser));
+                const snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                    const userDoc = snapshot.docs[0];
+                    userDocRef = doc(window.firestoreDb, "users", userDoc.id);
+                } else {
+                    console.error("❌ Email ile kullanıcı bulunamadı:", targetUser);
+                    showErrorMessage('Kullanıcı bulunamadı!');
+                    return;
+                }
+            }
+            
+            // Profil verilerini güncelle
+            if (userDocRef) {
+                await updateDoc(userDocRef, profileData);
+                console.log("✅ Profil Firebase'e kaydedildi! Hedef:", targetUser);
             }
         });
     }
@@ -196,8 +247,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const viewUserParam = urlParams.get('viewUser');
         const isReadOnly = urlParams.get('readOnly') === 'true';
         
-        // Güvenlik kontrolü: viewUser varsa sadece readOnly modda açılmalı
-        if (viewUserParam && !isReadOnly) {
+        // Admin kontrolü
+        const adminMode = localStorage.getItem('adminMode');
+        const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+        const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+        
+        // Güvenlik kontrolü: viewUser varsa sadece readOnly modda açılmalı (admin değilse)
+        if (viewUserParam && !isReadOnly && !isAdminMode) {
             // URL'i temizle ve kendi profiline yönlendir
             window.location.href = 'profile.html';
             return;
@@ -210,12 +266,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Read-only modda düzenleme butonlarını gizle
-        if (isReadOnly) {
+        // Read-only modda düzenleme butonlarını gizle (admin değilse)
+        if (isReadOnly && !isAdminMode) {
             hideEditButtons();
             addViewOnlyIndicator(targetUserIdentifier);
         } else {
-            // Read-only mod değilse normal profil moduna geçir
+            // Read-only mod değilse veya admin modundaysa normal profil moduna geçir
             showEditButtons();
         }
 
@@ -442,11 +498,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update Firebase users collection photoUrl field
-    async function updateFirebaseUserPhoto(photoUrl) {
+    async function updateFirebaseUserPhoto(photoUrl, targetUserIdentifier = null) {
         try {
-            const currentUserEmail = localStorage.getItem('currentUserEmail');
-            if (!currentUserEmail) {
-                console.warn('Kullanıcı email bulunamadı, photo güncellemesi yapılamıyor');
+            // Hangi kullanıcının fotoğrafını güncellediğimizi belirle
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewUserParam = urlParams.get('viewUser');
+            const targetUser = targetUserIdentifier || viewUserParam || localStorage.getItem('currentUserEmail');
+            
+            if (!targetUser) {
+                console.warn('Hedef kullanıcı belirlenemedi, photo güncellemesi yapılamıyor');
                 return;
             }
 
@@ -458,29 +518,49 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (window.firestoreDb && window.firestoreFunctions) {
-                const { collection, query, where, getDocs, doc, updateDoc } = window.firestoreFunctions;
+                const { collection, query, where, getDocs, doc, updateDoc, getDoc } = window.firestoreFunctions;
                 
-                // Find user by email
-                const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
-                const snapshot = await getDocs(q);
+                // Hedef kullanıcıyı document ID veya email ile bul
+                let userDocRef = null;
                 
-                if (!snapshot.empty) {
-                    const userDoc = snapshot.docs[0];
-                    const userRef = doc(window.firestoreDb, "users", userDoc.id);
-                    
-                    // Update photoUrl field
-                    await updateDoc(userRef, {
+                if (targetUser.length >= 15 && !targetUser.includes('@') && !targetUser.includes('.')) {
+                    // Document ID gibi görünüyor
+                    try {
+                        userDocRef = doc(window.firestoreDb, "users", targetUser);
+                        const docSnap = await getDoc(userDocRef);
+                        if (!docSnap.exists()) {
+                            console.error("❌ Document ID ile kullanıcı bulunamadı:", targetUser);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('🔥 Document ID ile sorgulama hatası:', error);
+                        return;
+                    }
+                } else {
+                    // Email ile sorgula
+                    const q = query(collection(window.firestoreDb, "users"), where("email", "==", targetUser));
+                    const snapshot = await getDocs(q);
+                    if (!snapshot.empty) {
+                        const userDoc = snapshot.docs[0];
+                        userDocRef = doc(window.firestoreDb, "users", userDoc.id);
+                    } else {
+                        console.error("❌ Email ile kullanıcı bulunamadı:", targetUser);
+                        return;
+                    }
+                }
+                
+                // Photo URL'ini güncelle
+                if (userDocRef) {
+                    await updateDoc(userDocRef, {
                         photoUrl: photoUrl
                     });
                     
-                    console.log('✅ Firebase users collection photoUrl güncellendi:', photoUrl);
+                    console.log('✅ Firebase users collection photoUrl güncellendi:', photoUrl, 'Hedef:', targetUser);
                     
-                    // Update global user display (both name and photo)
-                    if (typeof updateUserNameDisplay === 'function') {
+                    // Update global user display (sadece kendi profilimizi düzenliyorsak)
+                    if (!viewUserParam && typeof updateUserNameDisplay === 'function') {
                         updateUserNameDisplay();
                     }
-                } else {
-                    console.warn('Kullanıcı email ile eşleşen kullanıcı bulunamadı:', currentUserEmail);
                 }
             } else {
                 console.warn('Firebase bağlantısı henüz hazır değil');
@@ -492,6 +572,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Profile Editing Functions
     function initProfileEditing() {
+        // Read-only mod kontrolü ve admin kontrolü
+        const urlParams = new URLSearchParams(window.location.search);
+        const isReadOnly = urlParams.get('readOnly') === 'true';
+        const adminMode = localStorage.getItem('adminMode');
+        const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+        const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+        
+        // Read-only modda profil düzenleme özelliklerini devre dışı bırak (admin değilse)
+        if (isReadOnly && !isAdminMode) {
+            console.log('Read-only mode detected, skipping profile editing initialization');
+            return;
+        }
+        
         const profileEditBtn = document.getElementById('profileEditBtn');
         const cancelBtn = document.getElementById('cancelBasicInfoBtn');
         const saveBtn = document.getElementById('saveBasicInfoBtn');
@@ -515,6 +608,18 @@ document.addEventListener('DOMContentLoaded', function() {
             newProfileEditBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                // Read-only mod kontrolü ve admin kontrolü
+                const urlParams = new URLSearchParams(window.location.search);
+                const isReadOnly = urlParams.get('readOnly') === 'true';
+                const adminMode = localStorage.getItem('adminMode');
+                const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+                const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+                
+                if (isReadOnly && !isAdminMode) {
+                    console.log('Profile editing disabled in read-only mode');
+                    return;
+                }
                 
                 // Check if edit mode is currently open
                 const editMode = document.getElementById('infoEditMode');
@@ -777,6 +882,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function saveBasicInfo() {
+        // Hangi kullanıcının profilini düzenlediğimizi belirle
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewUserParam = urlParams.get('viewUser');
+        const targetUserIdentifier = viewUserParam || localStorage.getItem('currentUserEmail');
+        
         // Get all form data
         const titlePrefix = document.getElementById('titlePrefixEdit')?.value || '';
         const fullName = document.getElementById('fullNameEdit')?.value || '';
@@ -785,8 +895,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const department = document.getElementById('departmentEdit')?.value || '';
         const status = document.getElementById('statusEdit')?.value || '';
         const phone = document.getElementById('phoneEdit')?.value || '';
-        // Email is not editable, always use currentUserEmail from localStorage
-        const email = localStorage.getItem('currentUserEmail') || '';
         // Positions (assume comma separated string)
         const positions = document.getElementById('positionsEdit')?.value || '';
         // Add other fields as needed
@@ -837,10 +945,9 @@ document.addEventListener('DOMContentLoaded', function() {
         originalFormData.department = department;
         originalFormData.status = status;
         originalFormData.phone = phone;
-        originalFormData.email = email;
         originalFormData.positions = positions;
 
-        // Save to Firebase
+        // Save to Firebase - hedef kullanıcıyı belirt
         saveProfileToFirebase({
             titlePrefix,
             name: fullName,
@@ -852,10 +959,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // email is not updated here
             positions: positions ? positions.split(',').map(p => p.trim()) : [],
             photoUrl: mainProfilePhoto ? (mainProfilePhoto.querySelector('img')?.src || '') : ''
-        });
+        }, targetUserIdentifier);
 
         // Update Firebase users collection name field if fullName is provided
-        if (fullName.trim()) {
+        // Sadece kendi profilimizi düzenliyorsak global user name'i güncelle
+        if (fullName.trim() && !viewUserParam) {
             updateFirebaseUserName(fullName);
         }
 
@@ -973,8 +1081,11 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
-        // Update Firebase with new photo URL
-        updateFirebaseUserPhoto(imageSrc);
+        // Update Firebase with new photo URL - hedef kullanıcıyı belirt
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewUserParam = urlParams.get('viewUser');
+        const targetUserIdentifier = viewUserParam || localStorage.getItem('currentUserEmail');
+        updateFirebaseUserPhoto(imageSrc, targetUserIdentifier);
         
         // Do NOT update original form data here - only update on save
         // This allows cancel to revert photo changes
@@ -1026,8 +1137,11 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
-        // Remove photo from Firebase (set to null)
-        updateFirebaseUserPhoto(null);
+        // Remove photo from Firebase (set to null) - hedef kullanıcıyı belirt
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewUserParam = urlParams.get('viewUser');
+        const targetUserIdentifier = viewUserParam || localStorage.getItem('currentUserEmail');
+        updateFirebaseUserPhoto(null, targetUserIdentifier);
         
         // Do NOT update original form data here - only update on save
         // This allows cancel to revert photo removal
@@ -3620,27 +3734,41 @@ function showSuccessMessage(message) {
     }, 3000);
 }
 
-// Read-only modda düzenleme butonlarını gizle
+// Read-only modda düzenleme butonlarını gizle (admin kontrolü ile)
 function hideEditButtons() {
+    // Admin kontrolü
+    const adminMode = localStorage.getItem('adminMode');
+    const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+    const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+    
+    // Admin modundaysa düzenleme butonlarını gizleme
+    if (isAdminMode) {
+        console.log('Admin mode detected, keeping edit buttons visible');
+        return;
+    }
+    
     const editBtn = document.getElementById('editProfileBtn');
     const saveBtn = document.getElementById('saveProfileBtn');
     const cancelBtn = document.getElementById('cancelProfileBtn');
     const photoControls = document.getElementById('photoControls');
     const profileEditBtn = document.getElementById('profileEditBtn'); // Mor düzenle butonu
-    
-    // Güvenli admin kontrolü
-    const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
-    const userRole = localStorage.getItem('userRole') || 'user';
-    const isRealAdmin = hasRealAdminAccess && userRole === 'admin';
+    const editBasicInfoBtn = document.getElementById('editBasicInfoBtn'); // Mavi düzenle butonu
     
     if (editBtn) editBtn.style.display = 'none';
     if (saveBtn) saveBtn.style.display = 'none';
     if (cancelBtn) cancelBtn.style.display = 'none';
     if (photoControls) photoControls.style.display = 'none';
     
-    // Mor düzenle butonu sadece gerçek admin ise göster
-    if (profileEditBtn && !isRealAdmin) {
+    // Read-only modda TÜM düzenleme butonları gizlenmeli (admin değilse)
+    if (profileEditBtn) {
         profileEditBtn.style.display = 'none';
+        profileEditBtn.style.visibility = 'hidden';
+        profileEditBtn.disabled = true;
+    }
+    if (editBasicInfoBtn) {
+        editBasicInfoBtn.style.display = 'none';
+        editBasicInfoBtn.style.visibility = 'hidden';
+        editBasicInfoBtn.disabled = true;
     }
     
     // Tüm inputları disable yap
@@ -3658,14 +3786,29 @@ function showEditButtons() {
     const cancelBtn = document.getElementById('cancelProfileBtn');
     const photoControls = document.getElementById('photoControls');
     const profileEditBtn = document.getElementById('profileEditBtn');
+    const editBasicInfoBtn = document.getElementById('editBasicInfoBtn'); // Mavi düzenle butonu
     
-    if (editBtn) editBtn.style.display = 'block';
-    if (profileEditBtn) profileEditBtn.style.display = 'block';
+    if (editBtn) {
+        editBtn.style.display = 'block';
+        editBtn.style.visibility = 'visible';
+        editBtn.disabled = false;
+    }
+    if (profileEditBtn) {
+        profileEditBtn.style.display = 'block';
+        profileEditBtn.style.visibility = 'visible';
+        profileEditBtn.disabled = false;
+    }
     
     // Save ve Cancel butonları edit modda gösterilir, normalde gizli
     if (saveBtn) saveBtn.style.display = 'none';
     if (cancelBtn) cancelBtn.style.display = 'none';
     if (photoControls) photoControls.style.display = 'none';
+    // Mavi düzenle butonu başlangıçta gizli, mor düzenle butonuna tıklandığında gösterilir
+    if (editBasicInfoBtn) {
+        editBasicInfoBtn.style.display = 'none';
+        editBasicInfoBtn.style.visibility = 'visible';
+        editBasicInfoBtn.disabled = false;
+    }
     
     // Tüm inputları enable yap
     const inputs = document.querySelectorAll('#profile-container input, #profile-container textarea');
@@ -3683,20 +3826,31 @@ function showEditButtons() {
 
 // Read-only modda kimin profilini görüntülediğimizi belirt
 function addViewOnlyIndicator(userIdentifier) {
+    // Admin kontrolü
+    const adminMode = localStorage.getItem('adminMode');
+    const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+    const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+    
     const header = document.querySelector('.header h1') || document.querySelector('h1');
     if (header) {
         const indicator = document.createElement('div');
         indicator.id = 'viewOnlyIndicator'; // ID ekle ki güncellenebilsin
         indicator.style.cssText = `
-            background: #e3f2fd;
+            background: ${isAdminMode ? '#e8f5e8' : '#e3f2fd'};
             padding: 8px 16px;
             border-radius: 5px;
             margin: 10px 0;
             font-size: 14px;
-            color: #1976d2;
-            border-left: 4px solid #2196f3;
+            color: ${isAdminMode ? '#2e7d32' : '#1976d2'};
+            border-left: 4px solid ${isAdminMode ? '#4caf50' : '#2196f3'};
         `;
-        indicator.innerHTML = `📋 Profil görüntüleniyor (Salt okunur mod)`;
+        
+        if (isAdminMode) {
+            indicator.innerHTML = `�️ <strong>Admin modu:</strong> Kullanıcı profili düzenlenebilir`;
+        } else {
+            indicator.innerHTML = `�📋 Profil görüntüleniyor (Salt okunur mod)`;
+        }
+        
         header.parentNode.insertBefore(indicator, header.nextSibling);
     }
 }
