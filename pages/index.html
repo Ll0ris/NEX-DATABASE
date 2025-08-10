@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Giriş</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="../assets/js/nodes.js" defer></script>
+    <script type="module" src="../assets/js/auth.js"></script>
+    <script type="module" src="../assets/js/login.js"></script>
+</head>
+<body>
+    <canvas id="nodeCanvas"></canvas>
+    <div class="background">
+        <div class="container">
+            <div class="login-panel">
+                <div class="header">
+                    <img src="../assets/images/logo.png" alt="NEX Logo" class="logo">
+                    <h1>NEX DATABASE</h1>
+                    <p class="subtitle">FSAC - Yıldız Teknik Üniversitesi</p>
+                </div>
+                
+                <form class="login-form">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="username" name="username" placeholder="Kullanıcı Adı" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="input-container">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="password" name="password" placeholder="Şifre" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Beni hatırla</label>
+                    </div>
+                    
+                    <button type="submit" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i> SİSTEME GİRİŞ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Animated Error Bubble -->
+    <div class="error-bubble" id="errorBubble">
+        <span class="error-text">Kullanıcı adı veya şifre hatalı!</span>
+    </div>
+    
+    <!-- Copyright Footer -->
+    <footer class="copyright-footer">
+        <p>&copy; 2025 NEX Database - FSAC Yıldız Teknik Üniversitesi. Tüm hakları saklıdır.</p>
+    </footer>
+    
+    <!-- Yükleme Ekranı -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Siteye yönlendiriliyorsunuz...</div>
+        </div>
+    </div>
+    
+    <script src="../assets/js/global-features.js"></script>
+</body>
+</html>

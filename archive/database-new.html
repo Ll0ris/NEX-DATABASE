@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Ana Panel</title>
+    <link rel="stylesheet" href="../assets/css/database-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <!-- Sol Taraf -->
+        <div class="left-section">
+            <button class="hamburger-btn" id="hamburgerBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="logo-section" onclick="window.location.href='database.html'">
+                <img src="../assets/images/logo.png" alt="NEX Logo" class="top-logo">
+                <span class="top-title">NEX DATABASE</span>
+            </div>
+        </div>
+        
+        <!-- Sağ Taraf -->
+        <div class="right-section">
+            <div class="theme-toggle" id="themeToggle">
+                <div class="theme-icon">☀️</div>
+            </div>
+            <div class="profile-section" id="profileSection">
+                <div class="profile-info">
+                    <div class="profile-name">Admin Kullanıcı</div>
+                    <div class="profile-rank">Sistem Yöneticisi</div>
+                </div>
+                <div class="profile-avatar">
+                    <img src="https://via.placeholder.com/40x40/5d0d0e/ffffff?text=A" alt="Profil">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Side Panel -->
+    <div class="side-panel" id="sidePanel">
+        <nav class="side-nav">
+            <a href="database.html" class="nav-item active">
+                <i class="nav-icon">🏠</i>
+                <span>Ana Sayfa</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="nav-icon">📊</i>
+                <span>Veriler</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="nav-icon">📈</i>
+                <span>Raporlar</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="nav-icon">⚙️</i>
+                <span>Ayarlar</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="nav-icon">👥</i>
+                <span>Kullanıcılar</span>
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="content-header">
+            <h1>Ana Panel</h1>
+            <p class="content-subtitle">NEX Database Yönetim Sistemi</p>
+        </div>
+        
+        <div class="dashboard-cards">
+            <div class="card">
+                <h3>Toplam Kullanıcı</h3>
+                <div class="card-number">1,234</div>
+            </div>
+            <div class="card">
+                <h3>Aktif Projeler</h3>
+                <div class="card-number">56</div>
+            </div>
+            <div class="card">
+                <h3>Yeni Kayıtlar</h3>
+                <div class="card-number">89</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Dropdown -->
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="profile.html" class="dropdown-item">
+            <i class="dropdown-icon">👤</i>
+            <span>Profil</span>
+        </a>
+        <a href="#" class="dropdown-item">
+            <i class="dropdown-icon">⚙️</i>
+            <span>Ayarlar</span>
+        </a>
+        <hr class="dropdown-divider">
+        <a href="index.html" class="dropdown-item logout">
+            <i class="dropdown-icon">🚪</i>
+            <span>Çıkış</span>
+        </a>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <script src="../assets/js/database-script.js"></script>
+    <script src="../assets/js/global-features.js"></script>
+</body>
+</html>

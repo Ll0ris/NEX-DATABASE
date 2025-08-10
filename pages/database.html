@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Ana Panel</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
+    <link rel="shortcut icon" href="../favicon.ico">
+    
+    <!-- Theme Loader -->
+    <script src="../assets/js/theme-loader.js"></script>
+    
+    <!-- PDF.js for PDF page counting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // PDF.js worker yapılandırması
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    
+    <link rel="stylesheet" href="../assets/css/database-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <!-- Firebase Configuration (Auth first) -->
+    <script type="module" src="../assets/js/auth.js"></script>
+</head>
+<body>
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <!-- Sol Taraf -->
+        <div class="left-section">
+            <button class="hamburger-btn" id="hamburgerBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
+                <img src="../assets/images/logo.png" alt="NEX Logo" class="top-logo">
+                <div class="logo-text">
+                    <span class="top-title">NEX DATABASE</span>
+                    <span class="top-subtitle">FSAC - Yıldız Teknik Üniversitesi</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orta Bölüm - Admin Dropdown -->
+        <div class="center-section">
+            <div class="admin-mode-dropdown" id="adminModeDropdown">
+                <div class="dropdown-trigger" id="dropdownTrigger">
+                    <i class="fas fa-shield-alt mode-icon" id="modeIcon"></i>
+                    <span class="mode-text">Güvenli Mod</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-option active" data-mode="safe">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Güvenli Mod</span>
+                    </div>
+                    <div class="dropdown-option" data-mode="admin">
+                        <i class="fas fa-cog"></i>
+                        <span>Admin Paneli</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sağ Taraf -->
+        <div class="right-section">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-sun theme-icon"></i>
+            </div>
+            <div class="profile-section" id="profileSection">
+                <div class="profile-info">
+                    <div class="profile-name"></div>
+                    <div class="profile-rank">Sistem Yöneticisi</div>
+                </div>
+                <div class="profile-avatar">
+                    <i class="fas fa-user-circle top-profile-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Side Panel -->
+    <div class="side-panel" id="sidePanel">
+        <nav class="side-nav">
+            <a href="database.html" class="nav-item active">
+                <i class="fas fa-home nav-icon"></i>
+                <span>Ana Sayfa</span>
+            </a>
+            <a href="members.html" class="nav-item">
+                <i class="fas fa-users nav-icon"></i>
+                <span>Üyeler</span>
+            </a>
+            <a href="teams.html" class="nav-item">
+                <i class="fas fa-user-friends nav-icon"></i>
+                <span>Takımlar</span>
+            </a>
+            <a href="management.html" class="nav-item">
+                <i class="fas fa-user-tie nav-icon"></i>
+                <span>Yönetim Kadrosu</span>
+            </a>
+            <a href="archive.html" class="nav-item">
+                <i class="fas fa-archive nav-icon"></i>
+                <span>Arşiv</span>
+            </a>
+            <a href="awards.html" class="nav-item">
+                <i class="fas fa-trophy nav-icon"></i>
+                <span>NEX Awards</span>
+            </a>
+            <a href="workshops.html" class="nav-item">
+                <i class="fas fa-tools nav-icon"></i>
+                <span>Atölyeler</span>
+            </a>
+            
+            <!-- Admin Only Section -->
+            <div class="admin-section admin-only">
+                <div class="admin-divider"></div>
+                <a href="#" class="nav-item admin-only" id="consoleToggle">
+                    <i class="fas fa-terminal nav-icon" style="color: #8b5cf6;"></i>
+                    <span>Konsol</span>
+                </a>
+                <a href="reports.html" class="nav-item admin-only">
+                    <i class="fas fa-chart-bar nav-icon"></i>
+                    <span>Raporlar</span>
+                </a>
+                <a href="server-status.html" class="nav-item admin-only">
+                    <i class="fas fa-server nav-icon"></i>
+                    <span>Sunucu Durumu</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Journal Section -->
+        <div class="journal-section">
+            <div class="journal-container">
+                <!-- 3D Rotating Journal Cover -->
+                <div class="journal-cover-container">
+                    <div class="journal-cover">
+                        <img src="../assets/images/journal.png" alt="NEX Annual Science Journal" class="journal-image">
+                    </div>
+                </div>
+
+                <!-- Journal Info -->
+                <div class="journal-info">
+                    <div class="journal-header">
+                        <h1 class="journal-title">NEX ANNUAL SCIENCE</h1>
+                        <p class="journal-authors">C. Ertuğrul ERDOĞAN, NEX</p>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div class="journal-progress">
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" data-progress="0"></div>
+                                <span class="progress-text">0/40 sayfa hazırlandı</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="journal-actions">
+                        <button class="btn-about">
+                            <i class="fas fa-info-circle"></i>
+                            Hakkında
+                        </button>
+                        <button class="btn-read" onclick="openJournalPdf()">
+                            <i class="fas fa-book-open"></i>
+                            Oku
+                        </button>
+                        <button class="btn-edit admin-only" onclick="showJournalEditForm()">
+                            <i class="fas fa-edit"></i>
+                            Düzenle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Journal Edit Section (Hidden by default) -->
+                <div class="journal-edit-section" id="journalEditSection" style="display: none;">
+                    <div class="edit-container">
+                        <h3 class="edit-title">Journal Düzenleme</h3>
+                        <form class="journal-edit-form" id="journalEditForm">
+                            <div class="form-group">
+                                <label for="journalName">Journal Adı:</label>
+                                <input type="text" id="journalName" name="journalName" placeholder="Journal adını girin..." required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="journalAuthors">Yazarlar:</label>
+                                <textarea id="journalAuthors" name="journalAuthors" placeholder="Yazarları girin (virgülle ayırın)..." rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="journalYear">Yıl:</label>
+                                <input type="number" id="journalYear" name="journalYear" min="1900" max="2030" placeholder="2024" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="journalPdf">PDF Yükle:</label>
+                                <div class="file-upload-area">
+                                    <input type="file" id="journalPdf" name="journalPdf" accept=".pdf" style="display: none;">
+                                    <div class="file-upload-button" onclick="document.getElementById('journalPdf').click();">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>PDF dosyası seçin</span>
+                                    </div>
+                                    <div class="file-info" id="fileInfo" style="display: none;">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <span id="fileName"></span>
+                                        <button type="button" class="remove-file" onclick="removeFile()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-buttons">
+                                <button type="button" class="btn btn-cancel" onclick="cancelJournalEdit()">İptal</button>
+                                <button type="submit" class="btn btn-save">Kaydet</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Deadline Section (Hidden when editing) -->
+                <div class="journal-deadline" id="journalDeadline">
+                    <div class="deadline-container">
+                        <h3 class="deadline-title">Deadline</h3>
+                        <div class="deadline-counter" id="deadlineCounter">180d</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Section -->
+        <div class="calendar-section">
+            <div class="calendar-container">
+                <!-- Calendar Header -->
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn" id="prevMonthBtn">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 class="calendar-month-year" id="calendarMonthYear">Ağustos 2025</h2>
+                    <button class="calendar-nav-btn" id="nextMonthBtn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="calendar-grid">
+                    <!-- Days of Week -->
+                    <div class="calendar-day-header">Pzt</div>
+                    <div class="calendar-day-header">Sal</div>
+                    <div class="calendar-day-header">Çar</div>
+                    <div class="calendar-day-header">Per</div>
+                    <div class="calendar-day-header">Cum</div>
+                    <div class="calendar-day-header">Cmt</div>
+                    <div class="calendar-day-header">Paz</div>
+                    
+                    <!-- Calendar Days will be dynamically generated -->
+                    <div class="calendar-days" id="calendarDays"></div>
+                </div>
+
+                <!-- Admin Controls -->
+                <div class="calendar-admin-controls admin-only">
+                    <button class="btn-calendar-edit">
+                        <i class="fas fa-edit"></i>
+                        Düzenle
+                    </button>
+                </div>
+            </div>
+
+            <!-- Upcoming Events Sidebar -->
+            <div class="events-sidebar">
+                <h3 class="events-title">Yaklaşan Etkinlikler</h3>
+                <div class="upcoming-events" id="upcomingEvents">
+                    <!-- Events will be dynamically generated -->
+                </div>
+                <button class="btn-all-events">
+                    <i class="fas fa-calendar-alt"></i>
+                    Tüm Etkinlikler
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console Panel (Admin Only) -->
+    <div class="console-panel" id="consolePanel" style="display: none;">
+        <div class="console-header">
+            <div class="console-title">
+                <i class="fas fa-terminal"></i>
+                <span>Firebase Konsol</span>
+            </div>
+            <button class="console-close" id="consoleClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="console-content">
+            <div class="console-section">
+                <h3>Kullanıcı İşlemleri</h3>
+                <div class="console-buttons">
+                    <button class="console-btn" onclick="addUserForm()">
+                        <i class="fas fa-user-plus"></i> Kullanıcı Ekle
+                    </button>
+                    <button class="console-btn" onclick="getAllUsers()">
+                        <i class="fas fa-users"></i> Tüm Kullanıcıları Göster
+                    </button>
+                </div>
+            </div>
+            
+            <div class="console-section">
+                <h3>Journal İşlemleri</h3>
+                <div class="console-buttons">
+                    <button class="console-btn" onclick="getAllJournals()">
+                        <i class="fas fa-book"></i> Tüm Journalları Göster
+                    </button>
+                    <button class="console-btn" onclick="showJournalStats()">
+                        <i class="fas fa-chart-bar"></i> Journal İstatistikleri
+                    </button>
+                    <button class="console-btn" onclick="testFirebaseConnection()">
+                        <i class="fas fa-plug"></i> Firebase Bağlantı Testi
+                    </button>
+                    <button class="console-btn" onclick="checkStorageStatus()">
+                        <i class="fas fa-cloud"></i> Storage Durumu
+                    </button>
+                    <button class="console-btn" onclick="debugPdfUrls()">
+                        <i class="fas fa-file-pdf"></i> PDF URL Debug
+                    </button>
+                    <button class="console-btn" onclick="testDirectPdfAccess()">
+                        <i class="fas fa-folder"></i> Storage Dosya Listesi
+                    </button>
+                    <button class="console-btn" onclick="manualPdfTest()">
+                        <i class="fas fa-vial"></i> Manuel PDF Test
+                    </button>
+                    <button class="console-btn" onclick="testPdfAccess()">
+                        <i class="fas fa-microscope"></i> PDF Erişim Testi
+                    </button>
+                    <button class="console-btn" onclick="fixStorageRules()">
+                        <i class="fas fa-wrench"></i> Storage Rules Düzelt
+                    </button>
+                </div>
+            </div>
+            
+            <div class="console-section">
+                <h3>Kullanıcı Ekleme Formu</h3>
+                <div class="console-form" id="userForm" style="display: none;">
+                    <div class="form-row">
+                        <input type="text" id="userName" placeholder="İsim (name)" class="console-input">
+                        <input type="text" id="userFullName" placeholder="Tam İsim (fullName)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="email" id="userEmail" placeholder="E-mail" class="console-input">
+                        <input type="password" id="userPassword" placeholder="Şifre" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="userPhone" placeholder="Telefon" class="console-input">
+                        <input type="text" id="userDepartment" placeholder="Bölüm (department)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="userFaculty" placeholder="Fakülte (faculty)" class="console-input">
+                        <input type="text" id="userInstitution" placeholder="Kurum (institution)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="url" id="userLinkedinLink" placeholder="LinkedIn Profili (https://...)" class="console-input">
+                        <input type="url" id="userOrcidLink" placeholder="ORCID Profili (https://...)" class="console-input">
+                    </div>
+                    <div class="form-row">
+                        <textarea id="userPhotoHTML" placeholder="Fotoğraf HTML kodu (opsiyonel)" class="console-input" rows="2"></textarea>
+                    </div>
+                    <button class="console-btn primary" onclick="submitUser()">
+                        <i class="fas fa-save"></i> Kaydet
+                    </button>
+                </div>
+            </div>
+            
+            <div class="console-section">
+                <h3>Konsol Çıktısı</h3>
+                <div class="console-output" id="consoleOutput">
+                    <div class="output-line">Firebase konsol hazır. Komutları kullanabilirsiniz.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Dropdown -->
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="profile.html" class="dropdown-item">
+            <i class="fas fa-user dropdown-icon"></i>
+            <span>Profil</span>
+        </a>
+        <a href="#" class="dropdown-item">
+            <i class="fas fa-cog dropdown-icon"></i>
+            <span>Ayarlar</span>
+        </a>
+        <hr class="dropdown-divider">
+        <a href="#" class="dropdown-item logout" onclick="logout(); return false;">
+            <i class="fas fa-sign-out-alt dropdown-icon"></i>
+            <span>Çıkış</span>
+        </a>
+    </div>
+
+    <!-- Admin Protocol Password Modal -->
+    <div class="modal-overlay" id="protocolModal">
+        <div class="modal-content protocol-modal">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-lock"></i>
+                    Protokol Şifresi Gerekli
+                </h3>
+                <button class="modal-close" id="closeProtocolModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="protocol-description">
+                    Admin paneline erişim için protokol şifresini girin:
+                </p>
+                <div class="password-field">
+                    <input type="password" id="protocolPassword" placeholder="Protokol şifresi..." maxlength="20">
+                    <i class="fas fa-eye password-toggle" id="passwordToggle"></i>
+                </div>
+                <div class="error-message" id="errorMessage" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Yanlış şifre! Tekrar deneyin.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancelProtocol">İptal</button>
+                <button class="btn-confirm" id="confirmProtocol">Onayla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Session Timer -->
+    <div class="session-timer" id="sessionTimer">
+        <div class="timer-content">
+            <i class="fas fa-clock"></i>
+            <span class="timer-text">40:00</span>
+        </div>
+    </div>
+
+    <!-- Session Warning Notification -->
+    <div class="session-warning-notification" id="sessionWarning">
+        <div class="warning-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span class="warning-text">Oturum 5 dakika içinde sona erecek!</span>
+        </div>
+    </div>
+
+    <!-- Welcome Bubble -->
+    <div class="welcome-bubble" id="welcomeBubble">
+        <div class="welcome-content">
+            <div class="welcome-title">Hoş Geldiniz!</div>
+            <div class="welcome-user"></div>
+        </div>
+    </div>
+
+    <script src="../assets/js/backend-api.js"></script>
+    <script src="../assets/js/database-script.js"></script>
+    <script src="../assets/js/global-features.js"></script>
+</body>
+</html>

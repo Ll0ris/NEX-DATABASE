@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Konsol</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="../assets/js/nodes.js" defer></script>
+    <!-- Firebase v9+ Modular SDK -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkCL0MJWOvv6cKCsnleL6EgIH1JsF_rzU",
+            authDomain: "nex-database.firebaseapp.com",
+            projectId: "nex-database",
+            storageBucket: "nex-database.appspot.com",
+            messagingSenderId: "532729129753",
+            appId: "1:532729129753:web:4af9c4bb3ff18c9902f388"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Make functions global for use in other scripts
+        window.firebaseApp = app;
+        window.firestoreDb = db;
+        window.firestoreFunctions = {
+            collection,
+            doc,
+            getDoc,
+            setDoc,
+            addDoc,
+            getDocs,
+            query,
+            where
+        };
+        
+        console.log('Firebase initialized successfully!');
+    </script>
+</head>
+<body>
+    <canvas id="nodeCanvas"></canvas>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-container">
+                <img src="../assets/images/logo.png" alt="NEX Logo" class="logo">
+                <h1>NEX DATABASE</h1>
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <div class="admin-mode-toggle">
+                <div class="toggle-container">
+                    <button class="toggle-btn" id="adminToggle">
+                        <span class="toggle-text" id="toggleText">Güvenli Mod</span>
+                        <i class="fas fa-shield-alt toggle-icon"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="profile-dropdown">
+                <button class="profile-btn" id="profileBtn">
+                    <div class="profile-photo">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <span class="profile-name">Kullanıcı</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="profile.html" class="dropdown-item">
+                        <i class="fas fa-user dropdown-icon"></i>
+                        <span>Profil</span>
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-cog dropdown-icon"></i>
+                        <span>Ayarlar</span>
+                    </a>
+                    <hr class="dropdown-divider">
+                    <a href="#" class="dropdown-item logout" onclick="logout(); return false;">
+                        <i class="fas fa-sign-out-alt dropdown-icon"></i>
+                        <span>Çıkış</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Side Panel -->
+    <nav class="side-panel" id="sidePanel">
+        <div class="side-panel-header">
+            <h3>Menü</h3>
+            <button class="close-btn" id="closeBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <ul class="side-menu">
+            <li><a href="database.html"><i class="fas fa-database"></i><span>Veritabanı</span></a></li>
+            <li><a href="members.html"><i class="fas fa-users"></i><span>Üyeler</span></a></li>
+            <li><a href="teams.html"><i class="fas fa-user-friends"></i><span>Takımlar</span></a></li>
+            <li><a href="workshops.html"><i class="fas fa-wrench"></i><span>Atölyeler</span></a></li>
+            <li><a href="awards.html"><i class="fas fa-trophy"></i><span>Ödüller</span></a></li>
+            <li><a href="management.html"><i class="fas fa-users-cog"></i><span>Yönetim</span></a></li>
+            <li><a href="archive.html"><i class="fas fa-archive"></i><span>Arşiv</span></a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-line"></i><span>Raporlar</span></a></li>
+            <li class="active"><a href="console.html"><i class="fas fa-terminal"></i><span>Konsol</span></a></li>
+            <li><a href="server-status.html"><i class="fas fa-server"></i><span>Sunucu Durumu</span></a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <div class="page-header">
+            <h1><i class="fas fa-terminal"></i> Sistem Konsolu</h1>
+            <p>Sistem yönetimi ve komut satırı araçları</p>
+        </div>
+
+        <div class="content-container">
+            <div class="console-container">
+                <div class="console-header">
+                    <div class="console-tabs">
+                        <button class="tab-btn active" data-tab="terminal">
+                            <i class="fas fa-terminal"></i> Terminal
+                        </button>
+                        <button class="tab-btn" data-tab="logs">
+                            <i class="fas fa-file-alt"></i> Loglar
+                        </button>
+                        <button class="tab-btn" data-tab="database">
+                            <i class="fas fa-database"></i> Veritabanı
+                        </button>
+                    </div>
+                    <div class="console-controls">
+                        <button class="btn btn-clear" onclick="clearConsole()">
+                            <i class="fas fa-trash"></i> Temizle
+                        </button>
+                        <button class="btn btn-export" onclick="exportLogs()">
+                            <i class="fas fa-download"></i> Dışa Aktar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="console-content">
+                    <div class="tab-content active" id="terminal">
+                        <div class="terminal-window">
+                            <div class="terminal-output" id="terminalOutput">
+                                <div class="log-entry system">
+                                    <span class="timestamp">[2025-08-06 10:30:15]</span>
+                                    <span class="level info">INFO</span>
+                                    <span class="message">NEX Database Konsolu başlatıldı</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="timestamp">[2025-08-06 10:30:16]</span>
+                                    <span class="level success">SUCCESS</span>
+                                    <span class="message">Firebase bağlantısı kuruldu</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="timestamp">[2025-08-06 10:30:17]</span>
+                                    <span class="level info">INFO</span>
+                                    <span class="message">Sistem hazır - komut bekleniyor</span>
+                                </div>
+                            </div>
+                            <div class="terminal-input">
+                                <span class="prompt">nex@database:~$</span>
+                                <input type="text" id="commandInput" placeholder="Komut girin..." autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="logs">
+                        <div class="logs-window">
+                            <div class="log-filters">
+                                <select id="logLevel">
+                                    <option value="all">Tüm Seviyeler</option>
+                                    <option value="error">Hata</option>
+                                    <option value="warning">Uyarı</option>
+                                    <option value="info">Bilgi</option>
+                                    <option value="success">Başarılı</option>
+                                </select>
+                                <input type="date" id="logDate" value="2025-08-06">
+                                <button class="btn btn-filter" onclick="filterLogs()">
+                                    <i class="fas fa-filter"></i> Filtrele
+                                </button>
+                            </div>
+                            <div class="logs-output" id="logsOutput">
+                                <div class="log-entry">
+                                    <span class="timestamp">[2025-08-06 09:15:23]</span>
+                                    <span class="level error">ERROR</span>
+                                    <span class="message">Kullanıcı giriş hatası: Geçersiz şifre</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="timestamp">[2025-08-06 09:14:12]</span>
+                                    <span class="level warning">WARNING</span>
+                                    <span class="message">Bellek kullanımı %85 seviyesinde</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="timestamp">[2025-08-06 09:12:45]</span>
+                                    <span class="level info">INFO</span>
+                                    <span class="message">Yeni üye kaydedildi: john.doe@example.com</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="timestamp">[2025-08-06 09:10:33]</span>
+                                    <span class="level success">SUCCESS</span>
+                                    <span class="message">Veritabanı yedekleme tamamlandı</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="database">
+                        <div class="database-window">
+                            <div class="query-input">
+                                <textarea id="sqlQuery" placeholder="Firebase Firestore sorgusu girin...">// Örnek sorgu
+const users = await getDocs(collection(db, "users"));
+users.forEach((doc) => {
+    console.log(doc.id, " => ", doc.data());
+});</textarea>
+                                <button class="btn btn-execute" onclick="executeQuery()">
+                                    <i class="fas fa-play"></i> Çalıştır
+                                </button>
+                            </div>
+                            <div class="query-output" id="queryOutput">
+                                <div class="output-placeholder">
+                                    Sorgu sonuçları burada görünecek...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .console-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            height: calc(100vh - 200px);
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .console-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-color-secondary);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active,
+        .tab-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .console-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .console-content {
+            flex: 1;
+            position: relative;
+        }
+
+        .tab-content {
+            display: none;
+            height: 100%;
+            padding: 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .terminal-window,
+        .logs-window,
+        .database-window {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-output,
+        .logs-output {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .terminal-input {
+            padding: 15px 20px;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .prompt {
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        #commandInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .level {
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .level.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .level.warning {
+            background: #ffc107;
+            color: black;
+        }
+
+        .level.info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .level.success {
+            background: #28a745;
+            color: white;
+        }
+
+        .log-filters {
+            padding: 15px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .query-input {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #sqlQuery {
+            width: 100%;
+            height: 150px;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        .query-output {
+            flex: 1;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+        }
+
+        .output-placeholder {
+            color: #666;
+            font-style: italic;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-clear {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-export {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-filter {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-execute {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+    </style>
+
+    <script src="../assets/js/backend-api.js"></script>
+    <script src="../assets/js/console.js"></script>
+    <script src="../assets/js/global-features.js"></script>
+</body>
+</html>
