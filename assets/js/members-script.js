@@ -5,26 +5,31 @@ document.addEventListener('DOMContentLoaded', function() {
     let allMembers = [];
     let sortField = 'name';
     let sortDirection = 'asc';
+    let backendTotalCount = null; // Backend'den gelen toplam üye sayısı
 
     // Initialize the page
     initializeMembersPage();
 
     async function initializeMembersPage() {
         try {
-            // Firebase hazır olana kadar bekle
-            let attempts = 0;
-            while (!window.firestoreDb && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
+            // Backend'den toplam sayıyı ve listeyi paralel çek
+            const [countRes, listRes] = await Promise.all([
+                window.backendAPI.get('users.php', { action: 'count' }),
+                window.backendAPI.get('users.php', { action: 'list' })
+            ]);
+
+            // Toplam sayı
+            if (countRes && countRes.success) {
+                backendTotalCount = Number(countRes.total || countRes.count || 0);
+            } else {
+                backendTotalCount = null;
             }
-            
-            if (!window.firestoreDb) {
-                console.error('Firebase bağlantısı kurulamadı');
-                showError('Veritabanı bağlantısı kurulamadı.');
-                return;
-            }
-            
-            await loadMembersFromFirestore();
+
+            // Liste
+            const items = (listRes && listRes.success && Array.isArray(listRes.items)) ? listRes.items : [];
+            allMembers = items.map(normalizeUserFromBackend);
+            currentMembers = [...allMembers];
+
             updateStatistics();
             renderMemberTable();
             initializeEventListeners();
@@ -34,49 +39,49 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Firestore'dan üyeleri yükle (users koleksiyonu)
-    async function loadMembersFromFirestore() {
-        try {
-            // Firebase v9+ modular SDK kullanım
-            if (!window.firestoreDb || !window.firestoreFunctions) {
-                console.error('Firebase bağlantısı henüz hazır değil');
-                return;
-            }
-            
-            const { collection, getDocs } = window.firestoreFunctions;
-            const usersSnapshot = await getDocs(collection(window.firestoreDb, 'users'));
-            currentMembers = [];
-            usersSnapshot.forEach((doc) => {
-                const userData = doc.data();
-                currentMembers.push({
-                    id: doc.id,
-                    name: userData.name || '',
-                    email: userData.email || '',
-                    phone: userData.phone || '',
-                    photoUrl: userData.photoUrl || null,
-                    joinDate: userData.createdAt || userData.joinDate || '',
-                    membershipType: userData.role || userData.membershipType || 'aktif',
-                    rank: userData.rank || '',
-                    isAdmin: userData.isAdmin || false,
-                    positions: userData.positions || [],
-                    fsacMembership: userData.fsacMembership || '',
-                    fsacMembershipType: userData.fsacMembershipType || '',
-                    institution: userData.institution || '',
-                    department: userData.department || '',
-                    status: userData.status || ''
-                });
-            });
-            allMembers = [...currentMembers];
-        } catch (error) {
-            console.error('Firestore\'dan üyeler yüklenirken hata:', error);
-            throw error;
+    function normalizeUserFromBackend(row) {
+        // Backend alanlarını UI için normalize et
+        // Olası kolonlar: id, name, email, phone, photo_url, institution, rank, role, position, created_at/createdAt
+        const createdAtRaw = row.createdAt || row.created_at || row.created_at_ms || null;
+        let createdAt;
+        if (typeof createdAtRaw === 'number') {
+            createdAt = new Date(createdAtRaw);
+        } else if (typeof createdAtRaw === 'string') {
+            const parsed = Date.parse(createdAtRaw);
+            createdAt = isNaN(parsed) ? null : new Date(parsed);
+        } else if (createdAtRaw && createdAtRaw.seconds) {
+            // Firestore benzeri destek
+            createdAt = new Date(createdAtRaw.seconds * 1000);
+        } else {
+            createdAt = null;
         }
+
+        // position tek string veya liste olabilir
+        let positions = row.positions || row.position || [];
+        if (typeof positions === 'string') {
+            positions = positions.split(',').map(s => s.trim()).filter(Boolean);
+        }
+
+        return {
+            id: row.id ?? row.user_id ?? row.uid ?? null,
+            name: row.name || '',
+            email: row.email || '',
+            phone: row.phone || '',
+            photoUrl: row.photo_url || row.photoUrl || null,
+            institution: row.institution || '',
+            rank: row.rank || '',
+            role: row.role || '',
+            positions: positions,
+            createdAt: createdAt
+        };
     }
 
     function updateStatistics() {
-        const totalMembers = allMembers.length;
-        const activeMembers = allMembers.filter(m => m.membershipType === 'aktif').length;
-        const activeAlumni = allMembers.filter(m => m.membershipType === 'aktif mezun').length;
+        const totalMembers = (backendTotalCount !== null && !isNaN(backendTotalCount)) ? backendTotalCount : allMembers.length;
+
+        // Role alanından türet (uygunsa)
+        const activeMembers = allMembers.filter(m => normalizeRole(m.role) === 'active').length;
+        const activeAlumni = allMembers.filter(m => normalizeRole(m.role) === 'active_alumni').length;
         
         const totalElement = document.getElementById('totalMembers');
         const activeElement = document.getElementById('activeMembers');
@@ -85,6 +90,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (totalElement) totalElement.textContent = totalMembers;
         if (activeElement) activeElement.textContent = activeMembers;
         if (alumniElement) alumniElement.textContent = activeAlumni;
+    }
+
+    function normalizeRole(role) {
+        if (!role) return 'unknown';
+        const r = String(role).toLowerCase();
+        if (r === 'aktif' || r === 'active') return 'active';
+        if (r === 'pasif' || r === 'inactive') return 'inactive';
+        if (r === 'fahri' || r === 'honorary') return 'honorary';
+        if (r === 'aktif mezun' || r === 'active_alumni' || r === 'active alumni') return 'active_alumni';
+        if (r === 'pasif mezun' || r === 'passive_alumni' || r === 'passive alumni') return 'passive_alumni';
+        return r;
     }
 
     function renderMemberTable() {
@@ -112,9 +128,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         currentMembers.forEach(member => {
-            const statusClass = getStatusClass(member.membershipType);
+            const statusClass = getStatusClass(normalizeRole(member.role));
             const rankBadge = getRankBadge(member.rank);
             const isCurrentUser = member.email && currentUserEmail && member.email.toLowerCase() === currentUserEmail.toLowerCase();
+            const joinYear = getJoinYear(member.createdAt);
             
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -136,9 +153,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </td>
-                <td><span class="join-year">${getJoinYear(member.joinDate)}</span></td>
+                <td><span class="join-year">${joinYear}</span></td>
                 <td>${rankBadge}</td>
-                <td><span class="status-badge ${statusClass}">${member.membershipType}</span></td>
+                <td><span class="status-badge ${statusClass}">${member.role || '-'}</span></td>
                 <td>
                     <div class="position-list">
                         ${getPositionBadges(member.positions || [])}
@@ -146,8 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
                 <td>
                     <div class="contact-buttons">
-                        ${member.phone ? `<button class="contact-btn phone" onclick="showContactModal('phone', '${member.phone}', '${member.name}')" title="Telefon"><i class="fas fa-phone"></i></button>` : ''}
                         ${member.email ? `<button class="contact-btn email" onclick="showContactModal('email', '${member.email}', '${member.name}')" title="E-posta"><i class="fas fa-envelope"></i></button>` : ''}
+                        ${member.phone ? `<button class="contact-btn phone" onclick="showContactModal('phone', '${member.phone}', '${member.name}')" title="Telefon"><i class="fas fa-phone"></i></button>` : ''}
                     </div>
                 </td>
                 ${isAdminMode ? `
@@ -163,13 +180,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function getStatusClass(membershipType) {
-        switch(membershipType) {
-            case 'aktif': return 'status-active';
-            case 'pasif': return 'status-inactive';
-            case 'fahri': return 'status-honorary';
-            case 'aktif mezun': return 'status-active-alumni';
-            case 'pasif mezun': return 'status-passive-alumni';
+    function getStatusClass(roleNorm) {
+        switch(roleNorm) {
+            case 'active': return 'status-active';
+            case 'inactive': return 'status-inactive';
+            case 'honorary': return 'status-honorary';
+            case 'active_alumni': return 'status-active-alumni';
+            case 'passive_alumni': return 'status-passive-alumni';
             default: return 'status-unknown';
         }
     }
@@ -189,29 +206,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<span class="rank-badge ${colorClass}">${rank}</span>`;
     }
 
-    function getJoinYear(joinDate) {
-        if (!joinDate) return 'Bilinmiyor';
-        
-        // Firestore timestamp veya string formatını handle et
-        let date;
-        if (joinDate.seconds) {
-            // Firestore timestamp
-            date = new Date(joinDate.seconds * 1000);
-        } else if (typeof joinDate === 'string') {
-            date = new Date(joinDate);
-        } else {
-            date = joinDate;
+    function getJoinYear(createdAt) {
+        if (!createdAt) return 'Bilinmiyor';
+        try {
+            const d = (createdAt instanceof Date) ? createdAt : new Date(createdAt);
+            if (isNaN(d.getTime())) return 'Bilinmiyor';
+            return d.getFullYear().toString();
+        } catch (_) {
+            return 'Bilinmiyor';
         }
-        
-        return date.getFullYear().toString();
     }
 
     function getPositionBadges(positions) {
-        if (!positions || positions.length === 0) {
+        if (!positions) return '<span style="color: #999; font-size: 12px;">Henüz atanmamış</span>';
+        let list = positions;
+        if (typeof list === 'string') {
+            list = list.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        if (!Array.isArray(list) || list.length === 0) {
             return '<span style="color: #999; font-size: 12px;">Henüz atanmamış</span>';
         }
-        
-        return positions.map(position => 
+        return list.map(position => 
             `<span class="position-item">${position}</span>`
         ).join('');
     }
@@ -261,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (status === 'all') {
             currentMembers = [...allMembers];
         } else {
-            currentMembers = allMembers.filter(member => member.membershipType === status);
+            currentMembers = allMembers.filter(member => normalizeRole(member.role) === status);
         }
         renderMemberTable();
         updateStatistics();
@@ -362,18 +377,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // deleteMember sonrası listeyi backend'den yenile
     window.deleteMember = async function(memberId) {
         if (confirm('Bu üyeyi silmek istediğinizden emin misiniz?')) {
             try {
-                // Firebase v9+ modular SDK kullanım
-                if (!window.firestoreDb || !window.firestoreFunctions) {
-                    console.error('Firebase bağlantısı henüz hazır değil');
+                if (!window.backendAPI) {
+                    console.error('Backend API hazır değil');
                     return;
                 }
-                
-                const { doc, deleteDoc } = window.firestoreFunctions;
-                await deleteDoc(doc(window.firestoreDb, 'users', memberId));
-                await loadMembersFromFirestore();
+                await window.backendAPI.post('users.php', { action: 'delete', id: memberId });
+                // Yeniden yükle
+                const [countRes, listRes] = await Promise.all([
+                    window.backendAPI.get('users.php', { action: 'count' }),
+                    window.backendAPI.get('users.php', { action: 'list' })
+                ]);
+                backendTotalCount = (countRes && countRes.success) ? Number(countRes.total || 0) : null;
+                const items = (listRes && listRes.success && Array.isArray(listRes.items)) ? listRes.items : [];
+                allMembers = items.map(normalizeUserFromBackend);
+                currentMembers = [...allMembers];
                 updateStatistics();
                 renderMemberTable();
             } catch (error) {

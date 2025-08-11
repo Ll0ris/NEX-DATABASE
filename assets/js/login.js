@@ -16,21 +16,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const rememberMe = document.getElementById('remember').checked;
 
         try {
-            const response = await fetch('http://localhost/nex-backend/login.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ email, password, rememberMe })
-            });
-
-            const responseText = await response.text();
-            let data;
-            try {
-                data = JSON.parse(responseText);
-            } catch (parseError) {
-                console.error('JSON parse error:', parseError, 'Response:', responseText);
-                throw new Error('Sunucudan geçersiz yanıt alındı');
+            // Backend baseURL dinamik ayar: window.__BACKEND_BASE_URL__ veya localStorage üzerinden
+            if (window.backendAPI) {
+                const stored = localStorage.getItem('backendBaseURL');
+                if (typeof window.__BACKEND_BASE_URL__ === 'string' && window.__BACKEND_BASE_URL__.length > 0) {
+                    window.backendAPI.baseURL = window.__BACKEND_BASE_URL__;
+                } else if (stored) {
+                    window.backendAPI.baseURL = stored;
+                }
             }
+
+            // Ortak Backend API'yi kullan
+            const data = await window.backendAPI.post('login.php', { email, password, rememberMe });
 
             if (data && data.success) {
                 const authToken = data.token || generateAuthToken(email);
@@ -69,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = 'database.html';
                 }, 1500);
             } else {
-                console.error('Login failed:', data.message);
+                console.error('Login failed:', data && data.message);
                 errorBubble.classList.remove('hide');
                 errorBubble.classList.add('show');
                 errorBubble.style.display = 'block';
