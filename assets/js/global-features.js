@@ -260,7 +260,6 @@ async function updateUserNameDisplay() {
     const currentUserEmail = localStorage.getItem('currentUserEmail');
     if (!currentUserEmail) return;
 
-<<<<<<< HEAD
     try {
         if (window.backendAPI && typeof window.backendAPI.get === 'function') {
             const res = await window.backendAPI.get('profile.php', { action: 'get', viewUser: currentUserEmail });
@@ -279,87 +278,16 @@ async function updateUserNameDisplay() {
                 }
 
                 // Update UI
-=======
-    // Firebase hazır olana kadar bekle
-    let attempts = 0;
-    while (!window.firestoreDb && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-    }
-
-    try {
-        if (window.firestoreDb && window.firestoreFunctions) {
-            const { collection, query, where, getDocs } = window.firestoreFunctions;
-            const q = query(collection(window.firestoreDb, "users"), where("email", "==", currentUserEmail));
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                const userData = snapshot.docs[0].data();
-                const userName = userData.name || '';
-                const userPhoto = userData.photoUrl || null;
-                const userRole = userData.role || 'user'; // Firebase'den rol al
-                
-                // Kullanıcının gerçek rolünü localStorage'a kaydet (güvenlik için)
-                const currentStoredRole = localStorage.getItem('userRole');
-                if (currentStoredRole !== userRole) {
-                    localStorage.setItem('userRole', userRole);
-                }
-                
-                // Admin mode localStorage'ını gerçek role göre zorla
-                if (userRole === 'admin') {
-                    // Gerçek admin ise admin moduna izin ver
-                    localStorage.setItem('realAdminAccess', 'true');
-                } else {
-                    // Normal kullanıcı ise admin modunu zorla kapat
-                    const currentAdminMode = localStorage.getItem('adminMode');
-                    if (currentAdminMode === 'admin') {
-                        localStorage.setItem('adminMode', 'safe');
-                        localStorage.setItem('adminModeText', 'Güvenli Mod');
-                        
-                        // UI'yi güncelle
-                        const modeText = document.querySelector('.mode-text');
-                        if (modeText) modeText.textContent = 'Güvenli Mod';
-                        
-                        const modeIcon = document.getElementById('modeIcon');
-                        if (modeIcon) modeIcon.className = 'fas fa-shield-alt mode-icon';
-                        
-                        alert('⚠️ Admin yetkisi yok! Güvenli moda çevrildi.');
-                    }
-                    localStorage.removeItem('realAdminAccess');
-                }
-                
-                // Kullanıcı adını güncelle
->>>>>>> 577a0340227c8faccc3398c174010673bcb418b5
                 const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
                 profileNameElements.forEach(element => {
                     element.textContent = userName;
                 });
-<<<<<<< HEAD
                 updateProfilePhoto(userPhoto);
             }
         }
     } catch (error) {
         // Backend erişimi başarısızsa mevcut UI'yı bozmayalım
         // No-op
-=======
-                
-                // Profil fotoğrafını güncelle
-                updateProfilePhoto(userPhoto);
-            } else {
-                // Kullanıcı bulunamazsa alanlar boş kalsın
-                const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
-                profileNameElements.forEach(element => {
-                    element.textContent = '';
-                });
-                updateProfilePhoto(null);
-            }
-        }
-    } catch (error) {
-        const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
-        profileNameElements.forEach(element => {
-            element.textContent = '';
-        });
-        updateProfilePhoto(null);
->>>>>>> 577a0340227c8faccc3398c174010673bcb418b5
     }
 }
 
@@ -675,8 +603,6 @@ function initHamburgerMenu() {
 function initThemeToggle() {
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = themeToggle?.querySelector('.theme-icon');
-<<<<<<< HEAD
-
     // Avoid conflicting bindings on database page (handled by database-script.js)
     const isDatabasePage = window.location.pathname.includes('database.html');
     if (isDatabasePage) {
@@ -697,22 +623,14 @@ function initThemeToggle() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-=======
-    
-    if (!themeToggle) return;
 
-    // Load saved theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    
->>>>>>> 577a0340227c8faccc3398c174010673bcb418b5
     // Update icon based on current theme
     updateThemeIcon(savedTheme, themeIcon);
 
     themeToggle.addEventListener('click', function() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-<<<<<<< HEAD
+
 
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
@@ -721,14 +639,6 @@ function initThemeToggle() {
     });
 
     themeToggle.dataset.bound = 'true';
-=======
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        updateThemeIcon(newTheme, themeIcon);
-    });
->>>>>>> 577a0340227c8faccc3398c174010673bcb418b5
 }
 
 function updateThemeIcon(theme, iconElement) {
@@ -795,43 +705,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const isDatabase = window.location.pathname.includes('database.html') || 
                        window.location.pathname === '/' || 
                        window.location.pathname === '';
-<<<<<<< HEAD
-
     // Check if this is profile.html - profile-script.js handles theme toggle
     const isProfile = window.location.pathname.includes('profile.html');
 
-=======
-    
-    // Check if this is profile.html - profile-script.js handles theme toggle
-    const isProfile = window.location.pathname.includes('profile.html');
-    
->>>>>>> 577a0340227c8faccc3398c174010673bcb418b5
+
     if (isDatabase) {
         // Only initialize theme and navigation for database page
         // Profile and hamburger are handled by database-script.js
         initThemeToggle();
         initNavigationActive();
     } else if (isProfile) {
-<<<<<<< HEAD
+
         // Profile page - enable theme toggle here as well
         initThemeToggle();
         // Only initialize admin dropdown (other profile-specific in profile-script.js)
-=======
+
         // Profile page - only initialize admin dropdown
         // Theme toggle is handled by profile-script.js
         // Navigation is handled by profile-script.js
         // Hamburger menu not needed as sidebar is always visible
->>>>>>> 577a0340227c8faccc3398c174010673bcb418b5
+
         initAdminDropdown();
     } else {
         // Initialize all features for other pages including admin dropdown
         initTopBarFeatures();
         initNavigationActive();
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 577a0340227c8faccc3398c174010673bcb418b5
         // Add admin-user class only if adminMode is set in localStorage
         const adminMode = localStorage.getItem('adminMode');
         if (adminMode === 'admin') {
