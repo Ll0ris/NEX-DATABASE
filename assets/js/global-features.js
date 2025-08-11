@@ -272,9 +272,11 @@ async function updateUserNameDisplay() {
                 // Persist role if provided
                 localStorage.setItem('userRole', userRole);
 
-                // Admin access flag (optional, keep existing behavior minimal)
-                if (userRole === 'admin') {
+                // Admin access flag
+                if ((userRole || '').toLowerCase() === 'admin') {
                     localStorage.setItem('realAdminAccess', 'true');
+                } else {
+                    localStorage.removeItem('realAdminAccess');
                 }
 
                 // Update UI
@@ -283,11 +285,13 @@ async function updateUserNameDisplay() {
                     element.textContent = userName;
                 });
                 updateProfilePhoto(userPhoto);
+
+                // Enforce admin control visibility after role is known
+                enforceAdminControlsVisibility();
             }
         }
     } catch (error) {
-        // Backend erişimi başarısızsa mevcut UI'yı bozmayalım
-        // No-op
+        // No-op on backend failure
     }
 }
 
@@ -705,33 +709,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const isDatabase = window.location.pathname.includes('database.html') || 
                        window.location.pathname === '/' || 
                        window.location.pathname === '';
+
     // Check if this is profile.html - profile-script.js handles theme toggle
     const isProfile = window.location.pathname.includes('profile.html');
 
-
     if (isDatabase) {
-        // Only initialize theme and navigation for database page
-        // Profile and hamburger are handled by database-script.js
         initThemeToggle();
         initNavigationActive();
     } else if (isProfile) {
-
-        // Profile page - enable theme toggle here as well
         initThemeToggle();
-        // Only initialize admin dropdown (other profile-specific in profile-script.js)
-
-        // Profile page - only initialize admin dropdown
-        // Theme toggle is handled by profile-script.js
-        // Navigation is handled by profile-script.js
-        // Hamburger menu not needed as sidebar is always visible
-
         initAdminDropdown();
     } else {
-        // Initialize all features for other pages including admin dropdown
         initTopBarFeatures();
         initNavigationActive();
 
-        // Add admin-user class only if adminMode is set in localStorage
         const adminMode = localStorage.getItem('adminMode');
         if (adminMode === 'admin') {
             document.body.classList.add('admin-user');
@@ -739,6 +730,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.classList.remove('admin-user');
         }
     }
+
+    // Enforce admin visibility based on current local role (will refine after profile fetch)
+    enforceAdminControlsVisibility();
 });
 
 // Navigation Active State
@@ -1554,3 +1548,46 @@ function saveAdminState(mode, text) {
 }
 
 // Event kaldırıldı - sayfa navigasyonunda auth verileri temizlenmesin
+
+// Helper: check if current user is admin
+function isCurrentUserAdmin() {
+    const role = (localStorage.getItem('userRole') || '').toLowerCase();
+    return role === 'admin';
+}
+
+// Enforce admin UI visibility across pages
+function enforceAdminControlsVisibility() {
+    const isAdmin = isCurrentUserAdmin();
+
+    // Hide or show admin dropdown containers
+    const containers = [
+        document.getElementById('adminModeDropdown'), // database.html ve diğer sayfalar
+        document.getElementById('adminDropdown')      // profile.html
+    ].filter(Boolean);
+
+    containers.forEach(el => {
+        el.style.display = isAdmin ? '' : 'none';
+    });
+
+    // Hide or show elements marked as admin-only
+    const adminOnlyEls = document.querySelectorAll('.admin-only');
+    adminOnlyEls.forEach(el => {
+        el.style.display = isAdmin ? '' : 'none';
+    });
+
+    // Force safe mode and remove admin classes for non-admin users
+    if (!isAdmin) {
+        localStorage.setItem('adminMode', 'safe');
+        localStorage.setItem('adminModeText', 'Güvenli Mod');
+        document.body.classList.remove('admin-mode');
+        document.body.classList.remove('admin-user');
+
+        const modeTextEl = document.querySelector('.mode-text');
+        if (modeTextEl) modeTextEl.textContent = 'Güvenli Mod';
+        const modeIcon = document.getElementById('modeIcon');
+        if (modeIcon) modeIcon.className = 'fas fa-shield-alt mode-icon';
+    } else {
+        // Admin kullanıcılar için isteğe bağlı görsel sınıf
+        document.body.classList.add('admin-user');
+    }
+}
