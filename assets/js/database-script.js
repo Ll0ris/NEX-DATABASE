@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Calendar fonksiyonları
-    function initializeCalendar() {
+    async function initializeCalendar() {
         // Admin yetkisi kontrolü (örnek - gerçek sistemde backend'den gelecek)
         const isAdmin = true; // Bu değer gerçek sistemde dinamik olacak
         
@@ -139,7 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.classList.remove('admin-mode');
         }
 
-        // Takvimi başlat
+        // Etkinlikleri yükle ve ardından takvimi başlat
+        await loadEventsFromBackend();
         generateCalendar();
         loadUpcomingEvents();
         
@@ -169,39 +170,55 @@ document.addEventListener('DOMContentLoaded', function() {
         'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
     ];
 
-    // Örnek etkinlik verileri (gerçek sistemde backend'den gelecek)
-    const events = [
-        {
-            id: 1,
-            title: 'Makine Öğrenmesi Semineri',
-            date: '2025-08-15',
-            time: '14:00'
-        },
-        {
-            id: 2,
-            title: 'Proje Sunumları',
-            date: '2025-08-22',
-            time: '10:00'
-        },
-        {
-            id: 3,
-            title: 'Yapay Zeka Konferansı',
-            date: '2025-09-05',
-            time: '09:00'
-        },
-        {
-            id: 4,
-            title: 'Veri Bilimi Workshops',
-            date: '2025-09-12',
-            time: '13:30'
-        },
-        {
-            id: 5,
-            title: 'Teknoloji Fuarı',
-            date: '2025-09-25',
-            time: '11:00'
+    // Etkinlikler artık backend'den yüklenecek
+    let events = [];
+
+    async function loadEventsFromBackend() {
+        try {
+            if (window.backendAPI && typeof window.backendAPI.get === 'function') {
+                const res = await window.backendAPI.get('events.php', { action: 'list' });
+                if (res && res.success && Array.isArray(res.items)) {
+                    events = res.items.map(normalizeEventFromBackend);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ Etkinlikler yüklenemedi (backend):', e?.message || e);
         }
-    ];
+        // Backend başarısızsa mevcut örnek veriler ile devam et
+        events = [
+            { id: 1, title: 'Makine Öğrenmesi Semineri', date: '2025-08-15', time: '14:00' },
+            { id: 2, title: 'Proje Sunumları', date: '2025-08-22', time: '10:00' },
+            { id: 3, title: 'Yapay Zeka Konferansı', date: '2025-09-05', time: '09:00' },
+            { id: 4, title: 'Veri Bilimi Workshops', date: '2025-09-12', time: '13:30' },
+            { id: 5, title: 'Teknoloji Fuarı', date: '2025-09-25', time: '11:00' }
+        ];
+    }
+
+    function normalizeEventFromBackend(row) {
+        const id = row.id ?? row.event_id ?? null;
+        const name = row.name || row.title || 'Etkinlik';
+        const type = row.type || '';
+        const date = toYMD(row.event_date);
+        const start = (row.start_time || '').toString();
+        const end = (row.end_time || '').toString();
+        const time = start || end || '10:00';
+        return { id, title: name, type, date, time };
+    }
+
+    function toYMD(value) {
+        if (!value) return '';
+        const str = String(value);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+        return '';
+    }
 
     function generateCalendar() {
         const calendarDays = document.getElementById('calendarDays');
