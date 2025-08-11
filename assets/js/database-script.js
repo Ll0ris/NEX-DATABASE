@@ -287,8 +287,9 @@ document.addEventListener('DOMContentLoaded', function() {
         dayElement.appendChild(dayNumber);
 
         // Etkinlik kontrolü
+        let dateString = '';
         if (!isOtherMonth) {
-            const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dayEvents = events.filter(event => event.date === dateString);
             
             if (dayEvents.length > 0) {
@@ -300,7 +301,214 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Gün tıklama: o güne ait etkinlikleri göster
+        dayElement.addEventListener('click', () => {
+            if (!dateString) {
+                dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+            openDayEventsModal(dateString);
+        });
+
         return dayElement;
+    }
+
+    // Admin kontrolü
+    function isAdminUser() {
+        return (localStorage.getItem('userRole') || '').toLowerCase() === 'admin';
+    }
+
+    // Gün etkinlikleri modalı
+    function ensureDayEventsModal() {
+        if (document.getElementById('dayEventsModal')) return;
+        const modal = document.createElement('div');
+        modal.id = 'dayEventsModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 560px;">
+                <div class="modal-header">
+                    <h3>Gün Etkinlikleri</h3>
+                    <button class="modal-close" id="closeDayEventsModal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="dayEventsBody" style="max-height: 60vh; overflow:auto;"></div>
+                <div class="modal-footer" id="dayEventsFooter"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('closeDayEventsModal').addEventListener('click', closeDayEventsModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeDayEventsModal(); });
+    }
+
+    function openDayEventsModal(dateStr) {
+        ensureDayEventsModal();
+        const modal = document.getElementById('dayEventsModal');
+        const body = document.getElementById('dayEventsBody');
+        const footer = document.getElementById('dayEventsFooter');
+
+        const list = events.filter(ev => ev.date === dateStr)
+                           .sort((a,b) => (a.time||'').localeCompare(b.time||''));
+        const prettyDate = new Date(dateStr).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+        let html = `<div style="margin-bottom:10px; font-weight:600;">${prettyDate}</div>`;
+        if (list.length === 0) {
+            html += `<div style="color:#888;">Bu günde etkinlik bulunmuyor.</div>`;
+        } else {
+            html += list.map(ev => {
+                const time = ev.time ? ev.time : '-';
+                const type = ev.type ? ` <span style="opacity:0.8">(${ev.type})</span>` : '';
+                return `
+                    <div class="event-item" style="padding:10px; border:1px solid var(--border-color,#e0e0e0); border-radius:8px; margin-bottom:8px;">
+                        <div style="font-weight:600;">${ev.title}${type}</div>
+                        <div style="font-size:12px; opacity:0.8;">Saat: ${time}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        body.innerHTML = html;
+
+        // Footer: Admin ise etkinlik ekle
+        footer.innerHTML = '';
+        if (isAdminUser()) {
+            const addBtn = document.createElement('button');
+            addBtn.className = 'btn-confirm';
+            addBtn.innerHTML = '<i class="fas fa-plus"></i> Etkinlik Ekle';
+            addBtn.addEventListener('click', () => openCreateEventModal(dateStr));
+            footer.appendChild(addBtn);
+        }
+
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    function closeDayEventsModal() {
+        const modal = document.getElementById('dayEventsModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+    }
+
+    // Etkinlik oluşturma modalı
+    function ensureCreateEventModal() {
+        if (document.getElementById('createEventModal')) return;
+        const modal = document.createElement('div');
+        modal.id = 'createEventModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 720px;">
+                <div class="modal-header">
+                    <h3>Etkinlik Ekle</h3>
+                    <button class="modal-close" id="closeCreateEventModal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createEventForm" class="modal-form">
+                        <div class="form-group">
+                            <label>Etkinlik Adı</label>
+                            <input type="text" name="name" required placeholder="Örn: Makine Öğrenmesi Semineri">
+                        </div>
+                        <div class="form-group">
+                            <label>Tür</label>
+                            <input type="text" name="type" placeholder="Örn: Seminar, Workshop, Conference">
+                        </div>
+                        <div class="form-group">
+                            <label>Tarih</label>
+                            <input type="date" name="event_date" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label>Başlangıç Saati</label>
+                                <input type="time" name="start_time" placeholder="HH:MM">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>Bitiş Saati</label>
+                                <input type="time" name="end_time" placeholder="HH:MM">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" id="cancelCreateEvent">İptal</button>
+                    <button class="btn-confirm" id="submitCreateEvent">Kaydet</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('closeCreateEventModal').addEventListener('click', closeCreateEventModal);
+        document.getElementById('cancelCreateEvent').addEventListener('click', closeCreateEventModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeCreateEventModal(); });
+
+        document.getElementById('submitCreateEvent').addEventListener('click', async () => {
+            const form = document.getElementById('createEventForm');
+            const formData = new FormData(form);
+            const name = (formData.get('name') || '').toString().trim();
+            const type = (formData.get('type') || '').toString().trim();
+            const event_date = (formData.get('event_date') || '').toString().trim();
+            const start_time = (formData.get('start_time') || '').toString().trim();
+            const end_time = (formData.get('end_time') || '').toString().trim();
+
+            if (!name || !isValidDateYMD(event_date)) {
+                alert('Lütfen etkinlik adını ve geçerli bir tarihi (YYYY-MM-DD) girin.');
+                return;
+            }
+            if (start_time && !isValidTimeHHMM(start_time)) {
+                alert('Geçersiz başlangıç saati. (HH:MM)');
+                return;
+            }
+            if (end_time && !isValidTimeHHMM(end_time)) {
+                alert('Geçersiz bitiş saati. (HH:MM)');
+                return;
+            }
+
+            try {
+                const payload = { name, type, event_date, start_time, end_time };
+                const res = await window.backendAPI.post('events.php?action=create', payload);
+                if (res && res.success) {
+                    // Başarı: etkinlikleri yeniden yükle ve takvimi güncelle
+                    await loadEventsFromBackend();
+                    generateCalendar();
+                    loadUpcomingEvents();
+                    closeCreateEventModal();
+                    // Aynı gün modalı açıksa listeyi yenile
+                    const dayModal = document.getElementById('dayEventsModal');
+                    if (dayModal && dayModal.style.display === 'flex') {
+                        openDayEventsModal(event_date);
+                    }
+                } else {
+                    alert('Etkinlik oluşturulamadı: ' + (res && (res.error || res.message) ? (res.error || res.message) : 'Bilinmeyen hata'));
+                }
+            } catch (e) {
+                alert('Etkinlik oluşturulurken hata: ' + (e?.message || e));
+            }
+        });
+    }
+
+    function openCreateEventModal(dateStr) {
+        ensureCreateEventModal();
+        const modal = document.getElementById('createEventModal');
+        const form = document.getElementById('createEventForm');
+        form.reset();
+        const dateInput = form.querySelector('input[name="event_date"]');
+        if (dateInput && dateStr) dateInput.value = dateStr;
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    function closeCreateEventModal() {
+        const modal = document.getElementById('createEventModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+    }
+
+    function isValidDateYMD(s) {
+        // YYYY-MM-DD
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+        const [y,m,d] = s.split('-').map(n => parseInt(n, 10));
+        return m >= 1 && m <= 12 && d >= 1 && d <= 31 && !isNaN(new Date(s).getTime());
+    }
+
+    function isValidTimeHHMM(s) {
+        if (!/^\d{2}:\d{2}$/.test(s)) return false;
+        const [h,mm] = s.split(':').map(n => parseInt(n, 10));
+        return h >= 0 && h <= 23 && mm >= 0 && mm <= 59;
     }
 
     function loadUpcomingEvents() {
@@ -341,7 +549,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Takvimi başlat
-    initializeCalendar();
+    initializeCalendar().then(() => {
+        // Modal altyapısını hazırla (ilk yüklemede)
+        ensureDayEventsModal();
+        ensureCreateEventModal();
+    });
 
     // Takvim buton event listener'ları
     const btnCalendarEdit = document.querySelector('.btn-calendar-edit');

@@ -1542,13 +1542,6 @@ function loadAdminState() {
     }
 }
 
-function saveAdminState(mode, text) {
-    localStorage.setItem('adminMode', mode);
-    localStorage.setItem('adminModeText', text);
-}
-
-// Event kaldırıldı - sayfa navigasyonunda auth verileri temizlenmesin
-
 // Helper: check if current user is admin
 function isCurrentUserAdmin() {
     const role = (localStorage.getItem('userRole') || '').toLowerCase();
