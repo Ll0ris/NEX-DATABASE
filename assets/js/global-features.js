@@ -603,25 +603,41 @@ function initHamburgerMenu() {
 function initThemeToggle() {
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = themeToggle?.querySelector('.theme-icon');
-    
+
+    // Avoid conflicting bindings on database page (handled by database-script.js)
+    const isDatabasePage = window.location.pathname.includes('database.html');
+    if (isDatabasePage) {
+        return;
+    }
+
     if (!themeToggle) return;
+
+    // Prevent multiple bindings across repeated initializations
+    if (themeToggle.dataset.bound === 'true') {
+        // Ensure icon matches current theme even if already bound
+        const currentTheme = document.documentElement.getAttribute('data-theme') || (localStorage.getItem('theme') || 'light');
+        updateThemeIcon(currentTheme, themeIcon);
+        return;
+    }
 
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    
+
     // Update icon based on current theme
     updateThemeIcon(savedTheme, themeIcon);
 
     themeToggle.addEventListener('click', function() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
+
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
-        
+
         updateThemeIcon(newTheme, themeIcon);
     });
+
+    themeToggle.dataset.bound = 'true';
 }
 
 function updateThemeIcon(theme, iconElement) {
@@ -688,26 +704,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const isDatabase = window.location.pathname.includes('database.html') || 
                        window.location.pathname === '/' || 
                        window.location.pathname === '';
-    
+
     // Check if this is profile.html - profile-script.js handles theme toggle
     const isProfile = window.location.pathname.includes('profile.html');
-    
+
     if (isDatabase) {
         // Only initialize theme and navigation for database page
         // Profile and hamburger are handled by database-script.js
         initThemeToggle();
         initNavigationActive();
     } else if (isProfile) {
-        // Profile page - only initialize admin dropdown
-        // Theme toggle is handled by profile-script.js
-        // Navigation is handled by profile-script.js
-        // Hamburger menu not needed as sidebar is always visible
+        // Profile page - enable theme toggle here as well
+        initThemeToggle();
+        // Only initialize admin dropdown (other profile-specific in profile-script.js)
         initAdminDropdown();
     } else {
         // Initialize all features for other pages including admin dropdown
         initTopBarFeatures();
         initNavigationActive();
-        
+
         // Add admin-user class only if adminMode is set in localStorage
         const adminMode = localStorage.getItem('adminMode');
         if (adminMode === 'admin') {
