@@ -22,8 +22,7 @@
     <link rel="stylesheet" href="../assets/css/database-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     
-    <!-- Firebase Configuration (Auth first) -->
-    <script type="module" src="../assets/js/auth.js"></script>
+    <!-- Firebase kaldırıldı: Konsol ve sayfa backend (PHP/MySQL) ile çalışır -->
 </head>
 <body>
     <!-- Top Panel -->
@@ -292,7 +291,7 @@
         <div class="console-header">
             <div class="console-title">
                 <i class="fas fa-terminal"></i>
-                <span>Firebase Konsol</span>
+                <span>Sistem Konsol</span>
             </div>
             <button class="console-close" id="consoleClose">
                 <i class="fas fa-times"></i>
@@ -320,26 +319,8 @@
                     <button class="console-btn" onclick="showJournalStats()">
                         <i class="fas fa-chart-bar"></i> Journal İstatistikleri
                     </button>
-                    <button class="console-btn" onclick="testFirebaseConnection()">
-                        <i class="fas fa-plug"></i> Firebase Bağlantı Testi
-                    </button>
-                    <button class="console-btn" onclick="checkStorageStatus()">
-                        <i class="fas fa-cloud"></i> Storage Durumu
-                    </button>
-                    <button class="console-btn" onclick="debugPdfUrls()">
-                        <i class="fas fa-file-pdf"></i> PDF URL Debug
-                    </button>
-                    <button class="console-btn" onclick="testDirectPdfAccess()">
-                        <i class="fas fa-folder"></i> Storage Dosya Listesi
-                    </button>
-                    <button class="console-btn" onclick="manualPdfTest()">
-                        <i class="fas fa-vial"></i> Manuel PDF Test
-                    </button>
-                    <button class="console-btn" onclick="testPdfAccess()">
-                        <i class="fas fa-microscope"></i> PDF Erişim Testi
-                    </button>
-                    <button class="console-btn" onclick="fixStorageRules()">
-                        <i class="fas fa-wrench"></i> Storage Rules Düzelt
+                    <button class="console-btn" onclick="checkBackendStatus()">
+                        <i class="fas fa-plug"></i> Backend Bağlantı Testi
                     </button>
                 </div>
             </div>
@@ -379,7 +360,7 @@
             <div class="console-section">
                 <h3>Konsol Çıktısı</h3>
                 <div class="console-output" id="consoleOutput">
-                    <div class="output-line">Firebase konsol hazır. Komutları kullanabilirsiniz.</div>
+                    <div class="output-line">Sistem konsolu hazır. Komutları kullanabilirsiniz.</div>
                 </div>
             </div>
         </div>

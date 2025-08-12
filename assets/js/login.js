@@ -44,12 +44,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const user = data.user || {};
                 const resolvedUserId = data.userId || user.id || email;
                 const resolvedEmail = data.email || user.email || email;
+                const resolvedRoleRaw = data.role || user.role || '';
+                const resolvedRole = typeof resolvedRoleRaw === 'string' ? resolvedRoleRaw.toLowerCase() : '';
 
                 localStorage.setItem('currentUserId', resolvedUserId);
                 localStorage.setItem('currentUserEmail', resolvedEmail);
                 localStorage.setItem('authToken', authToken);
                 localStorage.setItem('tokenExpiry', tokenExpiry.toString());
                 localStorage.setItem('isAuthenticated', 'true');
+
+                // Role kaydı: 'admin' ya da 'Admin' durumlarında admin erişimi aç
+                if (resolvedRole === 'admin') {
+                    localStorage.setItem('userRole', 'admin');
+                    localStorage.setItem('realAdminAccess', 'true');
+                }else {
+                    // Varsayılan kullanıcı
+                    localStorage.setItem('userRole', 'user');
+                    localStorage.removeItem('realAdminAccess');
+                }
 
                 if (rememberMe) {
                     localStorage.setItem('rememberMe', 'true');

@@ -45,7 +45,7 @@ document.getElementById('commandInput').addEventListener('keydown', function(e) 
     }
 });
 
-function executeCommand(command) {
+async function executeCommand(command) {
     const output = document.getElementById('terminalOutput');
     const timestamp = new Date().toLocaleString('tr-TR');
     
@@ -58,48 +58,41 @@ function executeCommand(command) {
         <span class="message">${command}</span>
     `;
     output.appendChild(commandEntry);
-    
-    // Process command
+
+    // Local-only commands
+    if (command.toLowerCase() === 'clear') {
+        clearConsole();
+        return;
+    }
+
+    // Defer command execution to backend
     let response = '';
-    switch (command.toLowerCase()) {
-        case 'help':
-            response = `Mevcut komutlar:
-help - Bu yardım menüsünü gösterir
-status - Sistem durumunu gösterir
-users - Kullanıcı listesini gösterir
-clear - Terminali temizler
-backup - Veritabanı yedeği oluşturur
-logs - Son 10 log kaydını gösterir`;
-            break;
-        case 'status':
-            response = `Sistem Durumu:
-- Firebase: Bağlı ✓
-- Kullanıcılar: 127 aktif
-- Bellek: %78 kullanımda
-- Disk: %45 dolu
-- Çalışma süresi: 24 gün`;
-            break;
-        case 'users':
-            response = `Son kullanıcılar:
-- admin@nex.com (Çevrimiçi)
-- user@nex.com (2 saat önce)
-- test@nex.com (1 gün önce)`;
-            break;
-        case 'clear':
-            clearConsole();
-            return;
-        case 'backup':
-            response = 'Veritabanı yedeği başlatıldı... Bu işlem birkaç dakika sürebilir.';
-            break;
-        case 'logs':
-            response = `Son log kayıtları:
-[10:30] INFO: Sistem başlatıldı
-[10:25] WARNING: Yüksek bellek kullanımı
-[10:20] ERROR: Giriş hatası
-[10:15] SUCCESS: Yedekleme tamamlandı`;
-            break;
-        default:
-            response = `Bilinmeyen komut: ${command}. 'help' yazarak mevcut komutları görebilirsiniz.`;
+    try {
+        const payload = { action: 'execute', command };
+        // baseURL is managed by backend-api.js
+        const data = await (window.backendAPI
+            ? window.backendAPI.post('console.php', payload)
+            : fetch('console.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+              }).then(r => r.json()));
+
+        if (data && data.success) {
+            if (Array.isArray(data.lines)) {
+                response = data.lines.join('\n');
+            } else if (typeof data.message === 'string') {
+                response = data.message;
+            } else {
+                response = JSON.stringify(data, null, 2);
+            }
+        } else {
+            const err = (data && (data.error || data.message)) || 'Komut çalıştırılamadı';
+            response = `Hata: ${err}`;
+        }
+    } catch (e) {
+        response = `Hata: ${(e && e.message) || e}`;
     }
     
     // Add response to output
@@ -126,41 +119,78 @@ function clearConsole() {
     `;
 }
 
-function filterLogs() {
-    // Simulated log filtering
+async function filterLogs() {
     const level = document.getElementById('logLevel').value;
     const date = document.getElementById('logDate').value;
-    
-    console.log(`Filtering logs: Level=${level}, Date=${date}`);
-    alert(`Loglar filtrelendi: ${level === 'all' ? 'Tüm seviyeler' : level}, Tarih: ${date}`);
+    const output = document.getElementById('terminalOutput');
+    const ts = new Date().toLocaleString('tr-TR');
+
+    try {
+        const payload = { action: 'logs', level, date };
+        const data = await (window.backendAPI
+            ? window.backendAPI.post('console.php', payload)
+            : fetch('console.php', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload)
+              }).then(r => r.json()));
+        const lines = (data && data.success && Array.isArray(data.lines)) ? data.lines : [ (data && (data.message || data.error)) || 'Log bulunamadı' ];
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `
+            <span class="timestamp">[${ts}]</span>
+            <span class="level info">LOGS</span>
+            <span class="message" style="white-space: pre-line;">${lines.join('\n')}</span>
+        `;
+        output.appendChild(entry);
+        output.scrollTop = output.scrollHeight;
+    } catch (e) {
+        alert('Loglar alınamadı: ' + (e && e.message ? e.message : e));
+    }
 }
 
-function executeQuery() {
-    const query = document.getElementById('sqlQuery').value;
+async function executeQuery() {
+    const sql = document.getElementById('sqlQuery').value;
     const output = document.getElementById('queryOutput');
-    
+    const ts = new Date().toLocaleString('tr-TR');
+
     output.innerHTML = `
         <div class="log-entry">
-            <span class="timestamp">[${new Date().toLocaleString('tr-TR')}]</span>
+            <span class="timestamp">[${ts}]</span>
             <span class="level info">QUERY</span>
             <span class="message">Sorgu çalıştırılıyor...</span>
         </div>
-        <div class="log-entry">
-            <span class="timestamp">[${new Date().toLocaleString('tr-TR')}]</span>
-            <span class="level success">RESULT</span>
-            <span class="message">3 kayıt bulundu</span>
-        </div>
-        <div style="margin-top: 10px; color: #888;">
-            Örnek sonuç:
-            {
-                "users": [
-                    {"id": "1", "email": "admin@nex.com", "role": "admin"},
-                    {"id": "2", "email": "user@nex.com", "role": "user"},
-                    {"id": "3", "email": "test@nex.com", "role": "user"}
-                ]
-            }
-        </div>
     `;
+
+    try {
+        const payload = { action: 'query', sql };
+        const data = await (window.backendAPI
+            ? window.backendAPI.post('console.php', payload)
+            : fetch('console.php', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload)
+              }).then(r => r.json()));
+
+        const success = data && data.success;
+        const rows = Array.isArray(data?.rows) ? data.rows : [];
+        const rowCount = typeof data?.rowCount === 'number' ? data.rowCount : rows.length;
+        const text = success ? `${rowCount} kayıt bulundu` : `Hata: ${(data && (data.error || data.message)) || 'Sorgu hatası'}`;
+
+        const result = document.createElement('div');
+        result.className = 'log-entry';
+        result.innerHTML = `
+            <span class="timestamp">[${new Date().toLocaleString('tr-TR')}]</span>
+            <span class="level ${success ? 'success' : 'error'}">RESULT</span>
+            <span class="message" style="white-space: pre-line;">${text}\n${success ? JSON.stringify(rows.slice(0, 10), null, 2) : ''}</span>
+        `;
+        output.appendChild(result);
+    } catch (e) {
+        const err = document.createElement('div');
+        err.className = 'log-entry';
+        err.innerHTML = `
+            <span class="timestamp">[${new Date().toLocaleString('tr-TR')}]</span>
+            <span class="level error">ERROR</span>
+            <span class="message">${(e && e.message) || e}</span>
+        `;
+        output.appendChild(err);
+    }
 }
 
 function exportLogs() {

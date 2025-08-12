@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Global değişkenler
     let currentJournalPdfUrl = null; // PDF URL'sini tutacağız
+    let currentJournal = null; // Şu an ekranda gösterilen journal verisi
     
     // Element seçicileri
     const hamburgerBtn = document.getElementById('hamburgerBtn');
@@ -1098,20 +1099,13 @@ function toggleConsole() {
 function showConsole() {
     const consolePanel = document.getElementById('consolePanel');
     consolePanel.style.display = 'flex';
-    
-    // Firebase bağlantısını kontrol et
-    if (!initializeFirebase()) {
-        addToConsoleOutput('⚠️ Firebase scriptleri yükleniyor, lütfen bekleyin...', 'info');
-        // 2 saniye sonra tekrar dene
-        setTimeout(() => {
-            if (initializeFirebase()) {
-                addToConsoleOutput('✓ Firebase bağlantısı başarılı!', 'success');
-            } else {
-                addToConsoleOutput('✗ Firebase bağlantısı kurulamadı!', 'error');
-            }
-        }, 2000);
-    } else {
-        addToConsoleOutput('✓ Firebase konsol açıldı. Hazır!', 'success');
+
+    // Backend durumunu göster
+    addToConsoleOutput('✓ Sistem konsolu açıldı. Hazır!', 'success');
+
+    // Backend bağlantı testini tetikle (varsa)
+    if (typeof testBackendConnection === 'function') {
+        try { testBackendConnection(); } catch (_) {}
     }
 }
 
@@ -1129,15 +1123,7 @@ function addToConsoleOutput(message, type = 'normal') {
     output.scrollTop = output.scrollHeight;
 }
 
-function addUserForm() {
-    const form = document.getElementById('userForm');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    if (form.style.display === 'block') {
-        addToConsoleOutput('Kullanıcı ekleme formu açıldı', 'info');
-    }
-}
-
-function submitUser() {
+async function submitUser() {
     console.log('🚀 submitUser function called!'); // Debug
     
     // Form görünürlüğünü kontrol et
@@ -1206,54 +1192,39 @@ function submitUser() {
         addToConsoleOutput('✗ Hata: İsim, e-mail ve şifre alanları gerekli!', 'error');
         return;
     }
-    
-    // Firebase bağlantısını kontrol et ve gerekirse başlat
-    if (!initializeFirebase() || !window.firestoreDb) {
-        addToConsoleOutput('✗ Hata: Firebase bağlantısı kurulamadı!', 'error');
-        return;
-    }
-    
+
     const currentUser = localStorage.getItem('currentUserEmail') || 'system';
-    const currentTime = new Date();
-    
     addToConsoleOutput(`→ Kullanıcı ekleniyor: ${name} (${email})`, 'info');
-    
-    const { collection, addDoc } = window.firestoreFunctions;
-    
-    // Tüm parametreleri içeren kullanıcı objesi
-    const userData = {
-        // Temel bilgiler
+
+    // Backend'e uygun payload hazırla
+    const payload = {
         name: name,
-        fullName: fullName || name, // fullName yoksa name kullan
+        fullName: fullName || name,
         email: email.toLowerCase(),
         password: password,
-        
-        // İletişim bilgileri
         phone: phone || null,
-        
-        // Akademik bilgiler
         department: department || null,
         faculty: faculty || null,
         institution: institution || null,
-        
-        // Sosyal medya bağlantıları
         linkedinLink: linkedinLink || null,
         orcidLink: orcidLink || null,
-        
-        // Fotoğraf
         photoHTML: photoHTML || null,
-        
-        // Güvenlik bilgileri
-        role: 'user', // Varsayılan role: normal kullanıcı
-        
-        // Sistem bilgileri
-        createdAt: currentTime,
-        lastUpdated: currentTime,
+        role: 'user',
         createdBy: currentUser
     };
-    
-    addDoc(collection(window.firestoreDb, "users"), userData)
-    .then(() => {
+
+    try {
+        // Mevcut BackendAPI helper'ını kullan
+        const res = await (window.backendAPI && typeof window.backendAPI.addMember === 'function'
+            ? window.backendAPI.addMember(payload)
+            : window.backendAPI.post('add_member.php', payload));
+
+        const ok = res && (res.success === true || res.status === 'ok' || typeof res.id !== 'undefined');
+        if (!ok) {
+            const msg = (res && (res.error || res.message)) ? (res.error || res.message) : 'Bilinmeyen backend hatası';
+            throw new Error(msg);
+        }
+
         addToConsoleOutput(`✓ Kullanıcı başarıyla eklendi: ${name}`, 'success');
         addToConsoleOutput(`  - Tam İsim: ${fullName || 'Belirtilmemiş'}`, 'info');
         addToConsoleOutput(`  - E-mail: ${email}`, 'info');
@@ -1261,7 +1232,7 @@ function submitUser() {
         addToConsoleOutput(`  - Bölüm: ${department || 'Belirtilmemiş'}`, 'info');
         addToConsoleOutput(`  - Fakülte: ${faculty || 'Belirtilmemiş'}`, 'info');
         addToConsoleOutput(`  - Kurum: ${institution || 'Belirtilmemiş'}`, 'info');
-        
+
         // Form temizle
         document.getElementById('userName').value = '';
         document.getElementById('userFullName').value = '';
@@ -1274,40 +1245,45 @@ function submitUser() {
         document.getElementById('userLinkedinLink').value = '';
         document.getElementById('userOrcidLink').value = '';
         document.getElementById('userPhotoHTML').value = '';
-        
+
         // Formu gizle
         document.getElementById('userForm').style.display = 'none';
-    }).catch(error => {
+    } catch (error) {
         addToConsoleOutput(`✗ Hata: ${error.message}`, 'error');
-    });
+    }
 }
 
-function getAllUsers() {
-    // Firebase bağlantısını kontrol et ve gerekirse başlat
-    if (!initializeFirebase() || !window.firestoreDb) {
-        addToConsoleOutput('✗ Hata: Firebase bağlantısı kurulamadı!', 'error');
-        return;
-    }
-    
+async function getAllUsers() {
     addToConsoleOutput('→ Kullanıcılar getiriliyor...', 'info');
-    
-    const { collection, getDocs } = window.firestoreFunctions;
-    
-    getDocs(collection(window.firestoreDb, "users")).then(snapshot => {
-        if (snapshot.empty) {
+
+    try {
+        // Mevcut BackendAPI helper'ını kullan
+        const res = await (window.backendAPI && typeof window.backendAPI.getAllMembers === 'function'
+            ? window.backendAPI.getAllMembers()
+            : window.backendAPI.get('users.php'));
+
+        // Çeşitli backend cevap biçimlerine toleranslı ol
+        const list = Array.isArray(res) ? res
+                   : Array.isArray(res?.items) ? res.items
+                   : Array.isArray(res?.data) ? res.data
+                   : [];
+
+        if (list.length === 0) {
             addToConsoleOutput('ℹ️ Henüz kullanıcı kaydı bulunmuyor.', 'info');
             return;
         }
-        
-        addToConsoleOutput(`✓ ${snapshot.size} kullanıcı bulundu:`, 'success');
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const createdAt = data.createdAt ? data.createdAt.toDate().toLocaleString('tr-TR') : 'Bilinmiyor';
-            addToConsoleOutput(`  • ${data.name || 'İsimsiz'} - ${data.email || 'E-mail yok'} - Rol: ${data.role || 'user'} - Oluşturulma: ${createdAt}`);
+
+        addToConsoleOutput(`✓ ${list.length} kullanıcı bulundu:`, 'success');
+        list.forEach(row => {
+            const name = row.name || row.fullName || row.full_name || 'İsimsiz';
+            const email = row.email || 'E-mail yok';
+            const role = (row.role || 'user');
+            const createdAt = row.created_at || row.createdAt || 'Bilinmiyor';
+            addToConsoleOutput(`  • ${name} - ${email} - Rol: ${role} - Oluşturulma: ${createdAt}`);
         });
-    }).catch(error => {
+    } catch (error) {
         addToConsoleOutput(`✗ Hata: ${error.message}`, 'error');
-    });
+    }
 }
 
 // Journal düzenleme fonksiyonları
@@ -1325,16 +1301,36 @@ function showJournalEditForm() {
         editSection.style.display = 'block';
         editSection.classList.add('expanded');
         
-        // Mevcut journal verilerini yükle (örnek veriler)
-        loadCurrentJournalData();
+        // Mevcut journal verilerini form alanlarına doldur
+        populateJournalEditForm(currentJournal);
     }
 }
 
-function loadCurrentJournalData() {
-    // Sayfadaki mevcut verilerden yükle
-    document.getElementById('journalName').value = 'NEX ANNUAL SCIENCE';
-    document.getElementById('journalAuthors').value = 'C. Ertuğrul ERDOĞAN, NEX';
-    document.getElementById('journalYear').value = '2024';
+function populateJournalEditForm(journal) {
+    // Eğer henüz set edilmediyse backend'den tekrar yüklemeyi deneyebiliriz
+    if (!journal) {
+        // En son yüklenenleri çağır ve düşük id'liyi seç
+        loadJournalsFromBackend().catch(() => {});
+        return;
+    }
+    const nameEl = document.getElementById('journalName');
+    const authorsEl = document.getElementById('journalAuthors');
+    const yearEl = document.getElementById('journalYear');
+    if (nameEl) nameEl.value = journal.name || '';
+    if (authorsEl) authorsEl.value = journal.authors || '';
+    if (yearEl) yearEl.value = String(journal.year || new Date().getFullYear());
+
+    // PDF bilgisi gösterim: Dosya input set edilemez; mevcut PDF varsa info alanını güncelle
+    const fileInfo = document.getElementById('fileInfo');
+    const fileNameSpan = document.getElementById('fileName');
+    const uploadButton = document.querySelector('.file-upload-button');
+    const pdfUrl = journal.pdfUrl || journal.pdf_url || '';
+    if (pdfUrl && fileInfo && fileNameSpan && uploadButton) {
+        const filename = String(pdfUrl).split('/').pop();
+        fileNameSpan.textContent = filename || 'Mevcut PDF';
+        fileInfo.style.display = 'flex';
+        uploadButton.style.display = 'none';
+    }
 }
 
 function cancelJournalEdit() {
@@ -1405,7 +1401,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function saveJournalChanges() {
+async function saveJournalChanges() {
     const formData = {
         name: document.getElementById('journalName').value,
         authors: document.getElementById('journalAuthors').value,
@@ -1428,21 +1424,60 @@ function saveJournalChanges() {
     // PDF varsa sayfa sayısını al ve backend'e kaydet
     const doSave = async () => {
         try {
+            let totalPages;
             if (formData.pdf) {
-                formData.pageCount = await getPdfPageCount(formData.pdf);
-                console.log(`📄 PDF sayfa sayısı: ${formData.pageCount}`);
+                totalPages = await getPdfPageCount(formData.pdf);
+                console.log(`📄 PDF sayfa sayısı (total_page_count): ${totalPages}`);
                 const pdfUploadRes = await uploadJournalPdfToBackend(formData.pdf);
                 if (pdfUploadRes && pdfUploadRes.pdf_url) {
                     formData.pdfUrl = pdfUploadRes.pdf_url;
                 }
             } else {
-                formData.pageCount = 40;
+                // Yeni PDF yoksa mevcut sayfa sayısı veya default kullan
+                totalPages = (currentJournal && Number(currentJournal.totalPageCount)) || 40;
+                // Eski PDF URL'ini koru
+                if (currentJournal && (currentJournal.pdfUrl || currentJournal.pdf_url)) {
+                    formData.pdfUrl = currentJournal.pdfUrl || currentJournal.pdf_url;
+                }
+            }
+            // prepared_page_count: kullanıcıdan al
+            let preparedInputEl = document.getElementById('preparedPages');
+            let preparedPagesVal = null;
+            if (preparedInputEl && preparedInputEl.value !== '') {
+                preparedPagesVal = parseInt(preparedInputEl.value, 10);
+            }
+            if (preparedPagesVal === null || isNaN(preparedPagesVal)) {
+                const defaultPrepared = currentJournal ? Number(currentJournal.preparedPageCount || 0) : 0;
+                const userInput = window.prompt('Hazırlanan sayfa sayısı (prepared_page_count):', String(defaultPrepared));
+                if (userInput === null) {
+                    // İptal edildi
+                    throw new Error('İşlem iptal edildi');
+                }
+                preparedPagesVal = parseInt(userInput, 10);
+            }
+            if (isNaN(preparedPagesVal) || preparedPagesVal < 0) preparedPagesVal = 0;
+            if (typeof totalPages === 'number' && totalPages >= 0 && preparedPagesVal > totalPages) {
+                preparedPagesVal = totalPages;
             }
 
-            await saveJournalToBackend(formData);
-            alert('Journal başarıyla kaydedildi!');
+            // Payload alan adlarını belirle
+            formData.preparedPageCount = preparedPagesVal;
+            formData.totalPageCount = totalPages || 40;
+ 
+            if (currentJournal && currentJournal.id) {
+                await updateJournalInBackend(currentJournal.id, formData);
+                alert('Journal güncellendi!');
+            } else {
+                await saveJournalToBackend(formData);
+                alert('Journal başarıyla kaydedildi!');
+            }
             cancelJournalEdit();
-            location.reload();
+            // Yeniden yükle ve ekranda güncelle
+            const items = await loadJournalsFromBackend();
+            if (items && items.length) {
+                const lowest = items.reduce((min, j) => (j.id < min.id ? j : min), items[0]);
+                updateJournalDisplay(lowest);
+            }
         } catch (error) {
             console.error('Journal kaydetme hatası (backend):', error);
             alert('Journal kaydedilirken bir hata oluştu: ' + error.message);
@@ -1506,15 +1541,43 @@ async function saveJournalToBackend(formData) {
         name: formData.name.trim(),
         authors: formData.authors.trim(),
         year: formData.year,
-        pageCount: formData.pageCount || 40,
+        preparedPageCount: Number(formData.preparedPageCount || 0),
+        totalPageCount: Number(formData.totalPageCount || 40),
         pdfUrl: formData.pdfUrl || null,
         status: 'draft'
     };
     const res = await window.backendAPI.post('journals.php?action=create', payload);
-    if (!res || !res.success) {
-        throw new Error(res && res.error ? res.error : 'Unknown backend error');
+    // Esnek başarı kontrolü
+    const ok = !!(res && (res.success === true || res.status === 'ok' || res.status === 'success' || typeof res.id !== 'undefined' || res.insertId || res.created === true || (typeof res.affectedRows === 'number' && res.affectedRows >= 0)));
+    if (!ok) {
+        const err = (res && (res.error || res.message || res.fatal)) || 'Unknown backend error';
+        console.error('Journal create response:', res);
+        throw new Error(err);
     }
-    return res.id;
+    return res.id || res.insertId;
+}
+
+// Backend: update journal
+async function updateJournalInBackend(id, formData) {
+    const payload = {
+        id: Number(id),
+        name: (formData.name || '').trim(),
+        authors: (formData.authors || '').trim(),
+        year: Number(formData.year),
+        preparedPageCount: Number(formData.preparedPageCount || 0),
+        totalPageCount: Number(formData.totalPageCount || 40),
+        pdfUrl: formData.pdfUrl || null,
+        status: formData.status || 'draft'
+    };
+    const res = await window.backendAPI.post('journals.php?action=update', payload);
+    // Esnek başarı kontrolü
+    const ok = !!(res && (res.success === true || res.status === 'ok' || res.status === 'success' || res.updated === true || (typeof res.affectedRows === 'number' && res.affectedRows >= 0)));
+    if (!ok) {
+        const err = (res && (res.error || res.message || res.fatal)) || 'Unknown backend error';
+        console.error('Journal update response:', res);
+        throw new Error(err);
+    }
+    return true;
 }
 
 // Firebase bekleme fonksiyonu artıktan kullanılmıyor; geriye dönük uyumluluk için no-op
@@ -1585,6 +1648,7 @@ async function loadJournalsFromBackend() {
     if (items.length > 0) {
         // En düşük id’li journal’ı al
         const lowest = items.reduce((min, j) => (j.id < min.id ? j : min), items[0]);
+        currentJournal = lowest;
         updateJournalDisplay(lowest);
     } else {
         updateDefaultProgressDisplay();
@@ -1649,6 +1713,7 @@ function updateJournalDisplay(journal) {
     const progressElement = document.querySelector('.progress-text');
     const progressFill = document.querySelector('.progress-fill');
     const deadlineCounter = document.getElementById('deadlineCounter');
+    currentJournal = journal || currentJournal;
     
     const totalPages = Number(journal.totalPageCount || 40);
     const preparedPages = Math.max(0, Number(journal.preparedPageCount || 0));
@@ -1835,5 +1900,3 @@ function updateCurrentJournalPdfUrl(journal) {
         currentJournalPdfUrl = toWebPdfUrl(raw);
     }
 }
-
-
