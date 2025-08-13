@@ -199,6 +199,18 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
     }
 
+    // Saat formatını HH:MM:SS'den HH:MM'ye çeviren helper fonksiyon
+    function formatTimeDisplay(timeStr) {
+        if (!timeStr || timeStr === null || timeStr === '') return timeStr;
+        const timeString = String(timeStr);
+        // HH:MM:SS formatında ise sadece HH:MM'yi al
+        if (/^\d{1,2}:\d{2}:\d{2}$/.test(timeString)) {
+            return timeString.substring(0, 5); // İlk 5 karakter HH:MM
+        }
+        // Zaten HH:MM formatında ise olduğu gibi dön
+        return timeString;
+    }
+
     function normalizeEventFromBackend(row) {
         const id = row.id ?? row.event_id ?? null;
         const name = row.name || row.title || 'Etkinlik';
@@ -210,7 +222,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const end = rawEnd == null ? '' : String(rawEnd);
         const isUnknown = (rawStart == null) || (rawEnd == null) || (start.toLowerCase() === 'unknown') || (end.toLowerCase() === 'unknown');
         const time = isUnknown ? '' : (start || end || '');
-        return { id, title: name, type, date, time, timeUnknown: isUnknown };
+        return { 
+            id, 
+            title: name, 
+            type, 
+            date, 
+            time, 
+            timeUnknown: isUnknown,
+            startRaw: rawStart,
+            endRaw: rawEnd
+        };
     }
 
     function toYMD(value) {
@@ -307,17 +328,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayElement.classList.add('has-event');
                 const eventIndicator = document.createElement('div');
                 eventIndicator.className = 'calendar-event-indicator';
-                eventIndicator.textContent = dayEvents[0].title;
+                eventIndicator.textContent = dayEvents[0].title; // Sadece ilk etkinliğin başlığını göster
                 dayElement.appendChild(eventIndicator);
             }
-            // Eğer bu günde belirsiz saatli etkinlik varsa '?' rozeti ekle
-            const hasUnknown = dayEvents.some(ev => (ev.timeUnknown === true) || (String(ev.time || '').toLowerCase() === 'unknown'));
-            if (hasUnknown) {
+            // Eğer bu günde başlangıç saati belirsiz etkinlik varsa '?' rozeti ekle
+            const hasStartTimeUnknown = dayEvents.some(ev => {
+                const hasStartTime = ev.startRaw && ev.startRaw !== null && ev.startRaw !== '' && String(ev.startRaw).toLowerCase() !== 'unknown';
+                const isStartUnknown = !hasStartTime;
+                // Debug: Sadece test için
+                if (dayEvents.length > 0) {
+                    console.log(`🔧 Date: ${dateString}, Events: ${dayEvents.length}, First: ${ev.title}, startRaw: ${ev.startRaw}, isStartUnknown: ${isStartUnknown}`);
+                }
+                return isStartUnknown; // Başlangıç saati belirsiz mi?
+            });
+            if (hasStartTimeUnknown) {
                 dayElement.style.position = 'relative';
                 const badge = document.createElement('div');
                 badge.textContent = '?';
-                badge.style.cssText = 'position:absolute; top:4px; right:6px; width:18px; height:18px; border-radius:50%; background:var(--primary-color,#5d0d0e); color:#fff; font-size:12px; display:flex; align-items:center; justify-content:center;';
+                badge.style.cssText = 'position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:var(--primary-color,#5d0d0e); color:#fff; font-size:12px; display:flex; align-items:center; justify-content:center; z-index:2;';
                 dayElement.appendChild(badge);
+            }
+            
+            // Birden fazla etkinlik varsa sayaç rozeti ekle
+            if (dayEvents.length > 1) {
+                dayElement.style.position = 'relative';
+                const countBadge = document.createElement('div');
+                const remainingCount = dayEvents.length - 1;
+                countBadge.textContent = `+${remainingCount}`;
+                
+                // Soru işareti varsa onun altına yerleştir, yoksa sağ üst köşeye
+                const topPosition = hasStartTimeUnknown ? '22px' : '2px';
+                const rightPosition = hasStartTimeUnknown ? '2px' : '2px'; // Her durumda sağ köşede
+                
+                countBadge.style.cssText = `position:absolute; top:${topPosition}; right:${rightPosition}; min-width:18px; height:16px; border-radius:8px; background:rgba(93,13,14,0.8); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; padding:0 3px; z-index:1;`;
+                dayElement.appendChild(countBadge);
             }
             // Eğer bu gün seçiliyse highlight uygula
             if (selectedDate && selectedDate === dateString) {
@@ -511,6 +555,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Lütfen etkinlik adını ve geçerli bir tarihi (YYYY-MM-DD) girin.');
                 return;
             }
+            
+            // Başlangıç belirsiz ama bitiş belli ise hata ver
+            if (startUnknown && !endUnknown && end_time) {
+                alert('Başlangıç saati belirsizse, bitiş saati de belirsiz olmalıdır.');
+                return;
+            }
+            
             if (start_time && start_time !== 'unknown' && !isValidTimeHHMMSafe(start_time)) {
                 alert('Geçersiz başlangıç saati. (HH:MM)');
                 return;
@@ -645,7 +696,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 day: '2-digit',
                 month: 'long'
             });
-            const displayTime = (String(event.time || '').toLowerCase() === 'unknown' || event.timeUnknown) ? 'Henüz Belli Değil' : (event.time || '-');
+            
+            // Yeni saat gösterim mantığı
+            let displayTime = '';
+            const hasStartTime = event.startRaw && event.startRaw !== null && event.startRaw !== '' && String(event.startRaw).toLowerCase() !== 'unknown';
+            const hasEndTime = event.endRaw && event.endRaw !== null && event.endRaw !== '' && String(event.endRaw).toLowerCase() !== 'unknown';
+            
+            if (hasStartTime && hasEndTime) {
+                // Her iki saat de belli - formatla ve göster
+                displayTime = `${formatTimeDisplay(event.startRaw)} - ${formatTimeDisplay(event.endRaw)}`;
+            } else if (hasStartTime && !hasEndTime) {
+                // Sadece başlangıç saati belli - formatla ve göster
+                displayTime = formatTimeDisplay(event.startRaw);
+            } else if (!hasStartTime && hasEndTime) {
+                // Bu durumu önlediğimiz için normalde olmamalı ama fallback
+                displayTime = 'Henüz Belli Değil';
+            } else {
+                // Her ikisi de belirsiz
+                displayTime = 'Henüz Belli Değil';
+            }
 
             eventElement.innerHTML = `
                 <div class="event-date">${dateStr}</div>
@@ -694,7 +763,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const el = document.createElement('div');
                 el.className = 'event-item';
                 const type = ev.type ? ` <span style="opacity:0.8">(${ev.type})</span>` : '';
-                const displayTime = (String(ev.time || '').toLowerCase() === 'unknown' || ev.timeUnknown) ? 'Henüz Belli Değil' : (ev.time || '-');
+                
+                // Yeni saat gösterim mantığı
+                let displayTime = '';
+                const hasStartTime = ev.startRaw && ev.startRaw !== null && ev.startRaw !== '' && String(ev.startRaw).toLowerCase() !== 'unknown';
+                const hasEndTime = ev.endRaw && ev.endRaw !== null && ev.endRaw !== '' && String(ev.endRaw).toLowerCase() !== 'unknown';
+                
+                if (hasStartTime && hasEndTime) {
+                    // Her iki saat de belli - formatla ve göster
+                    displayTime = `${formatTimeDisplay(ev.startRaw)} - ${formatTimeDisplay(ev.endRaw)}`;
+                } else if (hasStartTime && !hasEndTime) {
+                    // Sadece başlangıç saati belli - formatla ve göster
+                    displayTime = formatTimeDisplay(ev.startRaw);
+                } else if (!hasStartTime && hasEndTime) {
+                    // Bu durumu önlediğimiz için normalde olmamalı ama fallback
+                    displayTime = 'Henüz Belli Değil';
+                } else {
+                    // Her ikisi de belirsiz
+                    displayTime = 'Henüz Belli Değil';
+                }
+                
                 el.innerHTML = `
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                         <div style="flex:1;">
@@ -964,7 +1052,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const d = ev.__d;
                 const dateStr = isNaN(d.getTime()) ? (ev.date || '') : d.toLocaleDateString('tr-TR', { day:'2-digit', month:'long', year:'numeric' });
                 const type = ev.type ? `<span style="opacity:0.8; margin-left:6px;">(${ev.type})</span>` : '';
-                const displayTime = (String(ev.time || '').toLowerCase() === 'unknown' || ev.timeUnknown) ? 'Henüz Belli Değil' : (ev.time || '-');
+                
+                // Yeni saat gösterim mantığı
+                let displayTime = '';
+                const hasStartTime = ev.startRaw && ev.startRaw !== null && ev.startRaw !== '' && String(ev.startRaw).toLowerCase() !== 'unknown';
+                const hasEndTime = ev.endRaw && ev.endRaw !== null && ev.endRaw !== '' && String(ev.endRaw).toLowerCase() !== 'unknown';
+                
+                if (hasStartTime && hasEndTime) {
+                    // Her iki saat de belli - formatla ve göster
+                    displayTime = `${formatTimeDisplay(ev.startRaw)} - ${formatTimeDisplay(ev.endRaw)}`;
+                } else if (hasStartTime && !hasEndTime) {
+                    // Sadece başlangıç saati belli - formatla ve göster
+                    displayTime = formatTimeDisplay(ev.startRaw);
+                } else if (!hasStartTime && hasEndTime) {
+                    // Bu durumu önlediğimiz için normalde olmamalı ama fallback
+                    displayTime = 'Henüz Belli Değil';
+                } else {
+                    // Her ikisi de belirsiz
+                    displayTime = 'Henüz Belli Değil';
+                }
+                
                 html += `
                     <div class="event-item" style="padding:12px 14px; border-bottom:1px solid var(--border-color,#e0e0e0); display:flex; align-items:center; gap:12px;">
                         <div class="event-date" style="min-width:120px; font-weight:600;">${dateStr}</div>
@@ -2269,6 +2376,11 @@ function openEditEventModal(ev, originalDateStr) {
     ensureEditEventModal();
     const modal = document.getElementById('editEventModal');
     const formEl = document.getElementById('editEventForm');
+    
+    // Debug: Event objesini konsola yazdır
+    console.log('🔧 Edit Modal - Event Object:', ev);
+    console.log('🔧 startRaw:', ev.startRaw, 'endRaw:', ev.endRaw);
+    
     // Prefill fields
     formEl.querySelector('input[name="name"]').value = ev.title || '';
     formEl.querySelector('input[name="type"]').value = ev.type || '';
@@ -2277,10 +2389,21 @@ function openEditEventModal(ev, originalDateStr) {
     const endInput = formEl.querySelector('input[name="end_time"]');
     const startUnknownCb = document.getElementById('editStartUnknown');
     const endUnknownCb = document.getElementById('editEndUnknown');
-    const isStartUnknown = ev.startRaw == null || String(ev.startRaw).toLowerCase() === 'unknown';
-    const isEndUnknown = ev.endRaw == null || String(ev.endRaw).toLowerCase() === 'unknown';
-    if (startInput) startInput.value = (!isStartUnknown && ev.startRaw) ? String(ev.startRaw) : '';
-    if (endInput) endInput.value = (!isEndUnknown && ev.endRaw) ? String(ev.endRaw) : '';
+    
+    // Başlangıç saati belirsiz mi kontrol et
+    const isStartUnknown = (ev.startRaw === null || ev.startRaw === undefined) || 
+                          (typeof ev.startRaw === 'string' && ev.startRaw.toLowerCase().trim() === 'unknown') ||
+                          (ev.startRaw === '');
+    
+    // Bitiş saati belirsiz mi kontrol et                      
+    const isEndUnknown = (ev.endRaw === null || ev.endRaw === undefined) || 
+                        (typeof ev.endRaw === 'string' && ev.endRaw.toLowerCase().trim() === 'unknown') ||
+                        (ev.endRaw === '');
+    
+    console.log('🔧 isStartUnknown:', isStartUnknown, 'isEndUnknown:', isEndUnknown);
+    
+    if (startInput) startInput.value = (!isStartUnknown && ev.startRaw) ? formatTimeDisplay(String(ev.startRaw)) : '';
+    if (endInput) endInput.value = (!isEndUnknown && ev.endRaw) ? formatTimeDisplay(String(ev.endRaw)) : '';
     if (startUnknownCb) startUnknownCb.checked = isStartUnknown;
     if (endUnknownCb) endUnknownCb.checked = isEndUnknown;
     applyUnknownBindingsForEdit();
@@ -2301,6 +2424,10 @@ function openEditEventModal(ev, originalDateStr) {
         if (startUnknown) start_time = null;
         if (endUnknown) end_time = null;
         if (!name || !isValidDateYMDSafe(event_date)) { alert('Lütfen etkinlik adını ve geçerli bir tarihi girin.'); return; }
+        
+        // Başlangıç belirsiz ama bitiş belli ise hata ver
+        if (startUnknown && !endUnknown && end_time) { alert('Başlangıç saati belirsizse, bitiş saati de belirsiz olmalıdır.'); return; }
+        
         if (start_time && typeof start_time === 'string' && !isValidTimeHHMMSafe(start_time)) { alert('Geçersiz başlangıç saati (HH:MM)'); return; }
         if (end_time && typeof end_time === 'string' && !isValidTimeHHMMSafe(end_time)) { alert('Geçersiz bitiş saati (HH:MM)'); return; }
         try {
