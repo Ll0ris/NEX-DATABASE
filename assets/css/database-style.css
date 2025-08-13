@@ -483,20 +483,56 @@ body {
     margin-right: auto;
 }
 
-/* Profile Page - Side Panel Open by Default */
+/* Profile Page - Side Panel Hamburger Menu */
 .profile-page .main-content {
-    margin-left: 320px; /* Side panel width + padding */
+    margin-left: 320px; /* Side panel açıkken margin */
     margin-right: 20px;
-    max-width: calc(100vw - 360px); /* Responsive width */
+    max-width: calc(100vw - 360px);
     transition: all 0.3s ease;
+}
+
+/* Side panel kapalı olduğunda */
+.profile-page .main-content.sidebar-closed {
+    margin-left: 20px;
+    max-width: calc(100vw - 40px);
 }
 
 .profile-page body {
     overflow-x: hidden; /* Horizontal scroll'ı engelle */
 }
 
+.profile-page .side-panel {
+    left: 0; /* Başta açık */
+    transition: left 0.3s ease;
+}
+
 .profile-page .side-panel.active {
-    left: 0; /* Side panel her zaman görünür */
+    left: 0; /* Açık durum */
+}
+
+/* Profil sayfası side panel kapalı olduğunda */
+.profile-page .side-panel:not(.active) {
+    left: -300px; /* Kapalı durum */
+}
+
+/* Mobile responsive için profil sayfası */
+@media (max-width: 768px) {
+    .profile-page .main-content {
+        margin-left: 20px;
+        max-width: calc(100vw - 40px);
+    }
+    
+    .profile-page .main-content.sidebar-closed {
+        margin-left: 20px;
+    }
+    
+    .profile-page .side-panel {
+        left: -300px; /* Mobile'da başta kapalı */
+    }
+    
+    .profile-page .side-panel.active {
+        left: 0; /* Açık durum */
+    }
 }
 
 /* Content Sections */
@@ -1834,6 +1870,7 @@ body {
     background-color: rgba(0, 0, 0, 0.5);
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: all 0.3s ease;
     z-index: 1000;
 }
@@ -1841,6 +1878,7 @@ body {
 .overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* Profile Dropdown */
@@ -1919,12 +1957,14 @@ body {
     z-index: 999;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: all 0.3s ease;
 }
 
 .overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* Profile Side Panel */
@@ -3124,4 +3164,136 @@ body {
 [data-theme="dark"] .form-group select option {
     background-color: var(--panel-bg);
     color: var(--text-color);
+}
+
+/* Toast Notification System */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    padding: 15px 20px;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    opacity: 0;
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.hide {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.toast-icon {
+    font-size: 18px;
+    min-width: 18px;
+}
+
+.toast-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.toast-message {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    font-size: 16px;
+    padding: 2px;
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
+/* Toast Types */
+.toast.success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.success .toast-icon {
+    color: #10b981;
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast.error .toast-icon {
+    color: #ef4444;
+}
+
+.toast.warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.toast.warning .toast-icon {
+    color: #f59e0b;
+}
+
+.toast.info {
+    border-left: 4px solid #3b82f6;
+}
+
+.toast.info .toast-icon {
+    color: #3b82f6;
+}
+
+/* Dark theme toast */
+[data-theme="dark"] .toast {
+    background: #2d2d2d;
+    border-color: #404040;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .toast-container {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+    }
 }

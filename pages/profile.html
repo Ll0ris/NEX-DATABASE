@@ -20,6 +20,11 @@
     <div class="top-panel">
         <!-- Sol Taraf -->
         <div class="left-section">
+            <button type="button" class="hamburger-btn" id="hamburgerBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
                 <img src="../assets/images/logo.png" alt="NEX Logo" class="top-logo">
                 <div class="logo-text">
@@ -96,7 +101,7 @@
         </div>
         
         <!-- Navigasyon -->
-        <nav class="side-nav">
+        <nav class="side-nav active">
             <a href="#" class="nav-item" data-section="profile">
                 <i class="fas fa-user nav-icon"></i>
                 <span>Profil</span>
@@ -802,6 +807,9 @@
         </div>
     </div>
 
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
     <!-- Profile Dropdown -->
     <div class="profile-dropdown" id="profileDropdown">
         <a href="#" class="dropdown-item">
@@ -855,6 +863,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <script src="../assets/js/backend-api.js"></script>
     <script src="../assets/js/global-features.js"></script>

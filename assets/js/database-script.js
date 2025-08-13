@@ -29,6 +29,69 @@ function getEventTypeClass(eventType) {
     return typeMap[eventType] || '';
 }
 
+// Toast Notification System
+function showToast(message, type = 'info', title = null, duration = 4000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let iconClass = 'fas fa-info-circle';
+    switch (type) {
+        case 'success':
+            iconClass = 'fas fa-check-circle';
+            title = title || 'Başarılı';
+            break;
+        case 'error':
+            iconClass = 'fas fa-exclamation-circle';
+            title = title || 'Hata';
+            break;
+        case 'warning':
+            iconClass = 'fas fa-exclamation-triangle';
+            title = title || 'Uyarı';
+            break;
+        default:
+            title = title || 'Bilgi';
+    }
+
+    toast.innerHTML = `
+        <i class="${iconClass} toast-icon"></i>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="removeToast(this.parentElement)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    container.appendChild(toast);
+
+    // Animasyon için kısa gecikme
+    setTimeout(() => toast.classList.add('show'), 100);
+
+    // Otomatik kaldırma
+    if (duration > 0) {
+        setTimeout(() => removeToast(toast), duration);
+    }
+
+    return toast;
+}
+
+function removeToast(toast) {
+    if (!toast) return;
+    
+    toast.classList.add('hide');
+    toast.classList.remove('show');
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.parentElement.removeChild(toast);
+        }
+    }, 300);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Global değişkenler
     let currentJournalPdfUrl = null; // PDF URL'sini tutacağız
@@ -1127,6 +1190,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.updateCalendarSelection = updateCalendarSelection;
     window.formatTimeDisplay = formatTimeDisplay;
     window.getEventTypeClass = getEventTypeClass;
+    window.showToast = showToast;
+    window.removeToast = removeToast;
     
     // Export variables to global scope
     window.selectedDate = selectedDate;
@@ -1868,20 +1933,15 @@ async function saveJournalChanges() {
                     formData.pdfUrl = currentJournal.pdfUrl || currentJournal.pdf_url;
                 }
             }
-            // prepared_page_count: kullanıcıdan al
+            // prepared_page_count: form alanından al
             let preparedInputEl = document.getElementById('preparedPages');
             let preparedPagesVal = null;
             if (preparedInputEl && preparedInputEl.value !== '') {
                 preparedPagesVal = parseInt(preparedInputEl.value, 10);
-            }
-            if (preparedPagesVal === null || isNaN(preparedPagesVal)) {
+            } else {
+                // Form alanı boşsa varsayılan değeri kullan
                 const defaultPrepared = currentJournal ? Number(currentJournal.preparedPageCount || 0) : 0;
-                const userInput = window.prompt('Hazırlanan sayfa sayısı (prepared_page_count):', String(defaultPrepared));
-                if (userInput === null) {
-                    // İptal edildi
-                    throw new Error('İşlem iptal edildi');
-                }
-                preparedPagesVal = parseInt(userInput, 10);
+                preparedPagesVal = defaultPrepared;
             }
             if (isNaN(preparedPagesVal) || preparedPagesVal < 0) preparedPagesVal = 0;
             if (typeof totalPages === 'number' && totalPages >= 0 && preparedPagesVal > totalPages) {
@@ -1894,10 +1954,10 @@ async function saveJournalChanges() {
  
             if (currentJournal && currentJournal.id) {
                 await updateJournalInBackend(currentJournal.id, formData);
-                alert('Journal güncellendi!');
+                showToast('Journal başarıyla güncellendi!', 'success');
             } else {
                 await saveJournalToBackend(formData);
-                alert('Journal başarıyla kaydedildi!');
+                showToast('Journal başarıyla kaydedildi!', 'success');
             }
             cancelJournalEdit();
             // Yeniden yükle ve ekranda güncelle
@@ -1908,7 +1968,7 @@ async function saveJournalChanges() {
             }
         } catch (error) {
             console.error('Journal kaydetme hatası (backend):', error);
-            alert('Journal kaydedilirken bir hata oluştu: ' + error.message);
+            showToast('Journal kaydedilirken bir hata oluştu: ' + error.message, 'error');
         } finally {
             saveButton.textContent = originalText;
             saveButton.disabled = false;
@@ -2492,7 +2552,7 @@ function openEditEventModal(ev, originalDateStr) {
             if (typeof window.generateCalendar === 'function') { window.generateCalendar(); }
             if (typeof window.showDayEventsInSidebar === 'function') { window.showDayEventsInSidebar(newDate); }
         } catch (err) {
-            alert('Güncelleme hatası: ' + (err?.message || err));
+            showToast('Güncelleme hatası: ' + (err?.message || err), 'error');
         }
     };
 }

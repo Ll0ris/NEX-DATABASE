@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidePanel = document.getElementById('profileSidePanel');
     const mainContent = document.getElementById('mainContent');
+    const overlay = document.getElementById('overlay');
     const profileSection = document.getElementById('profileSection');
     const profileDropdown = document.getElementById('profileDropdown');
     const profileEditBtn = document.getElementById('profileEditBtn'); // ID düzeltildi
@@ -64,6 +65,65 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     const photoUpload = document.getElementById('photoUpload');
     const profilePhoto = document.getElementById('profilePhoto');
+
+    // Hamburger Menu Control
+    if (hamburgerBtn && sidePanel && mainContent) {
+        // Side panel ve hamburger başta açık/aktif olsun
+        sidePanel.classList.add('active');
+        hamburgerBtn.classList.add('active');
+        console.log('Initial setup complete');
+        
+        // Basit test: Hamburger butona direkt onclick ekle
+        hamburgerBtn.onclick = function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('Hamburger button clicked!');
+            
+            const isActive = sidePanel.classList.contains('active');
+            console.log('Current panel state:', isActive);
+            
+            if (isActive) {
+                // Panel'i kapat
+                console.log('Closing panel...');
+                sidePanel.classList.remove('active');
+                mainContent.classList.add('sidebar-closed');
+                hamburgerBtn.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+            } else {
+                // Panel'i aç
+                console.log('Opening panel...');
+                sidePanel.classList.add('active');
+                mainContent.classList.remove('sidebar-closed');
+                hamburgerBtn.classList.add('active');
+                // Mobile'da overlay göster
+                if (window.innerWidth <= 768 && overlay) {
+                    overlay.classList.add('active');
+                }
+            }
+            
+            console.log('New state - Panel active:', sidePanel.classList.contains('active'));
+        };
+        
+    // Not: Duplicate listeners elsewhere can cause double toggles; keep only this handler
+        
+        // Overlay'e tıklandığında panel'i kapat (mobile)
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                sidePanel.classList.remove('active');
+                mainContent.classList.add('sidebar-closed');
+                hamburgerBtn.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
+        
+        // Window resize kontrolü
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                // Desktop'ta overlay'i kaldır
+                if (overlay) overlay.classList.remove('active');
+            }
+        });
+    }
 
     // Section Navigation
     function switchSection(sectionName) {
@@ -1024,33 +1084,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Side Panel Toggle (database-script.js'teki gibi)
-    function toggleSidePanel() {
-        const isActive = sidePanel.classList.contains('active');
-        
-        if (isActive) {
-            closeSidePanel();
-        } else {
-            openSidePanel();
-        }
-    }
-
-    function openSidePanel() {
-        sidePanel.classList.add('active');
-        hamburgerBtn.classList.add('active');
-    }
-
-    function closeSidePanel() {
-        sidePanel.classList.remove('active');
-        hamburgerBtn.classList.remove('active');
-    }
-
-    // Hamburger button event
-    if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', function() {
-            toggleSidePanel();
-        });
-    }
+    // Remove duplicate hamburger handlers below to avoid double toggling
 
     // Profile Dropdown Toggle (database-script.js'teki gibi)
     function toggleProfileDropdown() {
@@ -1206,12 +1240,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     loadProfileData();
     
-    // Add hamburger animation
-    if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', function() {
-            this.classList.toggle('active');
-        });
-    }
+    // Hamburger animation is handled in the main click handler above
     
     // Mor düzenle butonuna tıklandığında direkt edit modunu aç
     // Zaten yukarıda tanımlı profileEditBtn ile event listener ekleniyor
