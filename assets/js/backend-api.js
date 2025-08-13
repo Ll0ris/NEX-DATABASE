@@ -17,11 +17,6 @@ class BackendAPI {
         const response = await fetch(url, { credentials: 'include' });
         const responseText = await response.text();
         
-        // Debug için yanıtı konsola yazdır
-        console.log('Backend GET status:', response.status, response.ok);
-        console.log('Backend GET url:', url.toString());
-        console.log('Backend GET response:', responseText);
-        
         if (responseText.trim() === '') {
             throw new Error('Empty response from backend');
         }
@@ -48,11 +43,6 @@ class BackendAPI {
         
         const responseText = await response.text();
         
-        // Debug için yanıtı konsola yazdır
-        console.log('Backend POST status:', response.status, response.ok);
-        console.log('Backend POST endpoint:', `${this.baseURL}/${endpoint}`);
-        console.log('Backend POST response:', responseText);
-        
         if (responseText.trim() === '') {
             throw new Error('Empty response from backend');
         }
@@ -69,11 +59,6 @@ class BackendAPI {
     // Tüm üyeleri getir
     async getAllMembers() {
         return await this.get('list_members.php');
-    }
-
-    // Test için üye listesi (Firebase bağımlılığı yok)
-    async getAllMembersTest() {
-        return await this.get('list_members_test.php');
     }
 
     // Tek üye getir
@@ -105,71 +90,8 @@ class BackendAPI {
         });
     }
 
-    // Test bağlantısı
-    async testConnection() {
-        return await this.get('test_connection.php');
-    }
-
-    // CORS test
-    async corsTest() {
-        return await this.get('cors_test.php');
-    }
 }
 
 // Global instance oluştur
 window.backendAPI = new BackendAPI();
 
-// Test fonksiyonu
-window.testBackendConnection = async function() {
-    try {
-        console.log('Backend test bağlantısı deneniyor...');
-        const result = await window.backendAPI.testConnection();
-        console.log('Backend bağlantısı başarılı:', result);
-        return result;
-    } catch (error) {
-        console.error('Backend bağlantısı başarısız:', error);
-        return { error: error.message };
-    }
-};
-
-// CORS test fonksiyonu
-window.testCORS = async function() {
-    try {
-        console.log('CORS test başlatılıyor...');
-        const result = await window.backendAPI.corsTest();
-        console.log('CORS test başarılı:', result);
-        return result;
-    } catch (error) {
-        console.error('CORS test başarısız:', error);
-        return { error: error.message };
-    }
-};
-
-// Üye listesi test fonksiyonu
-window.testGetMembers = async function() {
-    try {
-        console.log('Üye listesi çekiliyor...');
-        const result = await window.backendAPI.getAllMembers();
-        console.log('Üye listesi başarıyla alındı:', result);
-        return result;
-    } catch (error) {
-        console.error('Üye listesi hatası:', error);
-        return { error: error.message };
-    }
-};
-
-// Backend durumunu kontrol et
-window.checkBackendStatus = async function() {
-    console.log('🔍 Backend durumu kontrol ediliyor...');
-    
-    console.log('1. CORS Test:');
-    await testCORS();
-    
-    console.log('2. Backend Connection Test:');
-    await testBackendConnection();
-    
-    console.log('3. Members Test:');
-    await testGetMembers();
-    
-    console.log('✅ Tüm testler tamamlandı!');
-};

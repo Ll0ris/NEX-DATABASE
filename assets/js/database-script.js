@@ -1,3 +1,7 @@
+// Global takvim değişkenleri
+let selectedDate = '';
+let currentDate = new Date();
+
 document.addEventListener('DOMContentLoaded', function() {
     // Global değişkenler
     let currentJournalPdfUrl = null; // PDF URL'sini tutacağız
@@ -165,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Takvim değişkenleri
-    let currentDate = new Date();
     const monthNames = [
         'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
         'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
@@ -201,10 +204,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = row.name || row.title || 'Etkinlik';
         const type = row.type || '';
         const date = toYMD(row.event_date);
-        const start = (row.start_time || '').toString();
-        const end = (row.end_time || '').toString();
-        const time = start || end || '10:00';
-        return { id, title: name, type, date, time };
+        const rawStart = row.start_time;
+        const rawEnd = row.end_time;
+        const start = rawStart == null ? '' : String(rawStart);
+        const end = rawEnd == null ? '' : String(rawEnd);
+        const isUnknown = (rawStart == null) || (rawEnd == null) || (start.toLowerCase() === 'unknown') || (end.toLowerCase() === 'unknown');
+        const time = isUnknown ? '' : (start || end || '');
+        return { id, title: name, type, date, time, timeUnknown: isUnknown };
     }
 
     function toYMD(value) {
@@ -262,6 +268,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const dayElement = createDayElement(day, true);
             calendarDays.appendChild(dayElement);
         }
+
+        // Seçili günü işaretle
+        updateCalendarSelection();
     }
 
     function createDayElement(day, isOtherMonth) {
@@ -291,6 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let dateString = '';
         if (!isOtherMonth) {
             dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            dayElement.dataset.date = dateString;
             const dayEvents = events.filter(event => event.date === dateString);
             
             if (dayEvents.length > 0) {
@@ -300,17 +310,57 @@ document.addEventListener('DOMContentLoaded', function() {
                 eventIndicator.textContent = dayEvents[0].title;
                 dayElement.appendChild(eventIndicator);
             }
+            // Eğer bu günde belirsiz saatli etkinlik varsa '?' rozeti ekle
+            const hasUnknown = dayEvents.some(ev => (ev.timeUnknown === true) || (String(ev.time || '').toLowerCase() === 'unknown'));
+            if (hasUnknown) {
+                dayElement.style.position = 'relative';
+                const badge = document.createElement('div');
+                badge.textContent = '?';
+                badge.style.cssText = 'position:absolute; top:4px; right:6px; width:18px; height:18px; border-radius:50%; background:var(--primary-color,#5d0d0e); color:#fff; font-size:12px; display:flex; align-items:center; justify-content:center;';
+                dayElement.appendChild(badge);
+            }
+            // Eğer bu gün seçiliyse highlight uygula
+            if (selectedDate && selectedDate === dateString) {
+                dayElement.classList.add('selected-day');
+                dayElement.style.outline = '2px solid var(--primary-color)';
+                dayElement.style.outlineOffset = '-2px';
+            }
         }
 
-        // Gün tıklama: o güne ait etkinlikleri göster
+        // Gün tıklama: o güne ait etkinlikleri yan panelde göster
         dayElement.addEventListener('click', () => {
             if (!dateString) {
                 dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
-            openDayEventsModal(dateString);
+            selectedDate = dateString;
+            updateCalendarSelection();
+            showDayEventsInSidebar(dateString);
         });
 
         return dayElement;
+    }
+
+    function updateCalendarSelection() {
+        const allDays = document.querySelectorAll('.calendar-day');
+        allDays.forEach(el => {
+            if (el.classList.contains('other-month')) {
+                // Other-month hücrelerde seçili stilleri temizle
+                el.classList.remove('selected-day');
+                el.style.outline = '';
+                el.style.outlineOffset = '';
+                return;
+            }
+            const elDate = el.dataset ? el.dataset.date : '';
+            if (elDate && elDate === selectedDate) {
+                el.classList.add('selected-day');
+                el.style.outline = '2px solid var(--primary-color)';
+                el.style.outlineOffset = '-2px';
+            } else {
+                el.classList.remove('selected-day');
+                el.style.outline = '';
+                el.style.outlineOffset = '';
+            }
+        });
     }
 
     // Admin kontrolü
@@ -417,10 +467,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="form-group" style="flex:1;">
                                 <label>Başlangıç Saati</label>
                                 <input type="time" name="start_time" placeholder="HH:MM">
+                                <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+                                    <input type="checkbox" id="startUnknown" style="width:16px; height:16px;">
+                                    <label for="startUnknown" style="font-size:13px; opacity:0.85;">Başlangıç saati belirsiz</label>
+                                </div>
                             </div>
                             <div class="form-group" style="flex:1;">
                                 <label>Bitiş Saati</label>
                                 <input type="time" name="end_time" placeholder="HH:MM">
+                                <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+                                    <input type="checkbox" id="endUnknown" style="width:16px; height:16px;">
+                                    <label for="endUnknown" style="font-size:13px; opacity:0.85;">Bitiş saati belirsiz</label>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -442,18 +500,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = (formData.get('name') || '').toString().trim();
             const type = (formData.get('type') || '').toString().trim();
             const event_date = (formData.get('event_date') || '').toString().trim();
-            const start_time = (formData.get('start_time') || '').toString().trim();
-            const end_time = (formData.get('end_time') || '').toString().trim();
+            let start_time = (formData.get('start_time') || '').toString().trim();
+            let end_time = (formData.get('end_time') || '').toString().trim();
+            const startUnknown = !!document.getElementById('startUnknown')?.checked;
+            const endUnknown = !!document.getElementById('endUnknown')?.checked;
+            if (startUnknown) start_time = null;
+            if (endUnknown) end_time = null;
 
-            if (!name || !isValidDateYMD(event_date)) {
+            if (!name || !isValidDateYMDSafe(event_date)) {
                 alert('Lütfen etkinlik adını ve geçerli bir tarihi (YYYY-MM-DD) girin.');
                 return;
             }
-            if (start_time && !isValidTimeHHMM(start_time)) {
+            if (start_time && start_time !== 'unknown' && !isValidTimeHHMMSafe(start_time)) {
                 alert('Geçersiz başlangıç saati. (HH:MM)');
                 return;
             }
-            if (end_time && !isValidTimeHHMM(end_time)) {
+            if (end_time && end_time !== 'unknown' && !isValidTimeHHMMSafe(end_time)) {
                 alert('Geçersiz bitiş saati. (HH:MM)');
                 return;
             }
@@ -479,6 +541,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Etkinlik oluşturulurken hata: ' + (e?.message || e));
             }
         });
+
+        // Unknown checkbox davranışı: ilgili time input'unu devre dışı bırak
+        const formEl = document.getElementById('createEventForm');
+        const startInput = formEl ? formEl.querySelector('input[name="start_time"]') : null;
+        const endInput = formEl ? formEl.querySelector('input[name="end_time"]') : null;
+        const startUnknownCb = document.getElementById('startUnknown');
+        const endUnknownCb = document.getElementById('endUnknown');
+        function syncUnknownStates() {
+            if (startUnknownCb && startInput) {
+                if (startUnknownCb.checked) { startInput.value = ''; startInput.disabled = true; } else { startInput.disabled = false; }
+            }
+            if (endUnknownCb && endInput) {
+                if (endUnknownCb.checked) { endInput.value = ''; endInput.disabled = true; } else { endInput.disabled = false; }
+            }
+        }
+        startUnknownCb?.addEventListener('change', syncUnknownStates);
+        endUnknownCb?.addEventListener('change', syncUnknownStates);
+        syncUnknownStates();
     }
 
     function openCreateEventModal(dateStr) {
@@ -499,54 +579,178 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => { modal.style.display = 'none'; }, 200);
     }
 
-    function isValidDateYMD(s) {
-        // YYYY-MM-DD
+    // Güvenli validasyon yardımcıları (global kapsamda garanti değilse yedeklenir)
+    function isValidDateYMDSafe(s) {
+        if (typeof s !== 'string') return false;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-        const [y,m,d] = s.split('-').map(n => parseInt(n, 10));
-        return m >= 1 && m <= 12 && d >= 1 && d <= 31 && !isNaN(new Date(s).getTime());
+        const d = new Date(s);
+        return !isNaN(d.getTime());
     }
 
-    function isValidTimeHHMM(s) {
+    function isValidTimeHHMMSafe(s) {
+        if (typeof s !== 'string') return false;
         if (!/^\d{2}:\d{2}$/.test(s)) return false;
-        const [h,mm] = s.split(':').map(n => parseInt(n, 10));
-        return h >= 0 && h <= 23 && mm >= 0 && mm <= 59;
+        const [h, m] = s.split(':').map(n => parseInt(n, 10));
+        return h >= 0 && h <= 23 && m >= 0 && m <= 59;
+    }
+
+    // Expose validators globally
+    if (typeof window !== 'undefined') {
+        window.isValidDateYMDSafe = isValidDateYMDSafe;
+        window.isValidTimeHHMMSafe = isValidTimeHHMMSafe;
+    }
+
+    // Fallback alias to avoid ReferenceError if loadEventsFromBackend is not in this scope
+    if (typeof loadEventsFromBackend !== 'function') {
+        var loadEventsFromBackend = function() {
+            if (typeof window !== 'undefined' && typeof window.loadEventsFromBackend === 'function') {
+                return window.loadEventsFromBackend();
+            }
+            return Promise.resolve([]);
+        };
     }
 
     function loadUpcomingEvents() {
         const upcomingEventsContainer = document.getElementById('upcomingEvents');
         if (!upcomingEventsContainer) return;
-
+        
+        // Tarih seçimi yok sayfa: geri tuşu değil, tüm etkinlikler kullanılabilir
+        selectedDate = '';
+ 
         const today = new Date();
+        today.setHours(0,0,0,0);
+        const cutoff = new Date(today);
+        cutoff.setMonth(cutoff.getMonth() + 1);
         const upcomingEvents = events
-            .filter(event => new Date(event.date) >= today)
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .map(ev => ({ ...ev, __d: new Date(ev.date) }))
+            .filter(ev => ev.__d >= today && ev.__d <= cutoff)
+            .sort((a, b) => a.__d - b.__d)
             .slice(0, 3);
-
+        
         upcomingEventsContainer.innerHTML = '';
-
+        setEventsSidebarTitle('Yaklaşan Etkinlikler');
+        setEventsSidebarButtonToUpcoming();
+        
         if (upcomingEvents.length === 0) {
             upcomingEventsContainer.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">Yaklaşan etkinlik bulunmuyor.</p>';
             return;
         }
-
+        
         upcomingEvents.forEach(event => {
             const eventElement = document.createElement('div');
             eventElement.className = 'event-item';
             
-            const eventDate = new Date(event.date);
+            const eventDate = event.__d || new Date(event.date);
             const dateStr = eventDate.toLocaleDateString('tr-TR', {
                 day: '2-digit',
                 month: 'long'
             });
+            const displayTime = (String(event.time || '').toLowerCase() === 'unknown' || event.timeUnknown) ? 'Henüz Belli Değil' : (event.time || '-');
 
             eventElement.innerHTML = `
                 <div class="event-date">${dateStr}</div>
                 <div class="event-title">${event.title}</div>
-                <div class="event-time">${event.time}</div>
+                <div class="event-time">${displayTime}</div>
             `;
             
             upcomingEventsContainer.appendChild(eventElement);
         });
+    }
+
+    function setEventsSidebarTitle(text) {
+        const titleEl = document.querySelector('.events-title');
+        if (titleEl) titleEl.textContent = text;
+    }
+
+    function setEventsSidebarButtonToUpcoming() {
+        const btnAllEvents = document.querySelector('.btn-all-events');
+        if (!btnAllEvents) return;
+        btnAllEvents.innerHTML = '<i class="fas fa-calendar-alt"></i> Tüm Etkinlikler';
+    }
+
+    function setEventsSidebarButtonToBack(dateStr) {
+        const btnAllEvents = document.querySelector('.btn-all-events');
+        if (!btnAllEvents) return;
+        btnAllEvents.innerHTML = '<i class="fas fa-arrow-left"></i> Geri';
+        btnAllEvents.onclick = () => {
+            loadUpcomingEvents();
+        };
+    }
+
+    function showDayEventsInSidebar(dateStr) {
+        const container = document.getElementById('upcomingEvents');
+        if (!container) return;
+        const prettyDate = new Date(dateStr).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+        setEventsSidebarTitle(prettyDate + ' Etkinlikleri');
+        setEventsSidebarButtonToBack(dateStr);
+        const list = events
+            .filter(ev => ev.date === dateStr)
+            .sort((a,b) => (a.time||'').localeCompare(b.time||''));
+        container.innerHTML = '';
+        if (list.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#666; font-style: italic;">Bu günde etkinlik bulunmuyor.</p>';
+        } else {
+            list.forEach(ev => {
+                const el = document.createElement('div');
+                el.className = 'event-item';
+                const type = ev.type ? ` <span style="opacity:0.8">(${ev.type})</span>` : '';
+                const displayTime = (String(ev.time || '').toLowerCase() === 'unknown' || ev.timeUnknown) ? 'Henüz Belli Değil' : (ev.time || '-');
+                el.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                        <div style="flex:1;">
+                            <div class="event-title">${ev.title}${type}</div>
+                            <div class="event-time">${displayTime}</div>
+                        </div>
+                        <div class="event-actions" style="display:flex; gap:6px;"></div>
+                    </div>
+                `;
+                // Admin actions
+                try {
+                    if (typeof isAdminUser === 'function' ? isAdminUser() : (localStorage.getItem('userRole') || '').toLowerCase() === 'admin') {
+                        const actions = el.querySelector('.event-actions');
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'btn-confirm';
+                        editBtn.style.padding = '6px 10px';
+                        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                        editBtn.title = 'Düzenle';
+                        editBtn.addEventListener('click', () => openEditEventModal(ev, dateStr));
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'btn-cancel';
+                        delBtn.style.padding = '6px 10px';
+                        delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        delBtn.title = 'Sil';
+                        delBtn.addEventListener('click', async () => {
+                            const ok = window.confirm(`'${ev.title}' etkinliğini silmek istediğinize emin misiniz?`);
+                            if (!ok) return;
+                            try {
+                                await deleteEventInBackend(ev.id);
+                                if (typeof window.loadEventsFromBackend === 'function') { await window.loadEventsFromBackend(); }
+                                generateCalendar();
+                                showDayEventsInSidebar(dateStr);
+                            } catch (err) {
+                                alert('Silme hatası: ' + (err?.message || err));
+                            }
+                        });
+                        actions.appendChild(editBtn);
+                        actions.appendChild(delBtn);
+                    }
+                } catch (_) {}
+                container.appendChild(el);
+            });
+        }
+        // Admin kullanıcılar için: Etkinlik Ekle düğmesi (her durumda ekle)
+        try {
+            if (typeof isAdminUser === 'function' ? isAdminUser() : (localStorage.getItem('userRole') || '').toLowerCase() === 'admin') {
+                const actions = document.createElement('div');
+                actions.style.marginTop = '12px';
+                const btn = document.createElement('button');
+                btn.className = 'btn-confirm';
+                btn.innerHTML = '<i class="fas fa-plus"></i> Etkinlik Ekle';
+                btn.addEventListener('click', () => openCreateEventModal(dateStr));
+                actions.appendChild(btn);
+                container.appendChild(actions);
+            }
+        } catch (_) {}
     }
 
     // Takvimi başlat
@@ -569,10 +773,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (btnAllEvents) {
-        btnAllEvents.addEventListener('click', function() {
-            // Tüm etkinlikler sayfası açılacak
-            console.log('Tüm etkinlikler butonuna tıklandı');
-            // window.location.href = 'events.html';
+        btnAllEvents.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Eğer bir gün seçiliyse: geri davranışı (yaklaşan listeye dön)
+            if (selectedDate) {
+                selectedDate = '';
+                loadUpcomingEvents();
+                return;
+            }
+            // Seçim yoksa: tüm etkinlikler popup
+            openAllEventsModal();
         });
     }
 
@@ -703,6 +913,85 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Admin Mode Dropdown İşlevselliği
     initializeAdminDropdown();
+
+    // Tüm Etkinlikler Modalı
+    function ensureAllEventsModal() {
+        if (document.getElementById('allEventsModal')) return;
+        const modal = document.createElement('div');
+        modal.id = 'allEventsModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 860px; width: 92vw;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Tüm Etkinlikler</h3>
+                    <button class="modal-close" id="closeAllEventsModal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="allEventsBody" style="max-height: 70vh; overflow:auto; padding: 0 0 10px 0;"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('closeAllEventsModal').addEventListener('click', closeAllEventsModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeAllEventsModal(); });
+    }
+
+    function closeAllEventsModal() {
+        const modal = document.getElementById('allEventsModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+    }
+
+    async function openAllEventsModal() {
+        ensureAllEventsModal();
+        const modal = document.getElementById('allEventsModal');
+        const body = document.getElementById('allEventsBody');
+        
+        // Gerekirse etkinlikleri yükle
+        if (!Array.isArray(events) || events.length === 0) {
+            try { if (typeof window.loadEventsFromBackend === 'function') { await window.loadEventsFromBackend(); } } catch (_) {}
+        }
+        
+        // Listeyi hazırla (tarih-saat sıralı)
+        const enriched = events.map(ev => ({ ...ev, __d: new Date(ev.date) }))
+            .sort((a,b) => a.__d - b.__d || String(a.time||'').localeCompare(String(b.time||'')));
+        
+        let html = '';
+        if (enriched.length === 0) {
+            html = '<div style="padding:16px; color:#666; text-align:center;">Kayıtlı etkinlik bulunmuyor.</div>';
+        } else {
+            html = '<div style="padding:10px 16px;">';
+            enriched.forEach(ev => {
+                const d = ev.__d;
+                const dateStr = isNaN(d.getTime()) ? (ev.date || '') : d.toLocaleDateString('tr-TR', { day:'2-digit', month:'long', year:'numeric' });
+                const type = ev.type ? `<span style="opacity:0.8; margin-left:6px;">(${ev.type})</span>` : '';
+                const displayTime = (String(ev.time || '').toLowerCase() === 'unknown' || ev.timeUnknown) ? 'Henüz Belli Değil' : (ev.time || '-');
+                html += `
+                    <div class="event-item" style="padding:12px 14px; border-bottom:1px solid var(--border-color,#e0e0e0); display:flex; align-items:center; gap:12px;">
+                        <div class="event-date" style="min-width:120px; font-weight:600;">${dateStr}</div>
+                        <div style="flex:1;">
+                            <div class="event-title" style="font-weight:600;">${ev.title || 'Etkinlik'}${type}</div>
+                            <div class="event-time" style="font-size:12px; opacity:0.8;">${displayTime}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        body.innerHTML = html;
+        
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    // Export functions to global scope for external access
+    window.loadEventsFromBackend = loadEventsFromBackend;
+    window.generateCalendar = generateCalendar;
+    window.showDayEventsInSidebar = showDayEventsInSidebar;
+    window.updateCalendarSelection = updateCalendarSelection;
+    
+    // Export variables to global scope
+    window.selectedDate = selectedDate;
+    window.currentDate = currentDate;
 });
 
 // Admin Mode Functions
@@ -1580,12 +1869,6 @@ async function updateJournalInBackend(id, formData) {
     return true;
 }
 
-// Firebase bekleme fonksiyonu artıktan kullanılmıyor; geriye dönük uyumluluk için no-op
-function waitForFirebase() {
-    return new Promise((resolve, reject) => {
-        resolve();
-    });
-}
 
 // Global fonksiyonları window objesine ekle
 window.showJournalEditForm = showJournalEditForm;
@@ -1646,7 +1929,7 @@ async function loadJournalsFromBackend() {
     }
     const items = (res.items || []).map(normalizeJournal);
     if (items.length > 0) {
-        // En düşük id’li journal’ı al
+        // En düşük id'li journal'ı al
         const lowest = items.reduce((min, j) => (j.id < min.id ? j : min), items[0]);
         currentJournal = lowest;
         updateJournalDisplay(lowest);
@@ -1900,3 +2183,191 @@ function updateCurrentJournalPdfUrl(journal) {
         currentJournalPdfUrl = toWebPdfUrl(raw);
     }
 }
+
+// Edit Event Modal
+function ensureEditEventModal() {
+    if (document.getElementById('editEventModal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'editEventModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 720px;">
+            <div class="modal-header">
+                <h3>Etkinlik Düzenle</h3>
+                <button class="modal-close" id="closeEditEventModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEventForm" class="modal-form">
+                    <div class="form-group">
+                        <label>Etkinlik Adı</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tür</label>
+                        <input type="text" name="type">
+                    </div>
+                    <div class="form-group">
+                        <label>Tarih</label>
+                        <input type="date" name="event_date" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Başlangıç Saati</label>
+                            <input type="time" name="start_time" placeholder="HH:MM">
+                            <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="editStartUnknown" style="width:16px; height:16px;">
+                                <label for="editStartUnknown" style="font-size:13px; opacity:0.85;">Başlangıç saati belirsiz</label>
+                            </div>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Bitiş Saati</label>
+                            <input type="time" name="end_time" placeholder="HH:MM">
+                            <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="editEndUnknown" style="width:16px; height:16px;">
+                                <label for="editEndUnknown" style="font-size:13px; opacity:0.85;">Bitiş saati belirsiz</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancelEditEvent">İptal</button>
+                <button class="btn-confirm" id="submitEditEvent">Kaydet</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('closeEditEventModal').addEventListener('click', closeEditEventModal);
+    document.getElementById('cancelEditEvent').addEventListener('click', closeEditEventModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeEditEventModal(); });
+}
+
+function closeEditEventModal() {
+    const modal = document.getElementById('editEventModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => { modal.style.display = 'none'; }, 200);
+}
+
+function applyUnknownBindingsForEdit() {
+    const formEl = document.getElementById('editEventForm');
+    if (!formEl) return;
+    const startInput = formEl.querySelector('input[name="start_time"]');
+    const endInput = formEl.querySelector('input[name="end_time"]');
+    const startUnknownCb = document.getElementById('editStartUnknown');
+    const endUnknownCb = document.getElementById('editEndUnknown');
+    function sync() {
+        if (startUnknownCb && startInput) { if (startUnknownCb.checked) { startInput.value = ''; startInput.disabled = true; } else { startInput.disabled = false; } }
+        if (endUnknownCb && endInput) { if (endUnknownCb.checked) { endInput.value = ''; endInput.disabled = true; } else { endInput.disabled = false; } }
+    }
+    startUnknownCb?.addEventListener('change', sync);
+    endUnknownCb?.addEventListener('change', sync);
+    sync();
+}
+
+function openEditEventModal(ev, originalDateStr) {
+    ensureEditEventModal();
+    const modal = document.getElementById('editEventModal');
+    const formEl = document.getElementById('editEventForm');
+    // Prefill fields
+    formEl.querySelector('input[name="name"]').value = ev.title || '';
+    formEl.querySelector('input[name="type"]').value = ev.type || '';
+    formEl.querySelector('input[name="event_date"]').value = ev.date || '';
+    const startInput = formEl.querySelector('input[name="start_time"]');
+    const endInput = formEl.querySelector('input[name="end_time"]');
+    const startUnknownCb = document.getElementById('editStartUnknown');
+    const endUnknownCb = document.getElementById('editEndUnknown');
+    const isStartUnknown = ev.startRaw == null || String(ev.startRaw).toLowerCase() === 'unknown';
+    const isEndUnknown = ev.endRaw == null || String(ev.endRaw).toLowerCase() === 'unknown';
+    if (startInput) startInput.value = (!isStartUnknown && ev.startRaw) ? String(ev.startRaw) : '';
+    if (endInput) endInput.value = (!isEndUnknown && ev.endRaw) ? String(ev.endRaw) : '';
+    if (startUnknownCb) startUnknownCb.checked = isStartUnknown;
+    if (endUnknownCb) endUnknownCb.checked = isEndUnknown;
+    applyUnknownBindingsForEdit();
+    
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    // Bind submit
+    const submitBtn = document.getElementById('submitEditEvent');
+    submitBtn.onclick = async () => {
+        const name = formEl.querySelector('input[name="name"]').value.trim();
+        const type = formEl.querySelector('input[name="type"]').value.trim();
+        const event_date = formEl.querySelector('input[name="event_date"]').value.trim();
+        let start_time = formEl.querySelector('input[name="start_time"]').value.trim();
+        let end_time = formEl.querySelector('input[name="end_time"]').value.trim();
+        const startUnknown = !!document.getElementById('editStartUnknown')?.checked;
+        const endUnknown = !!document.getElementById('editEndUnknown')?.checked;
+        if (startUnknown) start_time = null;
+        if (endUnknown) end_time = null;
+        if (!name || !isValidDateYMDSafe(event_date)) { alert('Lütfen etkinlik adını ve geçerli bir tarihi girin.'); return; }
+        if (start_time && typeof start_time === 'string' && !isValidTimeHHMMSafe(start_time)) { alert('Geçersiz başlangıç saati (HH:MM)'); return; }
+        if (end_time && typeof end_time === 'string' && !isValidTimeHHMMSafe(end_time)) { alert('Geçersiz bitiş saati (HH:MM)'); return; }
+        try {
+            await updateEventInBackend({ id: ev.id, name, type, event_date, start_time, end_time });
+            closeEditEventModal();
+            if (typeof window.loadEventsFromBackend === 'function') { await window.loadEventsFromBackend(); }
+            // Tarih değiştiyse seçimi yeni güne taşı
+            const newDate = event_date;
+            selectedDate = newDate;
+            window.selectedDate = newDate; // Global değişkeni de güncelle
+            
+            // Yeni tarih farklı bir aydaysa, currentDate'i güncelleyelim
+            const newDateObj = new Date(newDate);
+            const currentMonth = currentDate.getMonth();
+            const currentYear = currentDate.getFullYear();
+            
+            if (newDateObj.getMonth() !== currentMonth || newDateObj.getFullYear() !== currentYear) {
+                currentDate.setMonth(newDateObj.getMonth());
+                currentDate.setFullYear(newDateObj.getFullYear());
+                window.currentDate = currentDate; // Global değişkeni de güncelle
+            }
+            
+            if (typeof window.generateCalendar === 'function') { window.generateCalendar(); }
+            if (typeof window.showDayEventsInSidebar === 'function') { window.showDayEventsInSidebar(newDate); }
+        } catch (err) {
+            alert('Güncelleme hatası: ' + (err?.message || err));
+        }
+    };
+}
+
+async function updateEventInBackend(payload) {
+    const res = await window.backendAPI.post('events.php?action=update', payload);
+    if (!res || !(res.success === true || res.status === 'ok' || res.updated === true || (typeof res.affectedRows === 'number' && res.affectedRows >= 0))) {
+        throw new Error((res && (res.error || res.message)) || 'Unknown backend error');
+    }
+    return true;
+}
+
+async function deleteEventInBackend(id) {
+    const res = await window.backendAPI.post('events.php?action=delete', { id });
+    if (!res || !(res.success === true || res.status === 'ok' || res.deleted === true || (typeof res.affectedRows === 'number' && res.affectedRows >= 0))) {
+        throw new Error((res && (res.error || res.message)) || 'Unknown backend error');
+    }
+    return true;
+}
+
+// Global-safe validation helpers to avoid ReferenceError in handlers
+if (typeof window !== 'undefined') {
+    if (typeof window.isValidDateYMDSafe !== 'function') {
+        window.isValidDateYMDSafe = function(s) {
+            if (typeof s !== 'string') return false;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+            const d = new Date(s);
+            return !isNaN(d.getTime());
+        };
+    }
+    if (typeof window.isValidTimeHHMMSafe !== 'function') {
+        window.isValidTimeHHMMSafe = function(s) {
+            if (typeof s !== 'string') return false;
+            if (!/^\d{2}:\d{2}$/.test(s)) return false;
+            const [h, m] = s.split(':').map(n => parseInt(n, 10));
+            return h >= 0 && h <= 23 && m >= 0 && m <= 59;
+        };
+    }
+}
+// Bind identifiers to global helpers for direct calls in this module
+/* eslint-disable no-redeclare */
+var isValidDateYMDSafe = window.isValidDateYMDSafe;
+var isValidTimeHHMMSafe = window.isValidTimeHHMMSafe;
+/* eslint-enable no-redeclare */
