@@ -879,6 +879,110 @@ body {
     color: #f09192;
 }
 
+/* Calendar Legend - Etkinlik Türü Açıklaması */
+.calendar-legend {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .calendar-legend {
+    background: rgba(26, 25, 26, 0.8);
+    border-color: #404040;
+}
+
+.legend-title {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 10px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.legend-items {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.9;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-color.event-toplanti {
+    background: #1e40af; /* Mavi - Toplantı */
+}
+
+.legend-color.event-sosyal {
+    background: #059669; /* Yeşil - Sosyal Etkinlik */
+}
+
+.legend-color.event-workshop {
+    background: #7c2d12; /* Turuncu - Workshop */
+}
+
+.legend-color.event-ders {
+    background: #7c3aed; /* Mor - Ders */
+}
+
+.legend-color.event-sunum {
+    background: #dc2626; /* Kırmızı - Sunum */
+}
+
+/* Dark tema legend renkleri */
+[data-theme="dark"] .legend-color.event-toplanti {
+    background: #1d4ed8; /* Açık Mavi - Toplantı */
+}
+
+[data-theme="dark"] .legend-color.event-sosyal {
+    background: #10b981; /* Açık Yeşil - Sosyal Etkinlik */
+}
+
+[data-theme="dark"] .legend-color.event-workshop {
+    background: #ea580c; /* Açık Turuncu - Workshop */
+}
+
+[data-theme="dark"] .legend-color.event-ders {
+    background: #8b5cf6; /* Açık Mor - Ders */
+}
+
+[data-theme="dark"] .legend-color.event-sunum {
+    background: #ef4444; /* Açık Kırmızı - Sunum */
+}
+
+/* Responsive legend */
+@media (max-width: 768px) {
+    .legend-items {
+        gap: 15px;
+    }
+    
+    .legend-item {
+        font-size: 0.75rem;
+    }
+    
+    .legend-color {
+        width: 14px;
+        height: 14px;
+    }
+}
+
 /* Calendar Grid */
 .calendar-grid {
     background: white;
@@ -977,6 +1081,57 @@ body {
     );
 }
 
+/* Etkinlik türlerine göre renkli takvim günleri */
+.calendar-day.has-event.event-toplanti {
+    background: linear-gradient(
+        to bottom,
+        white 0%,
+        white 67%,
+        #1e40af 67%, /* Mavi - Toplantı */
+        #1e40af 100%
+    );
+}
+
+.calendar-day.has-event.event-sosyal {
+    background: linear-gradient(
+        to bottom,
+        white 0%,
+        white 67%,
+        #059669 67%, /* Yeşil - Sosyal Etkinlik */
+        #059669 100%
+    );
+}
+
+.calendar-day.has-event.event-workshop {
+    background: linear-gradient(
+        to bottom,
+        white 0%,
+        white 67%,
+        #7c2d12 67%, /* Turuncu - Workshop */
+        #7c2d12 100%
+    );
+}
+
+.calendar-day.has-event.event-ders {
+    background: linear-gradient(
+        to bottom,
+        white 0%,
+        white 67%,
+        #7c3aed 67%, /* Mor - Ders */
+        #7c3aed 100%
+    );
+}
+
+.calendar-day.has-event.event-sunum {
+    background: linear-gradient(
+        to bottom,
+        white 0%,
+        white 67%,
+        #dc2626 67%, /* Kırmızı - Sunum */
+        #dc2626 100%
+    );
+}
+
 [data-theme="dark"] .calendar-day.has-event {
     background: linear-gradient(
         to bottom,
@@ -984,6 +1139,57 @@ body {
         #1A191A 67%,
         #5d0d0e 67%,
         #5d0d0e 100%
+    );
+}
+
+/* Dark tema etkinlik türü renkleri */
+[data-theme="dark"] .calendar-day.has-event.event-toplanti {
+    background: linear-gradient(
+        to bottom,
+        #1A191A 0%,
+        #1A191A 67%,
+        #1d4ed8 67%, /* Açık Mavi - Toplantı */
+        #1d4ed8 100%
+    );
+}
+
+[data-theme="dark"] .calendar-day.has-event.event-sosyal {
+    background: linear-gradient(
+        to bottom,
+        #1A191A 0%,
+        #1A191A 67%,
+        #10b981 67%, /* Açık Yeşil - Sosyal Etkinlik */
+        #10b981 100%
+    );
+}
+
+[data-theme="dark"] .calendar-day.has-event.event-workshop {
+    background: linear-gradient(
+        to bottom,
+        #1A191A 0%,
+        #1A191A 67%,
+        #ea580c 67%, /* Açık Turuncu - Workshop */
+        #ea580c 100%
+    );
+}
+
+[data-theme="dark"] .calendar-day.has-event.event-ders {
+    background: linear-gradient(
+        to bottom,
+        #1A191A 0%,
+        #1A191A 67%,
+        #8b5cf6 67%, /* Açık Mor - Ders */
+        #8b5cf6 100%
+    );
+}
+
+[data-theme="dark"] .calendar-day.has-event.event-sunum {
+    background: linear-gradient(
+        to bottom,
+        #1A191A 0%,
+        #1A191A 67%,
+        #ef4444 67%, /* Açık Kırmızı - Sunum */
+        #ef4444 100%
     );
 }
 
@@ -1007,6 +1213,48 @@ body {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+/* Event indicator renkleri etkinlik türlerine göre */
+.calendar-day.event-toplanti .calendar-event-indicator {
+    background: #1e40af; /* Mavi - Toplantı */
+}
+
+.calendar-day.event-sosyal .calendar-event-indicator {
+    background: #059669; /* Yeşil - Sosyal Etkinlik */
+}
+
+.calendar-day.event-workshop .calendar-event-indicator {
+    background: #7c2d12; /* Turuncu - Workshop */
+}
+
+.calendar-day.event-ders .calendar-event-indicator {
+    background: #7c3aed; /* Mor - Ders */
+}
+
+.calendar-day.event-sunum .calendar-event-indicator {
+    background: #dc2626; /* Kırmızı - Sunum */
+}
+
+/* Dark tema event indicator renkleri */
+[data-theme="dark"] .calendar-day.event-toplanti .calendar-event-indicator {
+    background: #1d4ed8; /* Açık Mavi - Toplantı */
+}
+
+[data-theme="dark"] .calendar-day.event-sosyal .calendar-event-indicator {
+    background: #10b981; /* Açık Yeşil - Sosyal Etkinlik */
+}
+
+[data-theme="dark"] .calendar-day.event-workshop .calendar-event-indicator {
+    background: #ea580c; /* Açık Turuncu - Workshop */
+}
+
+[data-theme="dark"] .calendar-day.event-ders .calendar-event-indicator {
+    background: #8b5cf6; /* Açık Mor - Ders */
+}
+
+[data-theme="dark"] .calendar-day.event-sunum .calendar-event-indicator {
+    background: #ef4444; /* Açık Kırmızı - Sunum */
 }
 
 /* Events Sidebar */
@@ -2705,7 +2953,8 @@ body {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
     width: 100%;
     padding: 12px 15px;
     border: 2px solid var(--border-color);
@@ -2718,7 +2967,8 @@ body {
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--secondary-color);
     box-shadow: 0 0 0 3px rgba(202, 163, 84, 0.1);
@@ -2857,4 +3107,21 @@ body {
 
 [data-theme="dark"] .file-info {
     background-color: rgba(202, 163, 84, 0.2);
+}
+
+/* Select element additional styling */
+.form-group select {
+    cursor: pointer;
+}
+
+.form-group select option {
+    background-color: var(--panel-bg);
+    color: var(--text-color);
+    padding: 8px;
+}
+
+/* Dark theme specific select option styling */
+[data-theme="dark"] .form-group select option {
+    background-color: var(--panel-bg);
+    color: var(--text-color);
 }

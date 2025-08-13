@@ -2,6 +2,33 @@
 let selectedDate = '';
 let currentDate = new Date();
 
+// Saat formatını HH:MM:SS'den HH:MM'ye çeviren helper fonksiyon
+function formatTimeDisplay(timeStr) {
+    if (!timeStr || timeStr === null || timeStr === '') return timeStr;
+    const timeString = String(timeStr);
+    // HH:MM:SS formatında ise sadece HH:MM'yi al
+    if (/^\d{1,2}:\d{2}:\d{2}$/.test(timeString)) {
+        return timeString.substring(0, 5); // İlk 5 karakter HH:MM
+    }
+    // Zaten HH:MM formatında ise olduğu gibi dön
+    return timeString;
+}
+
+// Etkinlik türünü CSS sınıfına çeviren helper fonksiyon
+function getEventTypeClass(eventType) {
+    if (!eventType) return '';
+    
+    const typeMap = {
+        'Toplantı': 'event-toplanti',
+        'Sosyal Etkinlik': 'event-sosyal',
+        'Workshop': 'event-workshop',
+        'Ders': 'event-ders',
+        'Sunum': 'event-sunum'
+    };
+    
+    return typeMap[eventType] || '';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Global değişkenler
     let currentJournalPdfUrl = null; // PDF URL'sini tutacağız
@@ -199,18 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
     }
 
-    // Saat formatını HH:MM:SS'den HH:MM'ye çeviren helper fonksiyon
-    function formatTimeDisplay(timeStr) {
-        if (!timeStr || timeStr === null || timeStr === '') return timeStr;
-        const timeString = String(timeStr);
-        // HH:MM:SS formatında ise sadece HH:MM'yi al
-        if (/^\d{1,2}:\d{2}:\d{2}$/.test(timeString)) {
-            return timeString.substring(0, 5); // İlk 5 karakter HH:MM
-        }
-        // Zaten HH:MM formatında ise olduğu gibi dön
-        return timeString;
-    }
-
     function normalizeEventFromBackend(row) {
         const id = row.id ?? row.event_id ?? null;
         const name = row.name || row.title || 'Etkinlik';
@@ -326,6 +341,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (dayEvents.length > 0) {
                 dayElement.classList.add('has-event');
+                
+                // İlk etkinliğin türüne göre CSS sınıfı ekle
+                const firstEventType = dayEvents[0].type;
+                const eventTypeClass = getEventTypeClass(firstEventType);
+                if (eventTypeClass) {
+                    dayElement.classList.add(eventTypeClass);
+                }
+                
                 const eventIndicator = document.createElement('div');
                 eventIndicator.className = 'calendar-event-indicator';
                 eventIndicator.textContent = dayEvents[0].title; // Sadece ilk etkinliğin başlığını göster
@@ -501,7 +524,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="form-group">
                             <label>Tür</label>
-                            <input type="text" name="type" placeholder="Örn: Seminar, Workshop, Conference">
+                            <select name="type">
+                                <option value="">Tür seçiniz...</option>
+                                <option value="Toplantı">Toplantı</option>
+                                <option value="Sosyal Etkinlik">Sosyal Etkinlik</option>
+                                <option value="Workshop">Workshop</option>
+                                <option value="Ders">Ders</option>
+                                <option value="Sunum">Sunum</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Tarih</label>
@@ -1095,6 +1125,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.generateCalendar = generateCalendar;
     window.showDayEventsInSidebar = showDayEventsInSidebar;
     window.updateCalendarSelection = updateCalendarSelection;
+    window.formatTimeDisplay = formatTimeDisplay;
+    window.getEventTypeClass = getEventTypeClass;
     
     // Export variables to global scope
     window.selectedDate = selectedDate;
@@ -2311,7 +2343,14 @@ function ensureEditEventModal() {
                     </div>
                     <div class="form-group">
                         <label>Tür</label>
-                        <input type="text" name="type">
+                        <select name="type">
+                            <option value="">Tür seçiniz...</option>
+                            <option value="Toplantı">Toplantı</option>
+                            <option value="Sosyal Etkinlik">Sosyal Etkinlik</option>
+                            <option value="Workshop">Workshop</option>
+                            <option value="Ders">Ders</option>
+                            <option value="Sunum">Sunum</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Tarih</label>
@@ -2383,7 +2422,7 @@ function openEditEventModal(ev, originalDateStr) {
     
     // Prefill fields
     formEl.querySelector('input[name="name"]').value = ev.title || '';
-    formEl.querySelector('input[name="type"]').value = ev.type || '';
+    formEl.querySelector('select[name="type"]').value = ev.type || '';
     formEl.querySelector('input[name="event_date"]').value = ev.date || '';
     const startInput = formEl.querySelector('input[name="start_time"]');
     const endInput = formEl.querySelector('input[name="end_time"]');
@@ -2415,7 +2454,7 @@ function openEditEventModal(ev, originalDateStr) {
     const submitBtn = document.getElementById('submitEditEvent');
     submitBtn.onclick = async () => {
         const name = formEl.querySelector('input[name="name"]').value.trim();
-        const type = formEl.querySelector('input[name="type"]').value.trim();
+        const type = formEl.querySelector('select[name="type"]').value.trim();
         const event_date = formEl.querySelector('input[name="event_date"]').value.trim();
         let start_time = formEl.querySelector('input[name="start_time"]').value.trim();
         let end_time = formEl.querySelector('input[name="end_time"]').value.trim();
