@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             updateStatistics();
             renderMemberTable();
+            updateSortIndicators();
             initializeEventListeners();
         } catch (error) {
             console.error('Üyeler yüklenirken hata:', error);
@@ -268,18 +269,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 member.institution.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
-        renderMemberTable();
-        updateStatistics();
+    renderMemberTable();
+    updateStatistics();
+    updateSortIndicators();
     }
 
     function filterMembersByStatus(status) {
         if (status === 'all') {
             currentMembers = [...allMembers];
+        } else if (status === 'alumni') {
+            currentMembers = allMembers.filter(member => {
+                const r = normalizeRole(member.role);
+                return r === 'active_alumni' || r === 'passive_alumni';
+            });
         } else {
             currentMembers = allMembers.filter(member => normalizeRole(member.role) === status);
         }
         renderMemberTable();
         updateStatistics();
+        updateSortIndicators();
+    }
+
+    // Rank and status ordering for meaningful sort
+    const rankOrder = {
+        'Cadet Second Class': 1,
+        'Cadet First Class': 2,
+        'Scholar': 3,
+        'Accomplished Scientist': 4,
+        'Transcendent': 5
+    };
+
+    const statusOrder = {
+        'active': 1,
+        'active_alumni': 2,
+        'honorary': 3,
+        'inactive': 4,
+        'passive_alumni': 5,
+        'unknown': 99
+    };
+
+    function getComparableValue(member, field) {
+        switch (field) {
+            case 'name': {
+                return (member.name || '').toLowerCase();
+            }
+            case 'joinYear': {
+                const d = member.createdAt instanceof Date ? member.createdAt : (member.createdAt ? new Date(member.createdAt) : null);
+                const y = d && !isNaN(d.getTime()) ? d.getFullYear() : 0;
+                return y;
+            }
+            case 'rank': {
+                const r = member.rank || '';
+                const order = rankOrder[r] ?? 999;
+                return order;
+            }
+            case 'status': {
+                return (member.role ?? '').toString().toLowerCase();
+            }
+            default: {
+                const v = member[field];
+                if (typeof v === 'string') return v.toLowerCase();
+                if (v instanceof Date) return v.getTime();
+                return v ?? '';
+            }
+        }
     }
 
     function sortMembers(field) {
@@ -291,14 +344,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         currentMembers.sort((a, b) => {
-            let aVal = a[field] || '';
-            let bVal = b[field] || '';
-            
-            if (typeof aVal === 'string') {
-                aVal = aVal.toLowerCase();
-                bVal = bVal.toLowerCase();
-            }
-
+            const aVal = getComparableValue(a, sortField);
+            const bVal = getComparableValue(b, sortField);
+            if (aVal === bVal) return 0;
             if (sortDirection === 'asc') {
                 return aVal > bVal ? 1 : -1;
             } else {
@@ -311,10 +359,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateSortIndicators() {
-        document.querySelectorAll('.sortable').forEach(header => {
-            header.classList.remove('sort-asc', 'sort-desc');
+        document.querySelectorAll('.member-table thead th.sortable').forEach(header => {
+            header.classList.remove('sort-asc', 'sort-desc', 'sorted');
+            const icon = header.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-sort-up', 'fa-sort-down');
+                icon.classList.add('fa-sort');
+            }
             if (header.dataset.sort === sortField) {
+                header.classList.add('sorted');
                 header.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                if (icon) {
+                    icon.classList.remove('fa-sort');
+                    icon.classList.add(sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+                }
+                // accessibility
+                header.setAttribute('aria-sort', sortDirection === 'asc' ? 'ascending' : 'descending');
+            } else {
+                header.removeAttribute('aria-sort');
             }
         });
     }

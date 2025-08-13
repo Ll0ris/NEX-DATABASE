@@ -1232,7 +1232,16 @@
     font-size: 1.4rem;
     color: var(--primary-color);
     font-weight: 600;
+}
+
+/* Only add spacing when there is actual prefix text */
+.title-prefix:not(:empty) {
     margin-right: 8px;
+}
+
+/* If prefix is empty, don’t reserve space */
+.title-prefix:empty {
+    display: none;
 }
 
 .full-name {

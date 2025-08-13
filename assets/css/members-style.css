@@ -183,6 +183,21 @@
     opacity: 0.7;
 }
 
+/* Sorted header visual feedback */
+.member-table th.sortable.sorted {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.member-table th.sortable.sort-asc i,
+.member-table th.sortable.sort-desc i {
+    opacity: 1;
+}
+
+/* Optional darker style in dark theme */
+[data-theme="dark"] .member-table th.sortable.sorted {
+    background-color: rgba(240, 145, 146, 0.2);
+}
+
 .member-table tbody tr {
     transition: all 0.3s ease;
     border-bottom: 1px solid var(--border-color);
