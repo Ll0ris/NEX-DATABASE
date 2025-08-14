@@ -288,11 +288,11 @@
     padding: 20px;
 }
 
-.profile-section {
+.profile-panel-content .profile-section {
     margin-bottom: 30px;
 }
 
-.profile-section h4 {
+.profile-panel-content .profile-section h4 {
     margin: 0 0 15px 0;
     color: var(--primary-color);
     font-size: 1.1em;
@@ -1051,16 +1051,16 @@
 }
 
 /* Profile Sections */
-.profile-section {
+#mainContent .profile-section {
     padding: 20px;
     border-bottom: 1px solid var(--border-color);
 }
 
-.profile-section:last-child {
+#mainContent .profile-section:last-child {
     border-bottom: none;
 }
 
-.profile-section h4 {
+#mainContent .profile-section h4 {
     margin: 0 0 15px 0;
     color: var(--text-color);
     font-size: 1rem;
@@ -1070,7 +1070,7 @@
     gap: 8px;
 }
 
-.profile-section h4::before {
+#mainContent .profile-section h4::before {
     content: "📋";
     font-size: 1.1rem;
 }
@@ -1259,7 +1259,7 @@
 .institution {
     font-size: 1.3rem;
     font-weight: 600;
-    color: var(--primary-color);
+    color: #c81113;
 }
 
 .faculty {
