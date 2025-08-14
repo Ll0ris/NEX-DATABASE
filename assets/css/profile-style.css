@@ -1230,7 +1230,7 @@
 
 .title-prefix {
     font-size: 1.4rem;
-    color: var(--primary-color);
+    color: #c81113;
     font-weight: 600;
 }
 
@@ -1943,13 +1943,13 @@
 
 .add-item-btn {
     background: transparent;
-    border: 2px dashed var(--primary-color);
+    border: 2px dashed #c81113;
     border-radius: 10px;
     padding: 20px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    color: var(--primary-color);
+    color: #c81113;
     font-weight: 500;
     display: none !important; /* Initially hidden */
     align-items: center;

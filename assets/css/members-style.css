@@ -224,18 +224,6 @@
     gap: 12px;
 }
 
-.member-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), #7a1315);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 18px;
-}
-
 .member-details .name {
     font-weight: 600;
     color: var(--text-color);
@@ -258,129 +246,6 @@
     color: #f09192;
 }
 
-/* Rank Badges */
-.rank-badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.rank-badge.rank-kurucu {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #333;
-}
-
-.rank-badge.rank-başkan {
-    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
-    color: white;
-}
-
-.rank-badge.rank-başkan-yardımcısı {
-    background: linear-gradient(135deg, #3B82F6, #2563EB);
-    color: white;
-}
-
-.rank-badge.rank-genel-sekreter {
-    background: linear-gradient(135deg, #10B981, #059669);
-    color: white;
-}
-
-.rank-badge.rank-mali-işler {
-    background: linear-gradient(135deg, #F59E0B, #D97706);
-    color: white;
-}
-
-.rank-badge.rank-proje-koordinatörü {
-    background: linear-gradient(135deg, #EF4444, #DC2626);
-    color: white;
-}
-
-.rank-badge.rank-üye {
-    background: linear-gradient(135deg, #6B7280, #4B5563);
-    color: white;
-}
-
-.rank-badge.rank-eski-başkan,
-.rank-badge.rank-eski-üye,
-.rank-badge.rank-kurucu-üye {
-    background: linear-gradient(135deg, #A855F7, #9333EA);
-    color: white;
-}
-
-/* Status Badges */
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.status-badge.status-active {
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.status-badge.status-inactive {
-    background: rgba(249, 115, 22, 0.1);
-    color: #ea580c;
-    border: 1px solid rgba(249, 115, 22, 0.3);
-}
-
-.status-badge.status-alumni {
-    background: rgba(139, 92, 246, 0.1);
-    color: #7c3aed;
-    border: 1px solid rgba(139, 92, 246, 0.3);
-}
-
-/* Contact Buttons */
-.contact-buttons {
-    display: flex;
-    gap: 8px;
-}
-
-.contact-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}
-
-.contact-btn.email {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.contact-btn.email:hover {
-    background: #3b82f6;
-    color: white;
-    transform: scale(1.1);
-}
-
-.contact-btn.phone {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.contact-btn.phone:hover {
-    background: #10b981;
-    color: white;
-    transform: scale(1.1);
-}
 
 /* Row Status Styling */
 .member-row.status-inactive {
@@ -490,6 +355,9 @@
 
 /* Status Badges */
 .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.85rem;
@@ -533,7 +401,6 @@
     border-radius: 15px;
     font-size: 0.8rem;
     font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 

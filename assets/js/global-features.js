@@ -96,18 +96,8 @@ function checkAuthentication() {
     const authToken = localStorage.getItem('authToken');
     const tokenExpiry = localStorage.getItem('tokenExpiry');
     const isAuthenticated = localStorage.getItem('isAuthenticated');
-    const rememberMe = localStorage.getItem('rememberMe');
     
-    // Debug log
-    const authStatus = {
-        hasToken: !!authToken,
-        hasExpiry: !!tokenExpiry,
-        isAuth: isAuthenticated,
-        rememberMe: rememberMe,
-        currentTime: Date.now(),
-        expiryTime: tokenExpiry ? parseInt(tokenExpiry) : null,
-        url: window.location.href
-    };
+    // Debug data previously logged here was removed to reduce noise
     
     // Eğer localStorage tamamen boşsa, biraz daha bekle
     if (!authToken && !tokenExpiry && !isAuthenticated) {
@@ -159,6 +149,10 @@ function clearAuthData() {
     localStorage.removeItem('currentUserEmail');
     localStorage.removeItem('rememberMe');
     localStorage.removeItem('rememberMeExpiry');
+    // Clear cached profile display values as well
+    localStorage.removeItem('profileFullName');
+    localStorage.removeItem('profilePhotoUrl');
+    localStorage.removeItem('profileRank');
 }
 
 // Logout function
@@ -166,7 +160,7 @@ function logout() {
     // Clear all authentication data including rememberMe
     clearAuthData(); // Bu zaten her şeyi temizliyor artık
     
-    // Show logout message
+    // Show logout message (themed)
     const loadingOverlay = document.createElement('div');
     loadingOverlay.id = 'logoutLoadingOverlay';
     loadingOverlay.style.cssText = `
@@ -175,20 +169,43 @@ function logout() {
         left: 0;
         width: 100%;
         height: 100%;
-        background: #1a1a1a;
+        background: rgba(0, 0, 0, 0.5);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 10000;
-        color: white;
-        font-family: Arial, sans-serif;
+        font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     `;
-    
+
     loadingOverlay.innerHTML = `
-        <div style="text-align: center;">
-            <div style="border: 4px solid #333; border-top: 4px solid #28a745; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-            <div style="font-size: 18px; margin-bottom: 10px; color: #28a745;">Çıkış Yapılıyor</div>
-            <div style="font-size: 14px; opacity: 0.7;">Güvenli bir şekilde oturumunuz sonlandırılıyor...</div>
+        <div style="
+            text-align: center;
+            background: var(--panel-bg, #ffffff);
+            color: var(--text-color, #333333);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 12px;
+            padding: 24px 28px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: var(--shadow, 0 10px 30px rgba(0,0,0,0.3));
+        ">
+            <div style="
+                border: 4px solid var(--border-color, #e0e0e0);
+                border-top: 4px solid var(--primary-color, #5d0d0e);
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 16px;
+            "></div>
+            <div style="
+                font-size: 18px;
+                margin-bottom: 8px;
+                color: var(--primary-color, #5d0d0e);
+                font-weight: 600;
+                letter-spacing: 0.3px;
+            ">Çıkış Yapılıyor</div>
+            <div style="font-size: 14px; opacity: 0.8;">Güvenli bir şekilde oturumunuz sonlandırılıyor...</div>
         </div>
         <style>
             @keyframes spin {
@@ -258,40 +275,137 @@ function redirectToLogin() {
 // Update user name and photo display from localStorage or database
 async function updateUserNameDisplay() {
     const currentUserEmail = localStorage.getItem('currentUserEmail');
+    // Use best-effort fallbacks so header is always populated
+    const storedFullName = localStorage.getItem('profileFullName') || '';
+    const storedPhotoUrl = localStorage.getItem('profilePhotoUrl') || '';
+    const userRole = (localStorage.getItem('userRole') || 'user').toLowerCase();
+    const storedRank = localStorage.getItem('profileRank') || '';
+
+    // 1) Immediate paint using cached values or email-derived name
+    const immediateName = storedFullName || deriveNameFromEmail(currentUserEmail) || 'Kullanıcı';
+    applyTopProfileDisplay({ name: immediateName, photoUrl: storedPhotoUrl, role: userRole, rank: storedRank });
+
+    // If no email (not logged in), nothing more to do
     if (!currentUserEmail) return;
 
+    // 2) Try to refresh from backend if available; then persist for next pages
     try {
         if (window.backendAPI && typeof window.backendAPI.get === 'function') {
             const res = await window.backendAPI.get('profile.php', { action: 'get', viewUser: currentUserEmail });
-            if (res && res.success && res.user) {
+            if (res?.success && res?.user) {
                 const user = res.user;
-                const userName = user.full_name || user.fullName || user.name || '';
-                const userPhoto = user.photo_url || user.photoUrl || null;
-                const userRole = user.role || localStorage.getItem('userRole') || 'user';
+                const userName = user.full_name || user.fullName || user.name || immediateName;
+                const userPhoto = user.photo_url || user.photoUrl || storedPhotoUrl || null;
+                const effectiveRole = (user.role || localStorage.getItem('userRole') || 'user').toLowerCase();
+                const rankName = getUserRank(user) || '';
 
-                // Persist role if provided
-                localStorage.setItem('userRole', userRole);
+                // Persist for cross-page usage
+                localStorage.setItem('profileFullName', userName);
+                if (userPhoto) localStorage.setItem('profilePhotoUrl', userPhoto); else localStorage.removeItem('profilePhotoUrl');
+                persistRoleAndRank(effectiveRole, rankName);
 
-                // Admin access flag
-                if ((userRole || '').toLowerCase() === 'admin') {
-                    localStorage.setItem('realAdminAccess', 'true');
-                } else {
-                    localStorage.removeItem('realAdminAccess');
-                }
+                // Admin access flag (used elsewhere)
+                applyAdminAccessFlag(effectiveRole);
 
-                // Update UI
-                const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
-                profileNameElements.forEach(element => {
-                    element.textContent = userName;
-                });
-                updateProfilePhoto(userPhoto);
+                // Update UI with freshest data
+                applyTopProfileDisplay({ name: userName, photoUrl: userPhoto, role: effectiveRole, rank: rankName });
 
                 // Enforce admin control visibility after role is known
                 enforceAdminControlsVisibility();
             }
         }
     } catch (error) {
-        // No-op on backend failure
+        // Log once for diagnostics; UI already uses fallback values
+        console.warn('updateUserNameDisplay fallback in use:', error);
+    }
+}
+
+function persistRoleAndRank(role, rankName) {
+    try {
+        localStorage.setItem('userRole', role || 'user');
+        if (rankName) localStorage.setItem('profileRank', rankName); else localStorage.removeItem('profileRank');
+    } catch (e) {
+        console.warn('persistRoleAndRank warning:', e);
+    }
+}
+
+function applyAdminAccessFlag(role) {
+    const isAdmin = (role || '').toLowerCase() === 'admin';
+    if (isAdmin) {
+        localStorage.setItem('realAdminAccess', 'true');
+    } else {
+        localStorage.removeItem('realAdminAccess');
+    }
+}
+
+// Helper: derive a human-friendly name from email like "john.doe@..." -> "John Doe"
+function deriveNameFromEmail(email) {
+    if (!email || typeof email !== 'string') return '';
+    const local = email.split('@')[0] || '';
+    if (!local) return '';
+    return local
+        .replace(/[._-]+/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+// Determine a displayable rank from the user object
+function getUserRank(user) {
+    if (!user || typeof user !== 'object') return '';
+    // Prefer explicit rank field if exists; then title_prefix; then first position; then status
+    const raw = user.rank || user.rank_name || user.rankName || user.title_prefix || user.titlePrefix || user.title ||
+        (Array.isArray(user.positions) ? user.positions[0] : (user.position || '')) ||
+        (typeof user.status !== 'undefined' ? String(user.status) : '');
+    const normalized = normalizeCanonicalRank((raw || '').toString());
+    return normalized;
+}
+
+// Map backend variants to canonical members table ranks
+function normalizeCanonicalRank(value) {
+    const v = (value || '').toString().trim();
+    if (!v) return '';
+    const low = v.toLowerCase();
+    // Canonical set
+    const canonical = [
+        'Cadet Second Class',
+        'Cadet First Class',
+        'Scholar',
+        'Accomplished Scientist',
+        'Transcendent'
+    ];
+    // Direct match
+    if (canonical.includes(v)) return v;
+    // Heuristics / synonyms
+    if (/(cadet).*(second|2(nd)?)/i.test(v) || /(ikinci).*kadet/i.test(low)) return 'Cadet Second Class';
+    if (/(cadet).*(first|1(st)?)/i.test(v) || /(birinci).*kadet/i.test(low)) return 'Cadet First Class';
+    if (/scholar|öğrenci|ogrenci|bursiyer/i.test(low)) return 'Scholar';
+    if (/scientist|bilim(insani| insanı)|bilim/i.test(low)) return 'Accomplished Scientist';
+    if (/transcendent|üstün|ultra|mükemmel|mukemmel/i.test(low)) return 'Transcendent';
+    // Unknown -> empty (so UI will show '-')
+    return '';
+}
+
+// Helper: apply profile name/photo/rank to the top bar and side panel
+function applyTopProfileDisplay({ name, photoUrl, role, rank }) {
+    try {
+        const profileNameElements = document.querySelectorAll('.profile-name, .side-profile-name, .welcome-user');
+        profileNameElements.forEach(element => {
+            element.textContent = name || '';
+        });
+
+        // Role label if present in DOM
+        const rankEl = document.querySelector('.profile-rank');
+        if (rankEl) {
+            // Show actual rank/title; avoid generic labels
+            rankEl.textContent = (rank || '').toString();
+        }
+
+        updateProfilePhoto(photoUrl);
+    } catch (e) {
+        // Non-fatal UI best-effort
+        console.warn('applyTopProfileDisplay warning:', e);
     }
 }
 
@@ -669,21 +783,18 @@ function initProfileSection() {
         
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
-            if (profileSection && profileDropdown && 
-                !profileSection.contains(e.target) && 
-                !profileDropdown.contains(e.target)) {
+            // profileSection & profileDropdown are guaranteed here
+            if (!profileSection.contains(e.target) && !profileDropdown.contains(e.target)) {
                 closeProfileDropdown();
             }
         });
         
         // Close dropdown when clicking inside dropdown links
-        if (profileDropdown) {
-            profileDropdown.addEventListener('click', function(e) {
-                if (e.target.closest('.dropdown-item')) {
-                    closeProfileDropdown();
-                }
-            });
-        }
+        profileDropdown.addEventListener('click', function(e) {
+            if (e.target.closest('.dropdown-item')) {
+                closeProfileDropdown();
+            }
+        });
     }
 }
 
@@ -746,7 +857,7 @@ function initNavigationActive() {
         // Handle different URL patterns
         if (href === currentPage || 
             (href === 'database.html' && (currentPage === '' || currentPage === 'index.html')) ||
-            (href && href.includes(currentPage))) {
+            (href?.includes(currentPage))) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
@@ -759,7 +870,6 @@ function initAdminDropdown() {
     const dropdownTrigger = document.getElementById('dropdownTrigger');
     const dropdownMenu = document.getElementById('dropdownMenu');
     const dropdownOptions = document.querySelectorAll('.dropdown-option');
-    const modeText = document.querySelector('.mode-text');
 
     if (!dropdownTrigger || !dropdownMenu) return;
 
@@ -1512,37 +1622,7 @@ document.addEventListener('DOMContentLoaded', function() {
     addAdminSuccessStyles();
 });
 
-// Global Admin State Management
-function loadAdminState() {
-    const savedMode = localStorage.getItem('adminMode') || 'safe';
-    const savedText = localStorage.getItem('adminModeText') || 'Güvenli Mod';
-    
-    const dropdownOptions = document.querySelectorAll('.dropdown-option');
-    const modeText = document.querySelector('.mode-text');
-    const modeIcon = document.getElementById('modeIcon');
-    
-    // Update UI
-    dropdownOptions.forEach(opt => opt.classList.remove('active'));
-    const selectedOption = document.querySelector(`[data-mode="${savedMode}"]`);
-    if (selectedOption) {
-        selectedOption.classList.add('active');
-    }
-    
-    if (modeText) {
-        modeText.textContent = savedText;
-    }
-    
-    if (modeIcon) {
-        modeIcon.className = savedMode === 'admin' ? 'fas fa-cog mode-icon' : 'fas fa-shield-alt mode-icon';
-    }
-    
-    // Apply admin mode
-    if (savedMode === 'admin') {
-        document.body.classList.add('admin-mode');
-    } else {
-        document.body.classList.remove('admin-mode');
-    }
-}
+// Global Admin State Management (single source of truth is the earlier loadAdminState)
 
 // Helper: check if current user is admin
 function isCurrentUserAdmin() {

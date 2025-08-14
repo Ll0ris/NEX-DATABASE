@@ -19,14 +19,14 @@ document.addEventListener('DOMContentLoaded', function() {
             ]);
 
             // Toplam sayı
-            if (countRes && countRes.success) {
+            if (countRes?.success) {
                 backendTotalCount = Number(countRes.total || countRes.count || 0);
             } else {
                 backendTotalCount = null;
             }
 
             // Liste
-            const items = (listRes && listRes.success && Array.isArray(listRes.items)) ? listRes.items : [];
+            const items = (listRes?.success && Array.isArray(listRes.items)) ? listRes.items : [];
             allMembers = items.map(normalizeUserFromBackend);
             currentMembers = [...allMembers];
 
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (typeof createdAtRaw === 'string') {
             const parsed = Date.parse(createdAtRaw);
             createdAt = isNaN(parsed) ? null : new Date(parsed);
-        } else if (createdAtRaw && createdAtRaw.seconds) {
+    } else if (createdAtRaw?.seconds) {
             // Firestore benzeri destek
             createdAt = new Date(createdAtRaw.seconds * 1000);
         } else {
@@ -193,7 +193,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getRankBadge(rank) {
-        if (!rank) return '<span class="rank-badge rank-default">-</span>';
+    if (!rank) {
+        return '<span class="rank-badge rank-default">-</span>';
+    }
         
         const rankColors = {
             'Cadet Second Class': 'rank-cadet-2',
@@ -203,8 +205,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'Transcendent': 'rank-transcendent'
         };
         
-        const colorClass = rankColors[rank] || 'rank-default';
-        return `<span class="rank-badge ${colorClass}">${rank}</span>`;
+    const colorClass = rankColors[rank] || 'rank-default';
+    const display = String(rank).toLocaleUpperCase('en-US');
+    return `<span class="rank-badge ${colorClass}">${display}</span>`;
     }
 
     function getJoinYear(createdAt) {
@@ -213,8 +216,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const d = (createdAt instanceof Date) ? createdAt : new Date(createdAt);
             if (isNaN(d.getTime())) return 'Bilinmiyor';
             return d.getFullYear().toString();
-        } catch (_) {
-            return 'Bilinmiyor';
+        } catch (e) {
+
+            console.warn('getJoinYear warning:', e);
         }
     }
 
@@ -299,14 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'Transcendent': 5
     };
 
-    const statusOrder = {
-        'active': 1,
-        'active_alumni': 2,
-        'honorary': 3,
-        'inactive': 4,
-        'passive_alumni': 5,
-        'unknown': 99
-    };
+    // statusOrder removed (unused)
 
     function getComparableValue(member, field) {
         switch (field) {
@@ -314,8 +311,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return (member.name || '').toLowerCase();
             }
             case 'joinYear': {
-                const d = member.createdAt instanceof Date ? member.createdAt : (member.createdAt ? new Date(member.createdAt) : null);
-                const y = d && !isNaN(d.getTime()) ? d.getFullYear() : 0;
+                let d = null;
+                if (member.createdAt instanceof Date) {
+                    d = member.createdAt;
+                } else if (member.createdAt) {
+                    d = new Date(member.createdAt);
+                }
+                const y = (d && !isNaN(d.getTime())) ? d.getFullYear() : 0;
                 return y;
             }
             case 'rank': {
@@ -441,20 +443,20 @@ document.addEventListener('DOMContentLoaded', function() {
             valueElement.textContent = value;
         }
         
-        // Kopyala butonuna event listener ekle
-        copyBtn.onclick = function() {
-            navigator.clipboard.writeText(value).then(() => {
+        // Kopyala butonuna event listener ekle (daha az iç içe fonksiyonla)
+        copyBtn.onclick = async function() {
+            try {
+                await navigator.clipboard.writeText(value);
                 const originalIcon = copyBtn.innerHTML;
                 copyBtn.innerHTML = '<i class="fas fa-check"></i>';
                 copyBtn.style.background = '#4CAF50';
-                
                 setTimeout(() => {
                     copyBtn.innerHTML = originalIcon;
                     copyBtn.style.background = '';
                 }, 1000);
-            }).catch(err => {
+            } catch (err) {
                 console.error('Kopyalama hatası:', err);
-            });
+            }
         };
         
         modal.classList.add('show');
@@ -481,8 +483,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.backendAPI.get('users.php', { action: 'count' }),
                     window.backendAPI.get('users.php', { action: 'list' })
                 ]);
-                backendTotalCount = (countRes && countRes.success) ? Number(countRes.total || 0) : null;
-                const items = (listRes && listRes.success && Array.isArray(listRes.items)) ? listRes.items : [];
+                backendTotalCount = (countRes?.success) ? Number(countRes.total || 0) : null;
+                const items = (listRes?.success && Array.isArray(listRes.items)) ? listRes.items : [];
                 allMembers = items.map(normalizeUserFromBackend);
                 currentMembers = [...allMembers];
                 updateStatistics();

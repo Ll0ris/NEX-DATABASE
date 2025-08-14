@@ -314,9 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const adminMode = localStorage.getItem('adminMode');
         const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
         const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
-    const isAdminUser = ((localStorage.getItem('userRole') || '').toLowerCase() === 'admin');
-    const currentUserEmail = (localStorage.getItem('currentUserEmail') || '').toLowerCase();
-    const isSelfProfile = !viewUserParam || (viewUserParam || '').toLowerCase() === currentUserEmail;
+        const isAdminUser = ((localStorage.getItem('userRole') || '').toLowerCase() === 'admin');
+        const currentUserEmail = (localStorage.getItem('currentUserEmail') || '').toLowerCase();
+        const isSelfProfile = !viewUserParam || (viewUserParam || '').toLowerCase() === currentUserEmail;
         
         // Hangi kullanıcının profilini göstereceğimizi belirle
         let targetUserIdentifier = viewUserParam || localStorage.getItem('currentUserEmail');
