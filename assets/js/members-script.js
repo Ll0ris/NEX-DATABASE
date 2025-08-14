@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
             phone: row.phone || '',
             photoUrl: row.photo_url || row.photoUrl || null,
             institution: row.institution || '',
-            rank: row.rank || '',
+            rank: row.rank_name || '',
             role: row.role || '',
             positions: positions,
             createdAt: createdAt
@@ -110,8 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tbody.innerHTML = '';
         
-        // Admin modunu kontrol et
-        const isAdminMode = localStorage.getItem('adminMode') === 'true' || localStorage.getItem('mode') === 'admin';
+    // Admin modunu kontrol et (gerçek admin ve admin modu birlikte gerekli)
+    const isAdminMode = (localStorage.getItem('adminMode') === 'admin') && (localStorage.getItem('realAdminAccess') === 'true');
         
         // Giriş yapan kullanıcının email'ini al
         let currentUserEmail = localStorage.getItem('currentUserEmail') || '';
@@ -389,9 +389,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // Global fonksiyonlar
     window.viewMemberProfile = function(memberId) {
         const member = currentMembers.find(m => m.id === memberId);
-        if (member) {
-            alert(`${member.name} profiline yönlendirilecek (henüz eklenmedi)`);
+        if (!member) return;
+
+        const currentUserEmail = (localStorage.getItem('currentUserEmail') || '').toLowerCase();
+        const memberEmail = (member.email || '').toLowerCase();
+        const isSelf = memberEmail && currentUserEmail && memberEmail === currentUserEmail;
+
+        // Kullanıcının admin olup olmadığını kontrol et
+        const isAdminUser = ((localStorage.getItem('userRole') || '').toLowerCase() === 'admin');
+        const isAdminModeActive = (localStorage.getItem('adminMode') === 'admin') && (localStorage.getItem('realAdminAccess') === 'true');
+
+        // Kendi profiline git
+        if (isSelf) {
+            window.location.href = 'profile.html';
+            return;
         }
+
+        // Adminler diğer profilleri görebilir; admin modunda düzenleyebilir
+        if (isAdminUser && member.email) {
+            const base = 'profile.html?viewUser=' + encodeURIComponent(member.email);
+            if (isAdminModeActive) {
+                // Düzenlenebilir görünüm
+                window.location.href = base + '&readOnly=false';
+            } else {
+                // Salt okunur görünüm
+                window.location.href = base + '&readOnly=true';
+            }
+            return;
+        }
+
+        // Admin değilse kısıtla
+        alert('Bu özelliği yalnızca admin kullanıcılar kullanabilir.');
     };
 
     window.showContactModal = function(type, value, memberName) {
@@ -483,27 +511,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // Test fonksiyonları
-    window.setTestUserEmail = function(email) {
-        localStorage.setItem('currentUserEmail', email);
-        console.log('Test user email set to:', email);
-        renderMemberTable();
-    };
-
-    window.testWithOguzhanEmail = function() {
-        setTestUserEmail('dedeogluoguzhan1603@gmail.com');
-    };
-    
-    // Üye profili görüntüleme fonksiyonu
-    window.viewMemberProfile = function(memberId) {
-        // Üye bilgilerini bul
-        const member = currentMembers.find(m => m.id === memberId);
-        if (!member) {
-            return;
-        }
-        
-        // Profile sayfasına üye ID'si ile yönlendir (email yerine Firestore document ID kullan)
-        window.location.href = `profile.html?viewUser=${member.id}&readOnly=true`;
-    };
 });

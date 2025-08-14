@@ -820,8 +820,10 @@ function selectAdminMode(mode, text) {
     // Güvenlik kontrolü: Gerçek admin yetkisi var mı?
     const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
     const userRole = localStorage.getItem('userRole') || 'user';
+    const normalizedRole = (userRole || '').toLowerCase();
     
-    if (mode === 'admin' && (!hasRealAdminAccess || userRole !== 'admin')) {
+    // Normalize role check to avoid case sensitivity issues
+    if (mode === 'admin' && (!hasRealAdminAccess || normalizedRole !== 'admin')) {
         alert('⚠️ Admin yetkisi yok!\n\nSadece sistem yöneticileri admin moduna geçebilir.');
         
         // Zorla güvenli moda çevir
@@ -866,7 +868,7 @@ function updateProfileButtonsOnAdminChange(mode) {
         // Güvenli admin kontrolü
         const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
         const userRole = localStorage.getItem('userRole') || 'user';
-        const isRealAdmin = hasRealAdminAccess && userRole === 'admin' && mode === 'admin';
+    const isRealAdmin = hasRealAdminAccess && (userRole || '').toLowerCase() === 'admin' && mode === 'admin';
         
         if (profileEditBtn) {
             if (isRealAdmin) {

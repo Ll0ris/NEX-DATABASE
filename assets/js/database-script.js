@@ -941,17 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ensureCreateEventModal();
     });
 
-    // Takvim buton event listener'ları
-    const btnCalendarEdit = document.querySelector('.btn-calendar-edit');
     const btnAllEvents = document.querySelector('.btn-all-events');
-
-    if (btnCalendarEdit) {
-        btnCalendarEdit.addEventListener('click', function() {
-            // Takvim düzenleme modalı veya sayfası açılacak
-            console.log('Takvim düzenle butonuna tıklandı');
-            // showCalendarEditModal(); // Bu fonksiyon sonra eklenecek
-        });
-    }
 
     if (btnAllEvents) {
         btnAllEvents.addEventListener('click', function(e) {

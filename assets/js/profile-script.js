@@ -314,6 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const adminMode = localStorage.getItem('adminMode');
         const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
         const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+    const isAdminUser = ((localStorage.getItem('userRole') || '').toLowerCase() === 'admin');
+    const currentUserEmail = (localStorage.getItem('currentUserEmail') || '').toLowerCase();
+    const isSelfProfile = !viewUserParam || (viewUserParam || '').toLowerCase() === currentUserEmail;
         
         // Hangi kullanıcının profilini göstereceğimizi belirle
         let targetUserIdentifier = viewUserParam || localStorage.getItem('currentUserEmail');
@@ -357,9 +360,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 setText(document.querySelector('.side-profile-name'), fullNameValue);
                 setText(document.querySelector('.side-profile-institution'), (typeof data.institution !== 'undefined') ? data.institution : '');
 
-                // Top panel name - read-only modda bu alanı güncelleme
+                // Top panel name: Sadece kendi profilini görüntülerken güncelle
                 const topProfileName = document.querySelector('.profile-name');
-                if (topProfileName && !isReadOnly) {
+                if (topProfileName && isSelfProfile) {
                     topProfileName.textContent = fullNameValue;
                 }
 
@@ -388,6 +391,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     hideEditButtons();
                 } else {
                     showEditButtons();
+                }
+
+                // Eğer admin kendi profilindeyse ana Düzenle butonunu koyu kırmızı yap
+                if (isAdminUser && isSelfProfile) {
+                    const profileEditBtnEl = document.getElementById('profileEditBtn');
+                    if (profileEditBtnEl) {
+                        profileEditBtnEl.style.background = '#800020'; // koyu kırmızı
+                        profileEditBtnEl.style.borderColor = '#800020';
+                    }
                 }
             })
             .catch((error) => {
