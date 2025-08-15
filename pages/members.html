@@ -170,6 +170,10 @@
             <div class="member-list-header">
                 <h2>Üye Listesi</h2>
                 <div class="member-controls">
+                        <button class="btn-confirm admin-only" id="addMemberBtn" title="Yeni Üye Ekle" style="display:none; gap:6px; align-items:center;">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Üye Ekle</span>
+                        </button>
                     <div class="search-box">
                         <i class="fas fa-search"></i>
                         <input type="text" id="memberSearch" placeholder="Üye ara...">
@@ -246,6 +250,112 @@
     
     <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
+
+    <!-- Add Member Modal -->
+    <div class="modal-overlay" id="addMemberModal" style="display:none;">
+        <div class="modal-content form-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Yeni Üye Ekle</h3>
+                <button class="modal-close" id="closeAddMemberModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMemberForm" class="modal-form">
+                    <div class="form-row" style="gap:12px;">
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_name">Ad<span style="color:#b91c1c">*</span></label>
+                            <input id="am_name" type="text" name="name" placeholder="Örn: Ahmet" required>
+                        </div>
+                        <div class="form-group" style="flex:2;">
+                            <label for="am_fullName">Ad Soyad<span style="color:#b91c1c">*</span></label>
+                            <input id="am_fullName" type="text" name="fullName" placeholder="Örn: Ahmet Yılmaz" required>
+                        </div>
+                    </div>
+                    <div class="form-row" style="gap:12px;">
+                        <div class="form-group" style="flex:2;">
+                            <label for="am_email">E-posta<span style="color:#b91c1c">*</span></label>
+                            <input id="am_email" type="email" name="email" placeholder="ornek@ytu.edu.tr" required>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_password">Parola (opsiyonel)</label>
+                            <input id="am_password" type="password" name="password" placeholder="Boş bırakırsanız üretilecek">
+                        </div>
+                    </div>
+                    <div class="form-row" style="gap:12px;">
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_institution">Kurum</label>
+                            <input id="am_institution" type="text" name="institution" placeholder="Örn: YTÜ">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_faculty">Fakülte</label>
+                            <input id="am_faculty" type="text" name="faculty" placeholder="Örn: Elektrik-Elektronik">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_department">Bölüm</label>
+                            <input id="am_department" type="text" name="department" placeholder="Örn: Bilgisayar Müh">
+                        </div>
+                    </div>
+                    <div class="form-row" style="gap:12px;">
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_phone">Telefon</label>
+                            <input id="am_phone" type="text" name="phone" placeholder="Örn: 05xx xxx xx xx">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_photo_url">Fotoğraf URL</label>
+                            <input id="am_photo_url" type="url" name="photo_url" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div class="form-row" style="gap:12px;">
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_role">Rol (role)</label>
+                            <select id="am_role" name="role">
+                                <option value="user">user</option>
+                                <option value="active">active</option>
+                                <option value="inactive">inactive</option>
+                                <option value="honorary">honorary</option>
+                                <option value="active_alumni">active_alumni</option>
+                                <option value="passive_alumni">passive_alumni</option>
+                                <option value="admin">admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_position">Pozisyon (position)</label>
+                            <input id="am_position" type="text" name="position" placeholder="Örn: Ekip Üyesi">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_status">Durum (status)</label>
+                            <select id="am_status" name="status">
+                                <option value="active">Aktif Öğrenci</option>
+                                <option value="inactive">Pasif Öğrenci</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row" style="gap:12px;">
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_title_prefix">Ünvan (title_prefix)</label>
+                            <select id="am_title_prefix" name="title_prefix">
+                                <option value="">Ünvan Seçin</option>
+                                <option value="">-</option>
+                                <option value="Prof. Dr.">Prof. Dr.</option>
+                                <option value="Doç. Dr.">Doç. Dr.</option>
+                                <option value="Dr. Öğr. Üyesi">Dr. Öğr. Üyesi</option>
+                                <option value="Öğr. Gör.">Öğr. Gör.</option>
+                                <option value="Arş. Gör.">Arş. Gör.</option>
+                                <option value="Dr.">Dr.</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="am_rank_id">Rütbe ID (rank_id) (opsiyonel)</label>
+                            <input id="am_rank_id" type="number" name="rank_id" min="1" step="1" placeholder="Örn: 2">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancelAddMember">İptal</button>
+                <button class="btn-confirm" id="saveAddMember">Kaydet</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Contact Modal -->
     <div class="contact-modal" id="contactModal">

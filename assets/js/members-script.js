@@ -261,6 +261,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 sortMembers(field);
             });
         });
+
+        // Admin'lere özel "Üye Ekle" butonu
+        const addBtn = document.getElementById('addMemberBtn');
+        const isRealAdmin = (localStorage.getItem('userRole') || '').toLowerCase() === 'admin';
+        const isAdminMode = (localStorage.getItem('adminMode') === 'admin') && (localStorage.getItem('realAdminAccess') === 'true');
+        if (addBtn) {
+            addBtn.style.display = (isRealAdmin && isAdminMode) ? 'inline-flex' : 'none';
+            addBtn.addEventListener('click', openAddMemberModal);
+        }
+
+        // Add Member modal kapatma
+        const addModal = document.getElementById('addMemberModal');
+        const closeAdd = document.getElementById('closeAddMemberModal');
+        const cancelAdd = document.getElementById('cancelAddMember');
+        if (closeAdd) closeAdd.addEventListener('click', closeAddMemberModal);
+        if (cancelAdd) cancelAdd.addEventListener('click', closeAddMemberModal);
+        if (addModal) {
+            addModal.addEventListener('click', function(e) {
+                if (e.target === addModal) closeAddMemberModal();
+            });
+        }
+
+        // Add Member kaydet
+        const saveAdd = document.getElementById('saveAddMember');
+        if (saveAdd) saveAdd.addEventListener('click', submitAddMemberForm);
     }
 
     function filterMembers(searchTerm) {
@@ -386,6 +411,144 @@ document.addEventListener('DOMContentLoaded', function() {
     function showError(message) {
         console.error('Error:', message);
         alert('Hata: ' + message);
+    }
+
+    function showInfo(message) {
+        alert(message);
+    }
+
+    // Helpers for Add Member form
+    function s(val) { return val == null ? '' : String(val); }
+    function getTrim(fd, name) { return s(fd.get(name)).trim(); }
+    function getOptionalSelect(fd, name, def) { const v = s(fd.get(name)).trim(); return v || def; }
+    function isEmailValid(email) { return /.+@.+\..+/.test(email); }
+    function isDigits(x) { return /^\d+$/.test(x); }
+
+    async function refreshMembersFromBackend() {
+        const [countRes, listRes] = await Promise.all([
+            window.backendAPI.get('users.php', { action: 'count' }),
+            window.backendAPI.get('users.php', { action: 'list' })
+        ]);
+        backendTotalCount = (countRes?.success) ? Number(countRes.total || countRes.count || 0) : null;
+        const items = (listRes?.success && Array.isArray(listRes.items)) ? listRes.items : [];
+        allMembers = items.map(normalizeUserFromBackend);
+        currentMembers = [...allMembers];
+        updateStatistics();
+        renderMemberTable();
+        updateSortIndicators();
+    }
+
+    function collectAddMemberValues(fd) {
+        const values = {
+            name: getTrim(fd, 'name'),
+            fullName: getTrim(fd, 'fullName'),
+            email: getTrim(fd, 'email'),
+            password: s(fd.get('password')),
+            department: getTrim(fd, 'department'),
+            faculty: getTrim(fd, 'faculty'),
+            institution: getTrim(fd, 'institution'),
+            phone: getTrim(fd, 'phone'),
+            photo_url: getTrim(fd, 'photo_url'),
+            role: getOptionalSelect(fd, 'role', 'user'),
+            position: getTrim(fd, 'position'),
+            status: getOptionalSelect(fd, 'status', 'active'),
+            title_prefix: getTrim(fd, 'title_prefix'),
+            rank_id_raw: s(fd.get('rank_id')).trim()
+        };
+        values.rank_id = values.rank_id_raw !== '' ? values.rank_id_raw : null;
+        return values;
+    }
+
+    function validateAddMemberValues(v) {
+        const missing = [];
+        if (!v.name) missing.push('Ad (name)');
+        if (!v.fullName) missing.push('Ad Soyad (fullName)');
+        if (!v.email) missing.push('E-posta (email)');
+        if (missing.length) return { ok: false, message: 'Zorunlu alanlar boş bırakılamaz: ' + missing.join(', ') };
+        if (!isEmailValid(v.email)) return { ok: false, message: 'Geçerli bir e-posta adresi giriniz.' };
+        if (v.password && v.password.length < 6) return { ok: false, message: 'Parola en az 6 karakter olmalıdır.' };
+        if (v.rank_id !== null && !isDigits(v.rank_id)) return { ok: false, message: 'Rütbe ID (rank_id) sadece sayısal olmalıdır.' };
+        return { ok: true };
+    }
+
+    // Map status to Turkish student labels for DB persistence
+    function mapStatusForDB(statusVal) {
+        const sv = (statusVal || '').toString().trim().toLowerCase();
+        if (sv === 'active' || sv === 'aktif' || sv === 'aktif öğrenci' || sv === 'aktif ogrenci') return 'Aktif Öğrenci';
+        if (sv === 'inactive' || sv === 'pasif' || sv === 'pasif öğrenci' || sv === 'pasif ogrenci') return 'Pasif Öğrenci';
+        return statusVal; // leave other custom statuses as-is
+    }
+
+    // Normalize role to canonical codes in case dropdown values were localized
+    function normalizeRoleForCreate(roleVal) {
+        const rv = (roleVal || '').toString().trim().toLowerCase();
+        if (rv === 'aktif öğrenci' || rv === 'aktif ogrenci' || rv === 'aktif' || rv === 'active') return 'active';
+        if (rv === 'pasif öğrenci' || rv === 'pasif ogrenci' || rv === 'pasif' || rv === 'inactive') return 'inactive';
+        if (rv === 'aktif mezun' || rv === 'active alumni' || rv === 'active_alumni') return 'active_alumni';
+        if (rv === 'pasif mezun' || rv === 'passive alumni' || rv === 'passive_alumni') return 'passive_alumni';
+        if (rv === 'fahri' || rv === 'honorary') return 'honorary';
+        if (rv === 'yönetici' || rv === 'yonetici' || rv === 'admin') return 'admin';
+        if (rv === 'kullanıcı' || rv === 'kullanici' || rv === 'user') return 'user';
+        return roleVal; // unknown stays as provided
+    }
+
+    function buildCreatePayload(v) {
+        return {
+            action: 'create',
+            name: v.name,
+            fullName: v.fullName,
+            email: v.email,
+            ...(v.password ? { password: v.password } : {}),
+            ...(v.department ? { department: v.department } : {}),
+            ...(v.faculty ? { faculty: v.faculty } : {}),
+            ...(v.institution ? { institution: v.institution } : {}),
+            ...(v.phone ? { phone: v.phone } : {}),
+            ...(v.photo_url ? { photo_url: v.photo_url } : {}),
+            ...(v.role ? { role: normalizeRoleForCreate(v.role) } : {}),
+            ...(v.position ? { position: v.position } : {}),
+            ...(v.status ? { status: mapStatusForDB(v.status) } : {}),
+            ...(v.title_prefix ? { title_prefix: v.title_prefix } : {}),
+            ...(v.rank_id !== null ? { rank_id: v.rank_id } : {})
+        };
+    }
+
+    function openAddMemberModal() {
+        const modal = document.getElementById('addMemberModal');
+        const form = document.getElementById('addMemberForm');
+        if (form) form.reset();
+        if (modal) {
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+    }
+
+    function closeAddMemberModal() {
+        const modal = document.getElementById('addMemberModal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => { modal.style.display = 'none'; }, 150);
+        }
+    }
+
+    async function submitAddMemberForm() {
+        const form = document.getElementById('addMemberForm');
+        if (!form) return;
+        const fd = new FormData(form);
+        const values = collectAddMemberValues(fd);
+        const valid = validateAddMemberValues(values);
+        if (!valid.ok) { showError(valid.message); return; }
+
+        const payload = buildCreatePayload(values);
+        try {
+            if (!window.backendAPI) throw new Error('Backend API hazır değil');
+            const res = await window.backendAPI.post('users.php?action=create', payload);
+            if (!res?.success) throw new Error(res?.error || res?.message || 'Oluşturma başarısız');
+            await refreshMembersFromBackend();
+            closeAddMemberModal();
+            showInfo(res.temporaryPassword ? ('Üye eklendi. Geçici parola: ' + res.temporaryPassword) : 'Üye eklendi.');
+        } catch (err) {
+            showError(err?.message || String(err));
+        }
     }
 
     // Global fonksiyonlar
@@ -514,3 +677,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+

@@ -833,13 +833,8 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         initTopBarFeatures();
         initNavigationActive();
-
-        const adminMode = localStorage.getItem('adminMode');
-        if (adminMode === 'admin') {
-            document.body.classList.add('admin-user');
-        } else {
-            document.body.classList.remove('admin-user');
-        }
+        // Initialize admin dropdown on pages that include it (e.g., members.html)
+        initAdminDropdown();
     }
 
     // Enforce admin visibility based on current local role (will refine after profile fetch)
@@ -958,9 +953,24 @@ function selectAdminMode(mode, text) {
         modeText.textContent = text;
     }
     updateAdminModeIcon(mode);
-    
+
     // Save admin state
     saveAdminState(mode, text);
+
+    // Apply body classes so admin-only UI becomes visible where appropriate
+    const isAdmin = isCurrentUserAdmin();
+    const hasRealAdminAccess_sel = localStorage.getItem('realAdminAccess') === 'true';
+    if (isAdmin && mode === 'admin' && hasRealAdminAccess_sel) {
+        document.body.classList.add('admin-user');
+        document.body.classList.add('admin-mode');
+    } else {
+        if (isAdmin) {
+            document.body.classList.add('admin-user');
+        } else {
+            document.body.classList.remove('admin-user');
+        }
+        document.body.classList.remove('admin-mode');
+    }
     
     // Profile sayfasında ise read-only butonları güncelle
     updateProfileButtonsOnAdminChange(mode);
@@ -1644,11 +1654,22 @@ function enforceAdminControlsVisibility() {
         el.style.display = isAdmin ? '' : 'none';
     });
 
-    // Hide or show elements marked as admin-only
+    // Hide or show elements marked as admin-only (inline style fallback; CSS governs final state)
     const adminOnlyEls = document.querySelectorAll('.admin-only');
     adminOnlyEls.forEach(el => {
         el.style.display = isAdmin ? '' : 'none';
     });
+
+    // Sync body classes based on current role and selected mode
+    const selectedMode = localStorage.getItem('adminMode') || 'safe';
+    const hasRealAdminAccess_state = localStorage.getItem('realAdminAccess') === 'true';
+    if (isAdmin && selectedMode === 'admin' && hasRealAdminAccess_state) {
+        document.body.classList.add('admin-user');
+        document.body.classList.add('admin-mode');
+    } else if (isAdmin) {
+        document.body.classList.add('admin-user');
+        document.body.classList.remove('admin-mode');
+    }
 
     // Force safe mode and remove admin classes for non-admin users
     if (!isAdmin) {

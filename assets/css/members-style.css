@@ -402,6 +402,10 @@
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.5px;
+    display: inline-flex;       /* keep as one pill */
+    align-items: center;
+    white-space: nowrap;        /* prevent wrap to second line */
+    line-height: 1;             /* tighter line height for pill */
 }
 
 .rank-cadet-2 {

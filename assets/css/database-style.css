@@ -1563,6 +1563,34 @@ body {
     max-width: 450px;
 }
 
+/* Generic modal sizing for larger forms (e.g., Add Member) */
+.modal-content.form-modal {
+    width: 92%;
+    max-width: 680px; /* a bit smaller than 720 to fit comfortably */
+    max-height: 85vh; /* keep inside viewport height */
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content.form-modal .modal-body {
+    flex: 1 1 auto; /* take remaining space */
+    min-height: 0;  /* allow flex child to shrink for scrolling */
+    overflow: auto; /* scroll body when content exceeds height */
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal-content.form-modal .modal-header,
+.modal-content.form-modal .modal-footer {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 480px) {
+    .modal-content.form-modal {
+        max-width: 95vw;
+        max-height: 90vh;
+    }
+}
+
 .modal-header {
     background: var(--primary-color);
     color: white;
