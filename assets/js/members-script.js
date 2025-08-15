@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return {
             id: row.id ?? row.user_id ?? row.uid ?? null,
-            name: row.name || '',
+            fullName: row.fullName || '',
             email: row.email || '',
             phone: row.phone || '',
             photoUrl: row.photo_url || row.photoUrl || null,
@@ -140,13 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="member-cell" onclick="viewMemberProfile('${member.id}')">
                         <div class="member-avatar">
                             ${member.photoUrl ? 
-                                `<img src="${member.photoUrl}" alt="${member.name}">` : 
+                                `<img src="${member.photoUrl}" alt="${member.fullName}">` : 
                                 `<i class="fas fa-user"></i>`
                             }
                         </div>
                         <div class="member-name-section">
                             <div class="member-name">
-                                ${member.name}
+                                ${member.fullName}
                                 ${isCurrentUser ? '<i class="fas fa-user-circle" style="color: #800020; margin-left: 8px; font-size: 16px;" title="Bu sizsiniz"></i>' : ''}
                                 ${isAdminMode && member.isAdmin ? '<i class="fas fa-cog admin-icon" title="Admin"></i>' : ''}
                             </div>
@@ -164,8 +164,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
                 <td>
                     <div class="contact-buttons">
-                        ${member.email ? `<button class="contact-btn email" onclick="showContactModal('email', '${member.email}', '${member.name}')" title="E-posta"><i class="fas fa-envelope"></i></button>` : ''}
-                        ${member.phone ? `<button class="contact-btn phone" onclick="showContactModal('phone', '${member.phone}', '${member.name}')" title="Telefon"><i class="fas fa-phone"></i></button>` : ''}
+                        ${member.email ? `<button class="contact-btn email" onclick="showContactModal('email', '${member.email}', '${member.fullName}')" title="E-posta"><i class="fas fa-envelope"></i></button>` : ''}
+                        ${member.phone ? `<button class="contact-btn phone" onclick="showContactModal('phone', '${member.phone}', '${member.fullName}')" title="Telefon"><i class="fas fa-phone"></i></button>` : ''}
                     </div>
                 </td>
                 ${isAdminMode ? `
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentMembers = [...allMembers];
         } else {
             currentMembers = allMembers.filter(member => 
-                member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 member.institution.toLowerCase().includes(searchTerm.toLowerCase())
             );
@@ -349,8 +349,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getComparableValue(member, field) {
         switch (field) {
-            case 'name': {
-                return (member.name || '').toLowerCase();
+            case 'fullName': {
+                return (member.fullName || '').toLowerCase();
             }
             case 'joinYear': {
                 let d = null;
@@ -645,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.manageMember = function(memberId) {
         const member = currentMembers.find(m => m.id === memberId);
         if (member) {
-            alert(`${member.name} yönetim paneli açılacak (henüz eklenmedi)`);
+            alert(`${member.fullName} yönetim paneli açılacak (henüz eklenmedi)`);
         }
     };
 

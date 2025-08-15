@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const payload = {
                 action: 'update',
                 targetUser: currentUserEmail,
-                profile: { fullName: newName, name: newName }
+                profile: { fullName: newName}
             };
 
             const res = await window.backendAPI.post('profile.php?action=update', payload);
