@@ -1081,7 +1081,7 @@ function createGlobalProtocolModal() {
             </div>
             <div class="modal-body">
                 <p class="protocol-description">
-                    Admin paneline erişim için protokol şifresini girin:
+                    Yönetici modu için protokol şifresini girin:
                 </p>
                 <div class="password-field">
                     <input type="password" id="globalProtocolPassword" placeholder="Protokol şifresi..." maxlength="20">

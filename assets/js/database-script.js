@@ -901,9 +901,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         delBtn.innerHTML = '<i class="fas fa-trash"></i>';
                         delBtn.title = 'Sil';
                         delBtn.addEventListener('click', async () => {
-                            const ok = window.confirm(`'${ev.title}' etkinliğini silmek istediğinize emin misiniz?`);
-                            if (!ok) return;
                             try {
+                                const confirmed = await openConfirmModal({
+                                    title: 'Etkinliği Sil',
+                                    message: `'${ev.title}' etkinliğini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`,
+                                    confirmText: 'Evet, Sil',
+                                    cancelText: 'Vazgeç'
+                                });
+                                if (!confirmed) return;
                                 await deleteEventInBackend(ev.id);
                                 if (typeof window.loadEventsFromBackend === 'function') { await window.loadEventsFromBackend(); }
                                 generateCalendar();
@@ -939,6 +944,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Modal altyapısını hazırla (ilk yüklemede)
         ensureDayEventsModal();
         ensureCreateEventModal();
+    // Onay modali da hazır olsun
+    ensureConfirmModal();
     });
 
     const btnAllEvents = document.querySelector('.btn-all-events');
@@ -1171,6 +1178,86 @@ document.addEventListener('DOMContentLoaded', function() {
         
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    // Basit Onay Modalı (site içi)
+    function ensureConfirmModal() {
+        if (document.getElementById('confirmModal')) return;
+        const modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 520px;">
+                <div class="modal-header">
+                    <h3 id="confirmTitle">Onay</h3>
+                    <button class="modal-close" id="closeConfirmModal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="confirmBody"></div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" id="cancelConfirmBtn">İptal</button>
+                    <button class="btn-confirm" id="okConfirmBtn">Onayla</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        // Kapama davranışları
+        document.getElementById('closeConfirmModal').addEventListener('click', closeConfirmModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeConfirmModal(); });
+    }
+
+    function closeConfirmModal() {
+        const modal = document.getElementById('confirmModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+        // Klavye handler'ı temizle
+        document.removeEventListener('keydown', confirmKeydownHandler, true);
+    }
+
+    function confirmKeydownHandler(e) {
+        if (e.key === 'Escape') {
+            closeConfirmModal();
+        }
+    }
+
+    async function openConfirmModal({ title = 'Onay', message = '', confirmText = 'Onayla', cancelText = 'İptal' } = {}) {
+        ensureConfirmModal();
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const bodyEl = document.getElementById('confirmBody');
+        const okBtn = document.getElementById('okConfirmBtn');
+        const cancelBtn = document.getElementById('cancelConfirmBtn');
+
+        if (titleEl) titleEl.textContent = title;
+        if (bodyEl) bodyEl.textContent = message;
+        if (okBtn) okBtn.textContent = confirmText;
+        if (cancelBtn) cancelBtn.textContent = cancelText;
+
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+
+        return new Promise((resolve) => {
+            const cleanup = () => {
+                // Eski listener'ları kaldırmak için yeni buton klonu
+                const okClone = okBtn.cloneNode(true);
+                const cancelClone = cancelBtn.cloneNode(true);
+                okBtn.parentNode.replaceChild(okClone, okBtn);
+                cancelBtn.parentNode.replaceChild(cancelClone, cancelBtn);
+                document.removeEventListener('keydown', onKey, true);
+            };
+
+            const onConfirm = () => { cleanup(); closeConfirmModal(); resolve(true); };
+            const onCancel = () => { cleanup(); closeConfirmModal(); resolve(false); };
+            const onKey = (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); onConfirm(); }
+                if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+            };
+
+            // Yeni listener'ları ekle
+            document.getElementById('okConfirmBtn').addEventListener('click', onConfirm);
+            document.getElementById('cancelConfirmBtn').addEventListener('click', onCancel);
+            document.addEventListener('keydown', onKey, true);
+        });
     }
 
     // Export functions to global scope for external access

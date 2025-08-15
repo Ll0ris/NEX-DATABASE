@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('overlay');
     const profileSection = document.getElementById('profileSection');
     const profileDropdown = document.getElementById('profileDropdown');
-    const profileEditBtn = document.getElementById('profileEditBtn'); // ID düzeltildi
     const profileEditingPanel = document.getElementById('profileEditingPanel');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     const photoUpload = document.getElementById('photoUpload');
@@ -291,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then((res) => {
                     console.log('🛰️ Profil update response:', res);
                     if (!res || res.success !== true) {
-                        console.error('Profil güncelleme hatası:', res && res.error);
+                        console.error('Profil güncelleme hatası:', res?.error);
                     } else {
                         console.log('✅ Profil backend\'e kaydedildi! Hedef:', targetUser);
                     }
@@ -340,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then((res) => {
                 console.log('📦 Profil yanıtı:', res);
                 if (!res || res.success !== true || !res.user) {
-                    console.error('❌ Profil verisi alınamadı:', res && res.error);
+                    console.error('❌ Profil verisi alınamadı:', res?.error);
                         return;
                 }
                 
@@ -354,6 +353,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 setText(document.querySelector('.faculty'), (typeof data.faculty !== 'undefined') ? data.faculty : '');
                 setText(document.querySelector('.department'), (typeof data.department !== 'undefined') ? data.department : '');
                 setTextOrHide(document.querySelector('.status'), (typeof data.status !== 'undefined') ? String(data.status) : '');
+
+                // About section
+                const aboutSectionEl = document.getElementById('profileAboutSection');
+                const aboutEl = document.getElementById('aboutText');
+                if (aboutEl) {
+                    const aboutText = (typeof data.about !== 'undefined' ? data.about : (data.bio || '')) || '';
+                    const trimmed = aboutText.toString().trim();
+                    if (trimmed) {
+                        aboutEl.textContent = trimmed;
+                        if (aboutSectionEl) aboutSectionEl.style.display = '';
+                    } else {
+                        aboutEl.textContent = '';
+                        if (aboutSectionEl) aboutSectionEl.style.display = 'none';
+                    }
+                }
 
                 // Side panel
                 setText(document.querySelector('.side-profile-title'), (typeof data.title_prefix !== 'undefined') ? data.title_prefix : '');
@@ -393,6 +407,66 @@ document.addEventListener('DOMContentLoaded', function() {
                     showEditButtons();
                 }
 
+                // Hakkında edit butonu görünürlüğü
+                const aboutEditBtn = document.getElementById('aboutEditBtn');
+                const aboutEditContainer = document.getElementById('aboutEditContainer');
+                const aboutTextEl = document.getElementById('aboutText');
+                const aboutField = document.getElementById('aboutEditField');
+                const aboutSaveBtn = document.getElementById('aboutSaveBtn');
+                const aboutCancelBtn = document.getElementById('aboutCancelBtn');
+                if (aboutEditBtn) {
+                    if (isReadOnly && !isAdminMode) {
+                        aboutEditBtn.style.display = 'none';
+                    } else {
+                        aboutEditBtn.style.display = 'inline-flex';
+                        // Set click handler
+                        aboutEditBtn.onclick = function() {
+                            const currentText = aboutTextEl?.textContent || '';
+                            if (aboutField) aboutField.value = currentText;
+                            if (aboutEditContainer) aboutEditContainer.style.display = 'block';
+                            if (aboutTextEl) aboutTextEl.style.display = 'none';
+                        };
+                    }
+                }
+                if (aboutCancelBtn) {
+                    aboutCancelBtn.onclick = function() {
+                        if (aboutEditContainer) aboutEditContainer.style.display = 'none';
+                        if (aboutTextEl) aboutTextEl.style.display = '';
+                    };
+                }
+                if (aboutSaveBtn) {
+                    aboutSaveBtn.onclick = async function() {
+                        const newAbout = (aboutField?.value || '').trim();
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const viewUserParam = urlParams.get('viewUser');
+                        const targetUser = viewUserParam || localStorage.getItem('currentUserEmail');
+                        if (!targetUser) return;
+                        try {
+                            const payload = {
+                                action: 'update',
+                                targetUser,
+                                profile: { about: newAbout }
+                            };
+                            const res = await window.backendAPI.post('profile.php?action=update', payload);
+                            if (res?.success) {
+                                if (aboutTextEl) aboutTextEl.textContent = newAbout;
+                                showSuccessMessage('Hakkında bilgisi güncellendi');
+                                if (aboutEditContainer) aboutEditContainer.style.display = 'none';
+                                if (aboutTextEl) aboutTextEl.style.display = '';
+                                const aboutSectionEl = document.getElementById('profileAboutSection');
+                                if (aboutSectionEl) {
+                                    aboutSectionEl.style.display = newAbout ? '' : 'none';
+                                }
+                            } else {
+                                showErrorMessage('Güncelleme başarısız: ' + (res?.error || 'Bilinmeyen hata'));
+                            }
+                        } catch (err) {
+                            console.error('Hakkında kaydetme hatası:', err);
+                            showErrorMessage('Güncelleme sırasında hata oluştu');
+                        }
+                    };
+                }
+
                 // Eğer admin kendi profilindeyse ana Düzenle butonunu koyu kırmızı yap
                 if (isAdminUser && isSelfProfile) {
                     const profileEditBtnEl = document.getElementById('profileEditBtn');
@@ -428,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const res = await window.backendAPI.post('profile.php?action=update', payload);
             if (!res || res.success !== true) {
-                console.warn('Kullanıcı adı güncellemesi başarısız:', res && res.error);
+                console.warn('Kullanıcı adı güncellemesi başarısız:', res?.error);
             } else {
                 console.log('✅ Backend users name güncellendi:', newName);
                     if (typeof updateUserNameDisplay === 'function') {
@@ -463,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const res = await window.backendAPI.post('profile.php?action=photo', body);
-            if (res && res.success) {
+            if (res?.success) {
                 // Update side panel photo based on response
                 const sideProfilePhoto = document.querySelector('.side-profile-photo');
                 if (sideProfilePhoto) {
@@ -480,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateOrInsertImage(mainProfilePhoto, updatedUrl);
                 console.log('✅ Backend users collection photo_url güncellendi:', updatedUrl, 'Hedef:', targetUser);
                 } else {
-                console.warn('Fotoğraf güncelleme başarısız:', res && res.error);
+                console.warn('Fotoğraf güncelleme başarısız:', res?.error);
             }
         } catch (error) {
             console.error('Backend users photoUrl güncelleme hatası:', error);
