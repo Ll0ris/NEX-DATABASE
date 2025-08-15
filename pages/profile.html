@@ -12,6 +12,7 @@
     
     <link rel="stylesheet" href="../assets/css/database-style.css">
     <link rel="stylesheet" href="../assets/css/profile-style.css">
+    <link rel="stylesheet" href="../assets/css/works-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     
 </head>
@@ -479,12 +480,56 @@
 
         <!-- Works Content -->
         <div class="content-section" id="worksContent" style="display: none;">
-            <div class="content-header">
-                <h1>Çalışmalar</h1>
-                <p class="content-subtitle">Yayınlar, projeler ve akademik çalışmalarınız</p>
-            </div>
-            <div class="section-placeholder">
-                <p>Çalışmalar içeriği burada olacak...</p>
+            <div class="works-container">
+                <!-- Works Header -->
+                <div class="works-header">
+                    <h1 class="works-title">
+                        <i class="fas fa-newspaper"></i>
+                        Projeler ve Çalışmalar
+                    </h1>
+                    <div class="works-actions">
+                        <div class="works-search">
+                            <input type="text" id="worksSearchInput" placeholder="Çalışmalarda ara...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <button class="add-work-btn" id="addWorkBtn">
+                            <i class="fas fa-plus"></i>
+                            Yeni Çalışma Ekle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="works-loading" id="worksLoading" style="display: none;">
+                    <i class="fas fa-spinner"></i>
+                </div>
+
+                <!-- Works Grid -->
+                <div class="works-grid" id="worksGrid">
+                    <!-- Works will be dynamically loaded here -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="works-empty" id="worksEmpty" style="display: none;">
+                    <i class="fas fa-newspaper"></i>
+                    <h3>Henüz Çalışma Eklenmemiş</h3>
+                    <p>İlk çalışmanızı eklemek için yukarıdaki "Yeni Çalışma Ekle" butonunu kullanabilirsiniz.</p>
+                    <button class="add-work-btn" onclick="document.getElementById('addWorkBtn').click()">
+                        <i class="fas fa-plus"></i>
+                        İlk Çalışmanı Ekle
+                    </button>
+                </div>
+
+                <!-- Pagination -->
+                <div class="works-pagination" id="worksPagination" style="display: none;">
+                    <button class="pagination-btn" id="prevPageBtn" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="pagination-info" id="paginationInfo"></div>
+                    <button class="pagination-btn" id="nextPageBtn" disabled>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -899,8 +944,90 @@
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Work Modal -->
+    <div class="work-modal" id="workModal">
+        <div class="work-modal-content">
+            <div class="work-modal-header">
+                <h2 class="work-modal-title" id="workModalTitle">
+                    <i class="fas fa-plus"></i>
+                    Yeni Çalışma Ekle
+                </h2>
+                <button class="work-modal-close" id="workModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="work-modal-body">
+                <form class="work-form" id="workForm">
+                    <!-- Basic Information -->
+                    <div class="form-group">
+                        <label class="form-label" for="workName">Çalışma Adı *</label>
+                        <input type="text" id="workName" name="name" class="form-input" placeholder="Çalışmanızın başlığını girin" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="workSubject">Konu *</label>
+                        <textarea id="workSubject" name="subject" class="form-textarea" placeholder="Çalışmanın konusunu ve kısa açıklamasını girin" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="workLink">Bağlantı</label>
+                            <input type="url" id="workLink" name="link" class="form-input" placeholder="https://example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="workYear">Yıl *</label>
+                            <input type="number" id="workYear" name="year" class="form-input" min="1950" max="2030" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Authors Section -->
+                    <div class="authors-section">
+                        <h3 class="authors-section-title">
+                            <i class="fas fa-users"></i>
+                            Yazarlar
+                        </h3>
+                        
+                        <!-- Current User Info -->
+                        <div class="current-user-info">
+                            <div class="user-name" id="currentUserName">-</div>
+                            <div class="user-note">Ana yazar olarak eklenecek</div>
+                        </div>
+                        
+                        <!-- Other Authors -->
+                        <div class="author-search-section">
+                            <label class="form-label">Diğer Yazarlar</label>
+                            <div class="author-search">
+                                <input type="text" id="authorSearchInput" class="form-input" placeholder="Üye ara ve ekle...">
+                                <div class="author-suggestions" id="authorSuggestions"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Authors -->
+                        <div class="selected-authors" id="selectedAuthors"></div>
+                        
+                        <!-- Hidden input for authors -->
+                        <input type="hidden" id="authorsInput" name="authors">
+                    </div>
+                </form>
+            </div>
+            
+            <div class="work-modal-actions">
+                <button type="button" class="work-modal-btn btn-cancel" id="workModalCancel">
+                    <i class="fas fa-times"></i>
+                    İptal
+                </button>
+                <button type="submit" form="workForm" class="work-modal-btn btn-save" id="workModalSave">
+                    <i class="fas fa-save"></i>
+                    Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="../assets/js/backend-api.js"></script>
     <script src="../assets/js/global-features.js"></script>
+    <script src="../assets/js/works-script.js"></script>
     <script src="../assets/js/profile-script.js"></script>
 </body>
 </html>

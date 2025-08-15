@@ -170,6 +170,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(initResearchSystem, 100);
             }
             
+            // Initialize works system if switching to works section
+            if (sectionName === 'works') {
+                // Works manager handles its own admin/readonly state internally
+                setTimeout(() => {
+                    if (window.worksManager) {
+                        window.worksManager.loadWorks();
+                    }
+                }, 100);
+            }
+            
             // Initialize contact system if switching to contact section (read-only değilse veya admin modundaysa)
             if (sectionName === 'contact' && (!isReadOnly || isAdminMode)) {
                 setTimeout(initContactSystem, 100);
