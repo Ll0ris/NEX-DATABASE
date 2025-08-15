@@ -261,10 +261,6 @@
             <div class="modal-body">
                 <form id="addMemberForm" class="modal-form">
                     <div class="form-row" style="gap:12px;">
-                        <div class="form-group" style="flex:1;">
-                            <label for="am_name">Ad<span style="color:#b91c1c">*</span></label>
-                            <input id="am_name" type="text" name="name" placeholder="Örn: Ahmet" required>
-                        </div>
                         <div class="form-group" style="flex:2;">
                             <label for="am_fullName">Ad Soyad<span style="color:#b91c1c">*</span></label>
                             <input id="am_fullName" type="text" name="fullName" placeholder="Örn: Ahmet Yılmaz" required>
@@ -349,6 +345,9 @@
                         </div>
                     </div>
                 </form>
+                <div class="modal-body">
+                    <p><span style="color:#b91c1c">*</span> İşaretli alanlar zorunludur.</p>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" id="cancelAddMember">İptal</button>

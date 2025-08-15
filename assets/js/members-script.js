@@ -286,6 +286,23 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add Member kaydet
         const saveAdd = document.getElementById('saveAddMember');
         if (saveAdd) saveAdd.addEventListener('click', submitAddMemberForm);
+
+        // React to global admin mode changes
+        document.addEventListener('adminModeChanged', function(e) {
+            try {
+                const addBtn = document.getElementById('addMemberBtn');
+                const isAdminUser = ((localStorage.getItem('userRole') || '').toLowerCase() === 'admin');
+                const mode = localStorage.getItem('adminMode');
+                const hasAccess = localStorage.getItem('realAdminAccess') === 'true';
+                const inAdmin = isAdminUser && hasAccess && mode === 'admin';
+                if (addBtn) addBtn.style.display = inAdmin ? 'inline-flex' : 'none';
+                // Sync table admin-only column visibility via re-render
+                renderMemberTable();
+                updateSortIndicators();
+            } catch (err) {
+                console.warn('adminModeChanged handling warning:', err);
+            }
+        });
     }
 
     function filterMembers(searchTerm) {

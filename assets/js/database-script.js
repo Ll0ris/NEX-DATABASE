@@ -1090,7 +1090,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Admin Mode Dropdown İşlevselliği
-    initializeAdminDropdown();
+    // Commented out to prevent conflict with global admin dropdown system
+    // initializeAdminDropdown();
 
     // Tüm Etkinlikler Modalı
     function ensureAllEventsModal() {
@@ -1289,7 +1290,7 @@ function enableAdminMode() {
     }
     
     // Save admin state to localStorage ONLY after password validation
-    saveAdminState('admin', 'Admin Paneli');
+    saveAdminState('admin', 'Yönetici Modu');
     
     // Burada admin özelliklerini açabilirsiniz
     // Örnek: Ek butonları göster, edit modlarını aktif et vs.

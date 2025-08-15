@@ -827,14 +827,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isDatabase) {
         initThemeToggle();
         initNavigationActive();
+        // Initialize admin dropdown on database page - reduced delay since we disabled conflict
+        setTimeout(initAdminDropdown, 300);
     } else if (isProfile) {
         initThemeToggle();
-        initAdminDropdown();
+        setTimeout(initAdminDropdown, 100);
     } else {
         initTopBarFeatures();
         initNavigationActive();
         // Initialize admin dropdown on pages that include it (e.g., members.html)
-        initAdminDropdown();
+        setTimeout(initAdminDropdown, 100);
     }
 
     // Enforce admin visibility based on current local role (will refine after profile fetch)
@@ -866,7 +868,15 @@ function initAdminDropdown() {
     const dropdownMenu = document.getElementById('dropdownMenu');
     const dropdownOptions = document.querySelectorAll('.dropdown-option');
 
-    if (!dropdownTrigger || !dropdownMenu) return;
+    if (!dropdownTrigger || !dropdownMenu || dropdownOptions.length === 0) {
+        return;
+    }
+
+    // Prevent double initialization
+    if (dropdownTrigger.dataset.globalInit === 'true') {
+        return;
+    }
+    dropdownTrigger.dataset.globalInit = 'true';
 
     // Load saved admin state
     loadAdminState();
@@ -974,6 +984,19 @@ function selectAdminMode(mode, text) {
     
     // Profile sayfasında ise read-only butonları güncelle
     updateProfileButtonsOnAdminChange(mode);
+
+    // Broadcast mode change so pages can react (e.g., show/hide admin-only controls)
+    try {
+        const detail = {
+            mode,
+            isAdminUser: isCurrentUserAdmin(),
+            hasRealAdminAccess: localStorage.getItem('realAdminAccess') === 'true'
+        };
+        document.dispatchEvent(new CustomEvent('adminModeChanged', { detail }));
+    } catch (e) {
+        // Non-fatal
+        console.warn('adminModeChanged event dispatch warning:', e);
+    }
 }
 
 // Profile sayfasında admin modu değiştiğinde butonları güncelle
@@ -1028,15 +1051,17 @@ function loadAdminState() {
         // GitHub Pages'te ise her zaman güvenli mod
         savedMode = 'safe';
         savedText = 'Güvenli Mod';
-        localStorage.setItem('adminMode', 'safe');
-        localStorage.setItem('adminModeText', 'Güvenli Mod');
+    localStorage.setItem('adminMode', 'safe');
+    localStorage.setItem('adminModeText', 'Güvenli Mod');
     } else {
         // Localhost'ta ise kayıtlı durumu kullan
         savedMode = localStorage.getItem('adminMode') || 'safe';
         savedText = localStorage.getItem('adminModeText') || 'Güvenli Mod';
     }
     
-    selectAdminMode(savedMode, savedText);
+    // Ensure admin label uses consistent naming
+    const effectiveText = (savedMode === 'admin') ? 'Yönetici Modu' : (savedText || 'Güvenli Mod');
+    selectAdminMode(savedMode, effectiveText);
 }
 
 // Global Protocol Modal for Admin Access
@@ -1651,7 +1676,13 @@ function enforceAdminControlsVisibility() {
     ].filter(Boolean);
 
     containers.forEach(el => {
-        el.style.display = isAdmin ? '' : 'none';
+        // Always show the dropdown initially, hide only if explicitly not admin
+        // This prevents hiding before user profile is loaded
+        if (isAdmin || localStorage.getItem('userRole') === null || localStorage.getItem('userRole') === '') {
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
     });
 
     // Hide or show elements marked as admin-only (inline style fallback; CSS governs final state)
