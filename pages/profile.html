@@ -252,6 +252,77 @@
                     </div>
                 </div>
                 
+                <!-- Works Tracker Section -->
+                <div class="profile-tracker-section" id="profileTrackerSection">
+                    <div class="tracker-header">
+                        <h3 class="section-title">
+                            <i class="fas fa-chart-line"></i>
+                            Çalışma İstatistikleri
+                        </h3>
+                    </div>
+                    
+                    <div class="tracker-content">
+                        <!-- Main Stats -->
+                        <div class="tracker-stats">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number" id="totalWorksCount">-</div>
+                                    <div class="stat-label">Toplam Çalışma</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number" id="thisYearWorksCount">-</div>
+                                    <div class="stat-label">Bu Yıl</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-tachometer"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number" id="averagePerYear">-</div>
+                                    <div class="stat-label">Yıllık Ortalama</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Yearly Chart -->
+                        <div class="tracker-chart">
+                            <div class="chart-header">
+                                <h4>Yıllık Dağılım</h4>
+                                <div class="chart-legend">
+                                    <span class="legend-item">
+                                        <span class="legend-color"></span>
+                                        Çalışma Sayısı
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <div class="chart-bars" id="chartBars">
+                                    <!-- Chart bars will be generated dynamically -->
+                                </div>
+                                <div class="chart-labels" id="chartLabels">
+                                    <!-- Year labels will be generated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tracker-loading" id="trackerLoading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <span>İstatistikler yükleniyor...</span>
+                    </div>
+                </div>
+                
                 <!-- Hakkında Bölümü -->
                 <div class="profile-about-section" id="profileAboutSection" style="display: none;">
                     <div class="about-header">

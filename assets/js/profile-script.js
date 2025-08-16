@@ -493,6 +493,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Başarısız olsa bile içeriği görünür yap
                 const pc = document.getElementById('profileContent');
                 if (pc) pc.style.visibility = 'visible';
+                
+                // Dispatch profile loaded event for tracker
+                document.dispatchEvent(new CustomEvent('profileLoaded'));
             });
     }
 
@@ -3811,4 +3814,267 @@ function addViewOnlyIndicator(userIdentifier) {
         
         header.parentNode.insertBefore(indicator, header.nextSibling);
     }
+}
+
+// Works Tracker Functionality
+class WorksTracker {
+    constructor() {
+        this.currentProfileName = null;
+        this.worksData = [];
+        this.yearlyStats = {};
+    }
+
+    async init() {
+        // Load tracker when profile content is loaded
+        this.currentProfileName = await this.getCurrentProfileName();
+        if (this.currentProfileName) {
+            await this.loadWorksStats();
+        }
+    }
+
+    async getCurrentProfileName() {
+        try {
+            // Try to get from URL parameter first
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewUserParam = urlParams.get('viewUser');
+            
+            if (viewUserParam) {
+                // Get profile name from backend
+                const response = await window.backendAPI.get('profile.php', { 
+                    action: 'get', 
+                    viewUser: viewUserParam 
+                });
+                if (response?.success && response.user) {
+                    return response.user.full_name || response.user.fullName || response.user.name;
+                }
+            }
+            
+            // Fallback to DOM element
+            const nameElement = document.querySelector('.full-name');
+            if (nameElement && nameElement.textContent.trim()) {
+                return nameElement.textContent.trim();
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('Error getting profile name for tracker:', error);
+            return null;
+        }
+    }
+
+    async loadWorksStats() {
+        const trackerSection = document.getElementById('profileTrackerSection');
+        const loadingElement = document.getElementById('trackerLoading');
+        
+        if (!this.currentProfileName || !trackerSection) return;
+        
+        try {
+            // Show loading
+            if (loadingElement) loadingElement.style.display = 'flex';
+            
+            // Fetch works data
+            const response = await window.backendAPI.get('works.php', {
+                action: 'get',
+                fullName: this.currentProfileName
+            });
+            
+            if (response?.success) {
+                this.worksData = response.items || [];
+                this.processWorksData();
+                this.renderStats();
+                this.renderChart();
+                
+                // Show tracker section
+                trackerSection.style.display = 'block';
+            } else {
+                console.warn('Failed to load works stats:', response?.message);
+                // Hide tracker section if no data
+                trackerSection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading works stats:', error);
+            trackerSection.style.display = 'none';
+        } finally {
+            if (loadingElement) loadingElement.style.display = 'none';
+        }
+    }
+
+    processWorksData() {
+        const currentYear = new Date().getFullYear();
+        this.yearlyStats = {};
+        
+        // Process each work
+        this.worksData.forEach(work => {
+            // First try to use the "year" field from database
+            let year = null;
+            if (work.year) {
+                year = parseInt(work.year);
+            }
+            
+            // Fallback to extracting from dates if year field is not available
+            if (!year || isNaN(year)) {
+                year = this.extractYear(work.publication_date || work.date || work.created_at);
+            }
+            
+            if (year && year >= 2000 && year <= currentYear + 1) { // Reasonable year range
+                this.yearlyStats[year] = (this.yearlyStats[year] || 0) + 1;
+            }
+        });
+        
+        // Fill missing years with 0
+        const years = Object.keys(this.yearlyStats).map(Number);
+        if (years.length > 0) {
+            const minYear = Math.min(...years);
+            const maxYear = Math.max(...years, currentYear);
+            
+            for (let year = minYear; year <= maxYear; year++) {
+                if (!this.yearlyStats[year]) {
+                    this.yearlyStats[year] = 0;
+                }
+            }
+        }
+    }
+
+    extractYear(dateString) {
+        if (!dateString) return null;
+        
+        // Try different date formats
+        const patterns = [
+            /(\d{4})-\d{2}-\d{2}/, // YYYY-MM-DD
+            /(\d{4})\/\d{2}\/\d{2}/, // YYYY/MM/DD
+            /\b(\d{4})\b/, // Just year
+        ];
+        
+        for (const pattern of patterns) {
+            const match = dateString.toString().match(pattern);
+            if (match) {
+                const year = parseInt(match[1]);
+                if (year >= 1900 && year <= 2100) { // Sanity check
+                    return year;
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    renderStats() {
+        const totalWorks = this.worksData.length;
+        const currentYear = new Date().getFullYear();
+        const thisYearWorks = this.yearlyStats[currentYear] || 0;
+        
+        // Calculate average per year
+        const years = Object.keys(this.yearlyStats).map(Number);
+        const activeYears = years.filter(year => this.yearlyStats[year] > 0);
+        const averagePerYear = activeYears.length > 0 ? 
+            Math.round((totalWorks / activeYears.length) * 10) / 10 : 0;
+        
+        // Update DOM elements
+        this.updateStatElement('totalWorksCount', totalWorks);
+        this.updateStatElement('thisYearWorksCount', thisYearWorks);
+        this.updateStatElement('averagePerYear', averagePerYear);
+    }
+
+    updateStatElement(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            // Animate number change
+            this.animateNumber(element, value);
+        }
+    }
+
+    animateNumber(element, targetValue) {
+        const startValue = parseInt(element.textContent) || 0;
+        const duration = 1000; // 1 second
+        const startTime = performance.now();
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function for smooth animation
+            const easedProgress = 1 - Math.pow(1 - progress, 3);
+            const currentValue = Math.round(startValue + (targetValue - startValue) * easedProgress);
+            
+            element.textContent = currentValue;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+
+    renderChart() {
+        const chartBars = document.getElementById('chartBars');
+        const chartLabels = document.getElementById('chartLabels');
+        
+        if (!chartBars || !chartLabels) return;
+        
+        // Clear existing content
+        chartBars.innerHTML = '';
+        chartLabels.innerHTML = '';
+        
+        const years = Object.keys(this.yearlyStats).map(Number).sort();
+        if (years.length === 0) return;
+        
+        const maxValue = Math.max(...Object.values(this.yearlyStats));
+        if (maxValue === 0) return;
+        
+        // Limit to last 6 years or available years
+        const displayYears = years.slice(-6);
+        
+        displayYears.forEach(year => {
+            const count = this.yearlyStats[year] || 0;
+            const percentage = maxValue > 0 ? (count / maxValue) * 100 : 0;
+            
+            // Create bar
+            const bar = document.createElement('div');
+            bar.className = 'chart-bar';
+            bar.style.height = `${Math.max(percentage, 5)}%`; // Minimum 5% height for visibility
+            
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'chart-bar-tooltip';
+            tooltip.textContent = `${year}: ${count} çalışma`;
+            bar.appendChild(tooltip);
+            
+            chartBars.appendChild(bar);
+            
+            // Create label
+            const label = document.createElement('div');
+            label.className = 'chart-label';
+            label.textContent = year;
+            chartLabels.appendChild(label);
+        });
+        
+        // Add animation delay to bars
+        const bars = chartBars.querySelectorAll('.chart-bar');
+        bars.forEach((bar, index) => {
+            bar.style.animationDelay = `${index * 100}ms`;
+            bar.style.opacity = '0';
+            bar.style.transform = 'scaleY(0)';
+            
+            // Trigger animation
+            setTimeout(() => {
+                bar.style.transition = 'all 0.6s ease';
+                bar.style.opacity = '1';
+                bar.style.transform = 'scaleY(1)';
+            }, index * 100);
+        });
+    }
+}
+
+// Initialize works tracker
+const worksTracker = new WorksTracker();
+
+// Load tracker data when profile loads
+document.addEventListener('profileLoaded', () => {
+    worksTracker.init();
+});
+
+// Also try to load immediately if profile is already loaded
+if (document.querySelector('.full-name')?.textContent?.trim()) {
+    worksTracker.init();
 }
