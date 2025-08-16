@@ -514,10 +514,6 @@
                     <i class="fas fa-newspaper"></i>
                     <h3>Henüz Çalışma Eklenmemiş</h3>
                     <p>İlk çalışmanızı eklemek için yukarıdaki "Yeni Çalışma Ekle" butonunu kullanabilirsiniz.</p>
-                    <button class="add-work-btn" onclick="document.getElementById('addWorkBtn').click()">
-                        <i class="fas fa-plus"></i>
-                        İlk Çalışmanı Ekle
-                    </button>
                 </div>
 
                 <!-- Pagination -->
@@ -997,9 +993,12 @@
                         <!-- Other Authors -->
                         <div class="author-search-section">
                             <label class="form-label">Diğer Yazarlar</label>
-                            <div class="author-search">
-                                <input type="text" id="authorSearchInput" class="form-input" placeholder="Üye ara ve ekle...">
-                                <div class="author-suggestions" id="authorSuggestions"></div>
+                            <div class="author-actions-row">
+                                <button type="button" class="work-modal-btn btn-cancel" id="openAuthorsBtn">
+                                    <i class="fas fa-user-plus"></i>
+                                    Yazarları Seç
+                                </button>
+                                <div class="authors-summary" id="authorsSummary">0 yazar seçildi</div>
                             </div>
                         </div>
                         
@@ -1020,6 +1019,43 @@
                 <button type="submit" form="workForm" class="work-modal-btn btn-save" id="workModalSave">
                     <i class="fas fa-save"></i>
                     Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authors Modal -->
+    <div class="work-modal" id="authorsModal">
+        <div class="work-modal-content">
+            <div class="work-modal-header">
+                <h2 class="work-modal-title">
+                    <i class="fas fa-users"></i>
+                    Yazarları Seç
+                </h2>
+                <button class="work-modal-close" id="authorsModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="work-modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="authorsModalSearch">Üye Ara</label>
+                    <input type="text" id="authorsModalSearch" class="form-input" placeholder="İsim, kurum...">
+                </div>
+
+                <div class="authors-modal-selected" id="authorsModalSelected"></div>
+
+                <div class="authors-modal-list" id="authorsModalList"></div>
+            </div>
+
+            <div class="work-modal-actions">
+                <button type="button" class="work-modal-btn btn-cancel" id="authorsModalCancel">
+                    <i class="fas fa-times"></i>
+                    İptal
+                </button>
+                <button type="button" class="work-modal-btn btn-save" id="authorsModalSave">
+                    <i class="fas fa-check"></i>
+                    Seçimi Kaydet
                 </button>
             </div>
         </div>

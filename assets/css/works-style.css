@@ -127,7 +127,7 @@
 
 .work-header {
     display: flex;
-    justify-content: between;
+    justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 16px;
     gap: 15px;
@@ -171,8 +171,9 @@
 
 .work-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
+    align-items: center;
 }
 
 .work-action-btn {
@@ -186,6 +187,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+/* Reset global .delete-btn absolute rules inside Works cards */
+.work-card .work-actions .work-action-btn.delete-btn,
+.work-card .work-actions .work-action-btn.edit-btn {
+    position: static;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    display: flex;
+}
+
+.work-card .work-actions .work-action-btn.delete-btn {
+    background: none;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     width: 36px;
     height: 36px;
 }
@@ -289,7 +310,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
-    z-index: 1000;
+    z-index: 9999;
     backdrop-filter: blur(5px);
 }
 
@@ -301,7 +322,7 @@
 }
 
 .work-modal-content {
-    background: var(--card-bg);
+    background: var(--card-bg, #fff);
     border-radius: 20px;
     width: 90%;
     max-width: 700px;
@@ -315,10 +336,9 @@
     padding: 25px 30px 0;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 0;
-    position: sticky;
-    top: 0;
-    background: var(--card-bg);
-    z-index: 1;
+    position: relative; /* removed sticky to avoid overlapping content while scrolling */
+    top: auto;
+    background: var(--card-bg, #fff);
 }
 
 .work-modal-title {
@@ -356,6 +376,7 @@
 
 .work-modal-body {
     padding: 30px;
+    background: var(--card-bg, #fff);
 }
 
 .work-form {
@@ -385,7 +406,7 @@
     padding: 12px 16px;
     border: 2px solid var(--border-color);
     border-radius: 12px;
-    background: var(--input-bg);
+    background: var(--input-bg, #fff);
     color: var(--text-color);
     font-size: 1rem;
     transition: all 0.3s ease;
@@ -409,7 +430,7 @@
 
 /* Authors Selection */
 .authors-section {
-    background: var(--hover-bg);
+    background: var(--hover-bg, #f6f7fb);
     padding: 20px;
     border-radius: 12px;
     border: 1px solid var(--border-color);
@@ -426,7 +447,7 @@
 }
 
 .current-user-info {
-    background: var(--card-bg);
+    background: var(--card-bg, #fff);
     padding: 12px 16px;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -458,7 +479,7 @@
     padding: 12px 16px;
     border: 2px solid var(--border-color);
     border-radius: 10px;
-    background: var(--card-bg);
+    background: var(--card-bg, #fff);
     color: var(--text-color);
     font-size: 1rem;
 }
@@ -473,7 +494,7 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--card-bg);
+    background: var(--card-bg, #fff);
     border: 1px solid var(--border-color);
     border-top: none;
     border-radius: 0 0 10px 10px;
@@ -550,6 +571,79 @@
 
 .selected-author .remove-author:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* Authors Modal */
+.author-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.authors-summary {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.authors-modal-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.authors-modal-list {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--card-bg, #fff);
+    max-height: 320px;
+    overflow: auto;
+}
+
+.authors-modal-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.authors-modal-item:last-child {
+    border-bottom: none;
+}
+
+.authors-modal-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.authors-modal-name {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.authors-modal-institution {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.authors-modal-action {
+    min-width: 110px;
+}
+
+.authors-modal-action .toggle-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--hover-bg);
+    color: var(--text-color);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.authors-modal-action .toggle-select.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
 }
 
 /* Modal Actions */

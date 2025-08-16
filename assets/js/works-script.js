@@ -9,15 +9,17 @@ class WorksManager {
         this.totalPages = 1;
         this.itemsPerPage = 12;
         this.searchQuery = '';
-        
-        this.init();
+    // authors modal state
+    this.authorsAll = [];
+    this._authorsSearchTimer = null;
+    // async init will be called after DOMContentLoaded
     }
 
-    init() {
+    async init() {
         this.bindEvents();
-        this.loadCurrentUser();
+        await this.loadCurrentUser();
         this.checkAdminAccess();
-        this.loadWorks();
+        await this.loadWorks();
     }
 
     checkAdminAccess() {
@@ -31,10 +33,8 @@ class WorksManager {
         // Hide add buttons if in read-only mode and not admin
         if (isReadOnly && !isAdminMode) {
             const addWorkBtn = document.getElementById('addWorkBtn');
-            const emptyStateBtn = document.querySelector('.works-empty .add-work-btn');
             
             if (addWorkBtn) addWorkBtn.style.display = 'none';
-            if (emptyStateBtn) emptyStateBtn.style.display = 'none';
         }
         
         this.canEdit = !isReadOnly || isAdminMode;
@@ -47,6 +47,16 @@ class WorksManager {
         const workModalClose = document.getElementById('workModalClose');
         const workModalCancel = document.getElementById('workModalCancel');
         const workForm = document.getElementById('workForm');
+    // Authors modal controls
+    this.openAuthorsBtn = document.getElementById('openAuthorsBtn');
+    this.authorsModal = document.getElementById('authorsModal');
+    this.authorsModalClose = document.getElementById('authorsModalClose');
+    this.authorsModalCancel = document.getElementById('authorsModalCancel');
+    this.authorsModalSave = document.getElementById('authorsModalSave');
+    this.authorsModalSearch = document.getElementById('authorsModalSearch');
+    this.authorsModalList = document.getElementById('authorsModalList');
+    this.authorsModalSelected = document.getElementById('authorsModalSelected');
+    this.authorsSummary = document.getElementById('authorsSummary');
 
         if (addWorkBtn) {
             addWorkBtn.addEventListener('click', () => this.openWorkModal());
@@ -82,15 +92,27 @@ class WorksManager {
             });
         }
 
-        // Author search
-        const authorSearchInput = document.getElementById('authorSearchInput');
-        if (authorSearchInput) {
-            authorSearchInput.addEventListener('input', (e) => this.handleAuthorSearch(e));
-            authorSearchInput.addEventListener('focus', () => this.showAuthorSuggestions());
-            authorSearchInput.addEventListener('blur', () => {
-                // Delay hiding to allow clicking on suggestions
-                setTimeout(() => this.hideAuthorSuggestions(), 200);
+        // Authors modal open/close
+        if (this.openAuthorsBtn) {
+            this.openAuthorsBtn.addEventListener('click', () => this.openAuthorsModal());
+        }
+        if (this.authorsModalClose) {
+            this.authorsModalClose.addEventListener('click', () => this.closeAuthorsModal());
+        }
+        if (this.authorsModalCancel) {
+            this.authorsModalCancel.addEventListener('click', () => this.closeAuthorsModal());
+        }
+        if (this.authorsModal) {
+            this.authorsModal.addEventListener('click', (e) => {
+                if (e.target === this.authorsModal) this.closeAuthorsModal();
             });
+        }
+        if (this.authorsModalSave) {
+            this.authorsModalSave.addEventListener('click', () => this.saveAuthorsSelection());
+        }
+        if (this.authorsModalSearch) {
+            this.authorsModalSearch.addEventListener('input', () => this.searchAuthorsInModal());
+            this.authorsModalSearch.addEventListener('focus', () => this.searchAuthorsInModal());
         }
 
         // Pagination
@@ -113,34 +135,176 @@ class WorksManager {
         });
     }
 
+    openAuthorsModal() {
+        if (!this.authorsModal) return;
+        this.renderAuthorsModalSelected();
+        if (this.authorsModalSearch) {
+            this.authorsModalSearch.value = '';
+        }
+        this.searchAuthorsInModal();
+        this.authorsModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeAuthorsModal() {
+        if (!this.authorsModal) return;
+        this.authorsModal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    renderAuthorsModalSelected() {
+        if (!this.authorsModalSelected) return;
+        this.authorsModalSelected.innerHTML = this.selectedAuthors.map(a => `
+            <div class="selected-author">
+                <span>${this.escapeHtml(a.name)}</span>
+                <button type="button" class="remove-author" data-remove-id="${a.id}"><i class="fas fa-times"></i></button>
+            </div>
+        `).join('');
+        this.authorsModalSelected.querySelectorAll('.remove-author').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.getAttribute('data-remove-id'));
+                this.removeAuthor(id);
+                this.renderAuthorsModalSelected();
+                this.searchAuthorsInModal();
+            });
+        });
+        this.updateAuthorsSummary();
+    }
+
+    updateAuthorsSummary() {
+        if (this.authorsSummary) {
+            this.authorsSummary.textContent = `${this.selectedAuthors.length} yazar seçildi`;
+        }
+    }
+
+    async searchAuthorsInModal() {
+        const query = this.authorsModalSearch?.value?.trim() || '';
+        // debounce rapid typing
+        if (this._authorsSearchTimer) clearTimeout(this._authorsSearchTimer);
+        this._authorsSearchTimer = setTimeout(() => {
+            this.loadAuthorsList(query);
+        }, 250);
+    }
+
+    async loadAuthorsList(query) {
+        try {
+            const data = await window.backendAPI.get('users.php', {
+                action: 'list',
+                search: query || '',
+                limit: 100
+            });
+            const items = (data.success ? (data.items || []) : [])
+                .filter(u => !this.isSameId(u.id, this.currentUser?.id));
+            this.authorsAll = items;
+            const filtered = this.filterAuthorsLocal(items, query);
+            this.renderAuthorsModalList(filtered);
+        } catch (e) {
+            console.error('Error loading authors list:', e);
+            const filtered = this.filterAuthorsLocal(this.authorsAll || [], query);
+            this.renderAuthorsModalList(filtered);
+        }
+    }
+
+    filterAuthorsLocal(list, query) {
+        if (!query) return list;
+        const q = this.normalizeText(query);
+        return list.filter(u => {
+            const name = this.normalizeText(u.fullName || '');
+            const inst = this.normalizeText(u.institution || '');
+            return name.includes(q) || inst.includes(q);
+        });
+    }
+
+    normalizeText(text) {
+        try {
+            return (text || '').toString().toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        } catch (_) {
+            return (text || '').toString().toLowerCase();
+        }
+    }
+
+    // ID helpers to avoid string/number mismatch issues
+    isSameId(a, b) {
+        if (a === undefined || a === null || b === undefined || b === null) return false;
+        return String(a) === String(b);
+    }
+
+    renderAuthorsModalList(users) {
+        if (!this.authorsModalList) return;
+        if (!users || users.length === 0) {
+            this.authorsModalList.innerHTML = '<div class="authors-modal-item">Kullanıcı bulunamadı</div>';
+            return;
+        }
+        this.authorsModalList.innerHTML = users.map(u => {
+            const selected = this.selectedAuthors.some(a => this.isSameId(a.id, u.id));
+            return `
+                <div class="authors-modal-item">
+                    <div class="authors-modal-info">
+                        <div class="authors-modal-name">${this.escapeHtml(u.fullName)}</div>
+                        <div class="authors-modal-institution">${this.escapeHtml(u.institution || 'Kurum belirtilmemiş')}</div>
+                    </div>
+                    <div class="authors-modal-action">
+                        <button type="button" class="toggle-select ${selected ? 'active' : ''}" data-user-id="${u.id}" data-user-name="${this.escapeHtml(u.fullName)}">
+                            ${selected ? 'Seçildi' : 'Seç'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    this.authorsModalList.querySelectorAll('.toggle-select').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.getAttribute('data-user-id'));
+                const name = btn.getAttribute('data-user-name');
+        const exists = this.selectedAuthors.some(a => this.isSameId(a.id, id));
+                if (exists) {
+                    this.removeAuthor(id);
+                } else {
+                    this.addAuthor(id, name);
+                }
+                this.renderAuthorsModalSelected();
+                this.searchAuthorsInModal();
+            });
+        });
+    }
+
+    saveAuthorsSelection() {
+        // Just close modal; authors already reflected in selectedAuthors
+        this.updateSelectedAuthors();
+        this.updateAuthorsSummary();
+        this.closeAuthorsModal();
+    }
+
     async loadCurrentUser() {
         try {
-            // URL parametrelerini kontrol et - hangi kullanıcının profilini görüntülediğimizi belirle
-            const urlParams = new URLSearchParams(window.location.search);
-            const viewUserParam = urlParams.get('viewUser');
-            const targetUser = viewUserParam || localStorage.getItem('currentUserEmail');
-            
-            if (!targetUser) {
-                console.warn('Target user not found');
-                return;
-            }
+            // Prefer session-based current user to avoid relying on localStorage
+            const data = await window.backendAPI.get('users.php', { action: 'profile' });
 
-            const response = await window.backendAPI.get('profile.php', { 
-                action: 'get', 
-                viewUser: targetUser 
-            });
-
-            if (response.success && response.profile) {
+            // Backend returns { success: true, item: { ...user } }
+            // but support { user } as well for compatibility
+            if (data?.success && (data.item || data.user)) {
+                const user = data.item || data.user;
                 const currentUserNameEl = document.getElementById('currentUserName');
                 if (currentUserNameEl) {
-                    currentUserNameEl.textContent = response.profile.fullName || 'Mevcut Kullanıcı';
+                    currentUserNameEl.textContent = user.fullName || 'Mevcut Kullanıcı';
                 }
-                
-                // Store user info for later use
-                this.currentUser = response.profile;
+                this.currentUser = user;
+                // cache email for other parts of the app if needed
+                if (user.email) {
+                    try {
+                        localStorage.setItem('currentUserEmail', user.email);
+                    } catch (e) {
+                        console.debug('Could not cache currentUserEmail:', e?.message || e);
+                    }
+                }
+            } else {
+                console.warn('Current user could not be determined from session');
+                this.currentUser = null;
             }
         } catch (error) {
             console.error('Error loading current user:', error);
+            this.currentUser = null;
         }
     }
 
@@ -152,6 +316,8 @@ class WorksManager {
             if (!this.currentUser) {
                 await this.loadCurrentUser();
             }
+
+            console.log('Current User:', this.currentUser);
             
             if (!this.currentUser?.id) {
                 throw new Error('Unable to get user information');
@@ -455,9 +621,15 @@ class WorksManager {
     async handleAuthorSearch(e) {
         const query = e.target.value.trim();
         
-        if (query.length < 2) {
-            this.hideAuthorSuggestions();
+        // If empty, show default suggestions
+        if (query.length === 0) {
+            this.loadDefaultAuthorSuggestions();
             return;
+        }
+
+        // Require at least 2 chars to search
+        if (query.length < 2) {
+            return; // keep current list visible
         }
 
         try {
@@ -475,15 +647,37 @@ class WorksManager {
         }
     }
 
+    async loadDefaultAuthorSuggestions() {
+        try {
+            const data = await window.backendAPI.get('users.php', {
+                action: 'list',
+                search: '',
+                limit: 10
+            });
+            if (data.success) {
+                this.showAuthorSuggestions(data.items || []);
+            } else {
+                this.showAuthorSuggestions([]);
+            }
+        } catch (error) {
+            console.error('Error loading default author suggestions:', error);
+            this.showAuthorSuggestions([]);
+        }
+    }
+
     showAuthorSuggestions(users = []) {
         const suggestions = document.getElementById('authorSuggestions');
         if (!suggestions) return;
 
-        if (users.length === 0) {
+        // filter out already-selected and current user
+        const filtered = users
+            .filter(user => !this.selectedAuthors.find(author => this.isSameId(author.id, user.id)))
+            .filter(user => !this.isSameId(user.id, this.currentUser?.id));
+
+        if (filtered.length === 0) {
             suggestions.innerHTML = '<div class="author-suggestion">Kullanıcı bulunamadı</div>';
         } else {
-            suggestions.innerHTML = users
-                .filter(user => !this.selectedAuthors.find(author => author.id === user.id))
+            suggestions.innerHTML = filtered
                 .map(user => `
                     <div class="author-suggestion" data-user-id="${user.id}" data-user-name="${this.escapeHtml(user.fullName)}">
                         <div class="suggestion-name">${this.escapeHtml(user.fullName)}</div>
@@ -515,7 +709,7 @@ class WorksManager {
     }
 
     addAuthor(userId, userName) {
-        if (this.selectedAuthors.find(author => author.id === userId)) {
+    if (this.selectedAuthors.find(author => this.isSameId(author.id, userId))) {
             return; // Already added
         }
 
@@ -531,7 +725,7 @@ class WorksManager {
     }
 
     removeAuthor(userId) {
-        this.selectedAuthors = this.selectedAuthors.filter(author => author.id !== userId);
+    this.selectedAuthors = this.selectedAuthors.filter(author => !this.isSameId(author.id, userId));
         this.updateSelectedAuthors();
     }
 
@@ -633,12 +827,12 @@ class WorksManager {
 // Initialize works manager when DOM is loaded
 let worksManager;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Only initialize if we're on a page with works content
     if (document.getElementById('worksContent')) {
         worksManager = new WorksManager();
+        await worksManager.init();
+        // expose after init so onclicks can see it
+        window.worksManager = worksManager;
     }
 });
-
-// Make it global for onclick handlers
-window.worksManager = worksManager;
