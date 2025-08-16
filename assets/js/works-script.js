@@ -216,18 +216,31 @@ class WorksManager {
     }
 
     normalizeText(text) {
-        try {
-            return (text || '').toString().toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        } catch (_) {
-            return (text || '').toString().toLowerCase();
+        const base = (text || '').toString().toLowerCase();
+        if (typeof ''.normalize === 'function') {
+            return base.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         }
+        return base;
     }
 
     // ID helpers to avoid string/number mismatch issues
     isSameId(a, b) {
         if (a === undefined || a === null || b === undefined || b === null) return false;
         return String(a) === String(b);
+    }
+
+    normalizeName(name) {
+        return this.normalizeText((name || '').toString().trim());
+    }
+
+    authorMatchesUser(author, user) {
+        if (!author || !user) return false;
+        if (this.isSameId(author.id, user.id)) return true;
+        return this.normalizeName(author.name) === this.normalizeName(user.fullName || '');
+    }
+
+    findSelectedAuthorByUser(user) {
+        return this.selectedAuthors.find(a => this.authorMatchesUser(a, user));
     }
 
     renderAuthorsModalList(users) {
@@ -237,7 +250,7 @@ class WorksManager {
             return;
         }
         this.authorsModalList.innerHTML = users.map(u => {
-            const selected = this.selectedAuthors.some(a => this.isSameId(a.id, u.id));
+            const selected = !!this.findSelectedAuthorByUser(u);
             return `
                 <div class="authors-modal-item">
                     <div class="authors-modal-info">
@@ -255,14 +268,11 @@ class WorksManager {
 
     this.authorsModalList.querySelectorAll('.toggle-select').forEach(btn => {
             btn.addEventListener('click', () => {
-                const id = parseInt(btn.getAttribute('data-user-id'));
+                const idRaw = btn.getAttribute('data-user-id');
+                const id = idRaw ? parseInt(idRaw, 10) : null;
                 const name = btn.getAttribute('data-user-name');
-        const exists = this.selectedAuthors.some(a => this.isSameId(a.id, id));
-                if (exists) {
-                    this.removeAuthor(id);
-                } else {
-                    this.addAuthor(id, name);
-                }
+                const exists = !!this.selectedAuthors.find(a => this.isSameId(a.id, id) || this.normalizeName(a.name) === this.normalizeName(name));
+                if (exists) this.removeAuthorByKey(id, name); else this.addAuthor(id, name);
                 this.renderAuthorsModalSelected();
                 this.searchAuthorsInModal();
             });
@@ -508,8 +518,14 @@ class WorksManager {
         // Parse authors
         this.selectedAuthors = [];
         if (work.authors && work.authors.trim() !== '') {
-            // For now, just show as text since we need to implement user lookup
-            // In the future, we would parse this and match to user IDs
+            // authors saved as string: "Me, Author 1, Author 2"
+            const names = work.authors.split(',').map(s => s.trim()).filter(Boolean);
+            // Remove current user name if present (already implied as main author)
+            const currentUserNameEl = document.getElementById('currentUserName');
+            const me = currentUserNameEl ? currentUserNameEl.textContent.trim() : '';
+            const filtered = names.filter(n => this.normalizeName(n) && this.normalizeName(n) !== this.normalizeName(me));
+            // Seed selectedAuthors with name-only entries; IDs will be hydrated on modal open/list load
+            this.selectedAuthors = filtered.map(n => ({ id: null, name: n }));
         }
         this.updateSelectedAuthors();
     }
@@ -709,23 +725,32 @@ class WorksManager {
     }
 
     addAuthor(userId, userName) {
-    if (this.selectedAuthors.find(author => this.isSameId(author.id, userId))) {
-            return; // Already added
+        const normName = this.normalizeName(userName);
+        const existing = this.selectedAuthors.find(a => this.isSameId(a.id, userId) || this.normalizeName(a.name) === normName);
+        if (existing) {
+            // hydrate id/name if missing
+            if (existing.id == null && userId != null) existing.id = userId;
+            if (!existing.name && userName) existing.name = userName;
+        } else {
+            this.selectedAuthors.push({ id: userId ?? null, name: userName });
         }
-
-        this.selectedAuthors.push({ id: userId, name: userName });
         this.updateSelectedAuthors();
-        
-        // Clear search
         const searchInput = document.getElementById('authorSearchInput');
-        if (searchInput) {
-            searchInput.value = '';
-        }
+        if (searchInput) searchInput.value = '';
         this.hideAuthorSuggestions();
     }
 
     removeAuthor(userId) {
-    this.selectedAuthors = this.selectedAuthors.filter(author => !this.isSameId(author.id, userId));
+        this.removeAuthorByKey(userId, null);
+    }
+
+    removeAuthorByKey(userId, userName) {
+        const normName = userName ? this.normalizeName(userName) : null;
+        this.selectedAuthors = this.selectedAuthors.filter(author => {
+            const idMatch = this.isSameId(author.id, userId);
+            const nameMatch = normName ? this.normalizeName(author.name) === normName : false;
+            return !(idMatch || nameMatch);
+        });
         this.updateSelectedAuthors();
     }
 
@@ -734,18 +759,32 @@ class WorksManager {
         if (!container) return;
 
         container.innerHTML = this.selectedAuthors.map(author => `
-            <div class="selected-author">
+            <div class="selected-author" data-id="${author.id ?? ''}" data-name="${this.escapeHtml(author.name)}">
                 <span>${this.escapeHtml(author.name)}</span>
-                <button type="button" class="remove-author" onclick="worksManager.removeAuthor(${author.id})">
+                <button type="button" class="remove-author" data-id="${author.id ?? ''}" data-name="${this.escapeHtml(author.name)}">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         `).join('');
 
+        // bind removal
+        container.querySelectorAll('.remove-author').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idAttr = btn.getAttribute('data-id');
+                const id = idAttr ? parseInt(idAttr, 10) : null;
+                const name = btn.getAttribute('data-name');
+                this.removeAuthorByKey(id, name);
+            });
+        });
+
         // Update hidden input
         const authorsInput = document.getElementById('authorsInput');
         if (authorsInput) {
             authorsInput.value = this.getAuthorsString();
+        }
+        // Update summary if present
+        if (this.updateAuthorsSummary) {
+            this.updateAuthorsSummary();
         }
     }
 
@@ -790,28 +829,70 @@ class WorksManager {
     }
 
     showSuccess(message) {
-        // Use existing toast system if available
-        if (typeof showToast === 'function') {
-            showToast(message, 'success');
-        } else {
-            alert(message);
-        }
+        this.displayToast('success', message);
     }
 
     showError(message) {
-        // Use existing toast system if available
-        if (typeof showToast === 'function') {
-            showToast(message, 'error');
-        } else {
-            alert('Hata: ' + message);
+        this.displayToast('error', message);
+    }
+
+    displayToast(type, message) {
+        // Prefer global helper if provided elsewhere
+        try {
+            if (typeof window.showToast === 'function') {
+                // App-wide helper signature is (message, type)
+                window.showToast(message, type);
+                return;
+            }
+        } catch (err) {
+            console.warn('showToast helper threw:', err);
         }
+
+        // Ensure container exists
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        // Compute visuals
+        let icon = 'ℹ️';
+        let title = 'Bilgi';
+        if (type === 'success') {
+            icon = '✔️';
+            title = 'Başarılı';
+        } else if (type === 'error') {
+            icon = '❌';
+            title = 'Hata';
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`; // expects CSS variants .toast.success / .toast.error
+        toast.innerHTML = `
+            <div class="toast-icon">${icon}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${this.escapeHtml(message)}</div>
+            </div>
+            <button class="toast-close" aria-label="Kapat">×</button>
+        `;
+        container.appendChild(toast);
+
+        const removeToast = () => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+        };
+        const closeBtn = toast.querySelector('.toast-close');
+        if (closeBtn) closeBtn.addEventListener('click', removeToast);
+        setTimeout(removeToast, 3000);
     }
 
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
+    };
 
     isValidUrl(string) {
         try {
