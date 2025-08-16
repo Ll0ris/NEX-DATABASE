@@ -851,8 +851,8 @@
     }
 }
 
-/* Toast Notification System */
-.toast-container {
+/* Toast Notification System (namespaced for Works) */
+.works-toast-container {
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -863,7 +863,7 @@
     pointer-events: none;
 }
 
-.toast {
+.works-toast {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -880,41 +880,41 @@
     opacity: 0;
 }
 
-.toast.show {
+.works-toast.show {
     transform: translateX(0);
     opacity: 1;
 }
 
-.toast.hide {
+.works-toast.hide {
     transform: translateX(100%);
     opacity: 0;
 }
 
-.toast-icon {
+.works-toast-icon {
     font-size: 18px;
     min-width: 18px;
 }
 
-.toast-content {
+.works-toast-content {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.toast-title {
+.works-toast-title {
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--text-color);
 }
 
-.toast-message {
+.works-toast-message {
     font-size: 0.8rem;
     color: var(--text-color);
     opacity: 0.8;
 }
 
-.toast-close {
+.works-toast-close {
     background: none;
     border: none;
     cursor: pointer;
@@ -925,45 +925,45 @@
     padding: 2px;
 }
 
-.toast-close:hover {
+.works-toast-close:hover {
     opacity: 1;
 }
 
 /* Toast Types */
-.toast.success {
+.works-toast.success {
     border-left: 4px solid #10b981;
 }
 
-.toast.success .toast-icon {
+.works-toast.success .works-toast-icon {
     color: #10b981;
 }
 
-.toast.error {
+.works-toast.error {
     border-left: 4px solid #ef4444;
 }
 
-.toast.error .toast-icon {
+.works-toast.error .works-toast-icon {
     color: #ef4444;
 }
 
-.toast.warning {
+.works-toast.warning {
     border-left: 4px solid #f59e0b;
 }
 
-.toast.warning .toast-icon {
+.works-toast.warning .works-toast-icon {
     color: #f59e0b;
 }
 
-.toast.info {
+.works-toast.info {
     border-left: 4px solid #3b82f6;
 }
 
-.toast.info .toast-icon {
+.works-toast.info .works-toast-icon {
     color: #3b82f6;
 }
 
 /* Dark theme toast */
-[data-theme="dark"] .toast {
+[data-theme="dark"] .works-toast {
     background: #2d2d2d;
     border-color: #404040;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
@@ -971,13 +971,13 @@
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-    .toast-container {
+    .works-toast-container {
         bottom: 10px;
         right: 10px;
         left: 10px;
     }
     
-    .toast {
+    .works-toast {
         min-width: auto;
         max-width: none;
     }

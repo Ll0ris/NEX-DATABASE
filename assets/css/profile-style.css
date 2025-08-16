@@ -64,22 +64,38 @@
     font-size: 0.9em;
 }
 
-.form-group input,
-.form-group select {
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    background: var(--input-bg);
-    color: var(--text-primary);
-    font-size: 0.9em;
-    transition: border-color 0.3s ease;
-}
+/* Prevent long text from stretching columns */
+.form-row .form-group { min-width: 0; }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Edit-mode specific tweaks to keep columns visually equal */
+.info-edit-mode .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    align-items: center;
+}
+
+.info-edit-mode .form-group { min-width: 0; }
+
+.info-edit-mode .form-group input,
+.info-edit-mode .form-group select {
+    height: 44px;
+    line-height: 44px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .info-edit-mode .form-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 .edit-actions {

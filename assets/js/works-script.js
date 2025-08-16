@@ -9,6 +9,9 @@ class WorksManager {
         this.totalPages = 1;
         this.itemsPerPage = 12;
         this.searchQuery = '';
+    // viewed profile cache
+    this.profileFullName = null;
+    this.profileEmail = null;
     // authors modal state
     this.authorsAll = [];
     this._authorsSearchTimer = null;
@@ -329,10 +332,17 @@ class WorksManager {
 
             console.log('Current User:', this.currentUser);
             
+            // Prefer fullName-based query so co-authored works appear too
+            const targetFullName = await this.getTargetFullName();
+            if (targetFullName) {
+                const ok = await this.loadWorksByFullName(targetFullName);
+                if (ok) return; // rendered
+                // fall back to user_id if fullName search failed
+            }
+
             if (!this.currentUser?.id) {
                 throw new Error('Unable to get user information');
             }
-            
             await this.loadUserWorks(this.currentUser.id);
         } catch (error) {
             console.error('Error loading works:', error);
@@ -340,6 +350,70 @@ class WorksManager {
         } finally {
             this.hideLoading();
         }
+    }
+
+    async getTargetFullName() {
+        try {
+            // If we've already resolved it, reuse
+            if (this.profileFullName && this.profileFullName.trim()) return this.profileFullName.trim();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewUserParam = urlParams.get('viewUser'); // email of viewed profile
+            const isReadOnly = urlParams.get('readOnly') === 'true';
+
+            // 1) If viewing someone (or read-only profile view), try DOM first
+            if (viewUserParam || isReadOnly) {
+                const nameFromDom = document.querySelector('.full-name')?.textContent?.trim();
+                if (nameFromDom) {
+                    this.profileFullName = nameFromDom;
+                    this.profileEmail = viewUserParam || null;
+                    return this.profileFullName;
+                }
+
+                // 2) Try backend profile endpoint to resolve full name
+                if (viewUserParam) {
+                    try {
+                        const res = await window.backendAPI.get('profile.php', { action: 'get', viewUser: viewUserParam });
+                        const user = res?.user;
+                        const fn = user?.full_name || user?.fullName || user?.name;
+                        if (fn) {
+                            this.profileFullName = fn.toString().trim();
+                            this.profileEmail = viewUserParam;
+                            return this.profileFullName;
+                        }
+                    } catch (e) {
+                        console.warn('Profile full name fetch failed:', e);
+                    }
+                }
+            }
+
+            // 3) Fallback to current user's full name if available
+            const cuName = this.currentUser?.full_name || this.currentUser?.fullName || this.currentUser?.name;
+            if (cuName && cuName.toString().trim()) {
+                this.profileFullName = cuName.toString().trim();
+                return this.profileFullName;
+            }
+        } catch (err) {
+            console.warn('getTargetFullName error:', err);
+        }
+        return null;
+    }
+
+    async loadWorksByFullName(fullName) {
+        try {
+            const response = await window.backendAPI.get('works.php', {
+                action: 'get',
+                fullName: fullName
+            });
+            if (response?.success) {
+                this.currentWorks = response.items || [];
+                this.renderWorks();
+                return true;
+            }
+        } catch (error) {
+            console.warn('FullName works fetch failed, will try user_id:', error?.message || error);
+        }
+        return false;
     }
 
     async loadUserWorks(userId) {
@@ -837,22 +911,13 @@ class WorksManager {
     }
 
     displayToast(type, message) {
-        // Prefer global helper if provided elsewhere
-        try {
-            if (typeof window.showToast === 'function') {
-                // App-wide helper signature is (message, type)
-                window.showToast(message, type);
-                return;
-            }
-        } catch (err) {
-            console.warn('showToast helper threw:', err);
-        }
+        // Works page uses its own toast namespace to avoid cross-page CSS conflicts
 
-        // Ensure container exists
-        let container = document.querySelector('.toast-container');
+        // Ensure container exists (namespaced)
+        let container = document.querySelector('.works-toast-container');
         if (!container) {
             container = document.createElement('div');
-            container.className = 'toast-container';
+            container.className = 'works-toast-container';
             document.body.appendChild(container);
         }
 
@@ -868,22 +933,26 @@ class WorksManager {
         }
 
         const toast = document.createElement('div');
-        toast.className = `toast ${type}`; // expects CSS variants .toast.success / .toast.error
+        toast.className = `works-toast ${type}`; // .works-toast.success / .works-toast.error
         toast.innerHTML = `
-            <div class="toast-icon">${icon}</div>
-            <div class="toast-content">
-                <div class="toast-title">${title}</div>
-                <div class="toast-message">${this.escapeHtml(message)}</div>
+            <div class="works-toast-icon">${icon}</div>
+            <div class="works-toast-content">
+                <div class="works-toast-title">${title}</div>
+                <div class="works-toast-message">${this.escapeHtml(message)}</div>
             </div>
-            <button class="toast-close" aria-label="Kapat">×</button>
+            <button class="works-toast-close" aria-label="Kapat">×</button>
         `;
         container.appendChild(toast);
 
+        // animate in
+        requestAnimationFrame(() => toast.classList.add('show'));
+
         const removeToast = () => {
-            toast.classList.add('fade-out');
+            toast.classList.remove('show');
+            toast.classList.add('hide');
             setTimeout(() => toast.remove(), 300);
         };
-        const closeBtn = toast.querySelector('.toast-close');
+        const closeBtn = toast.querySelector('.works-toast-close');
         if (closeBtn) closeBtn.addEventListener('click', removeToast);
         setTimeout(removeToast, 3000);
     }
