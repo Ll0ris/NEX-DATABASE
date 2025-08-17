@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Ayarlar</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
+    <link rel="shortcut icon" href="../favicon.ico">
+    
+    <!-- Theme Loader - Must be first to prevent flash -->
+    <script src="../assets/js/theme-loader.js"></script>
+    
+    <link rel="stylesheet" href="../assets/css/database-style.css">
+    <link rel="stylesheet" href="../assets/css/settings-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body class="settings-page">
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <!-- Sol Taraf -->
+        <div class="left-section">
+            <button type="button" class="hamburger-btn" id="hamburgerBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
+                <img src="../assets/images/logo.png" alt="NEX Logo" class="top-logo">
+                <div class="logo-text">
+                    <span class="top-title">NEX DATABASE</span>
+                    <span class="top-subtitle">FSAC - Yıldız Teknik Üniversitesi</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orta Bölüm - Admin Dropdown -->
+        <div class="center-section">
+            <div class="admin-dropdown" id="adminDropdown">
+                <div class="admin-dropdown-trigger" id="dropdownTrigger">
+                    <i class="fas fa-shield-alt mode-icon" id="modeIcon"></i>
+                    <span class="mode-text">Güvenli Mod</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-option active" data-mode="safe">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Güvenli Mod</span>
+                    </div>
+                    <div class="dropdown-option" data-mode="admin">
+                        <i class="fas fa-cog"></i>
+                        <span>Yönetici Modu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sağ Taraf -->
+        <div class="right-section">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-sun theme-icon"></i>
+            </div>
+            <div class="profile-section" id="profileSection">
+                <div class="profile-info">
+                    <div class="profile-name"></div>
+                    <div class="profile-rank">Sistem Yöneticisi</div>
+                </div>
+                <div class="profile-avatar">
+                    <i class="fas fa-user-circle top-profile-icon"></i>
+                </div>
+            </div>
+            
+            <!-- Profile Dropdown -->
+            <div class="profile-dropdown" id="profileDropdown">
+                <a href="profile.html" class="dropdown-item">
+                    <i class="fas fa-user dropdown-icon"></i>
+                    <span>Profilim</span>
+                </a>
+                <hr class="dropdown-divider">
+                <a href="#" class="dropdown-item logout" onclick="logout(); return false;">
+                    <i class="fas fa-sign-out-alt dropdown-icon"></i>
+                    <span>Çıkış</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="settings-container">
+            <!-- Settings Header -->
+            <div class="settings-header">
+                <div class="header-content">
+                    <button class="back-btn" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="header-title">
+                        <h1>
+                            <i class="fas fa-cog"></i>
+                            Ayarlar
+                        </h1>
+                        <p>Hesap bilgilerinizi yönetin ve güvenlik ayarlarınızı düzenleyin</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="settings-content">
+                <!-- Email Change Section -->
+                <div class="settings-section" id="emailSection">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-envelope"></i>
+                            <span>E-posta Değişimi</span>
+                        </div>
+                        <div class="section-subtitle">
+                            Hesabınızla ilişkilendirilmiş e-posta adresini değiştirin
+                        </div>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="current-email">
+                            <label>Mevcut E-posta</label>
+                            <div class="email-display" id="currentEmailDisplay">
+                                <span class="email-text">-</span>
+                                <span class="verified-badge">
+                                    <i class="fas fa-check-circle"></i>
+                                    Doğrulanmış
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Email Change Form -->
+                        <div class="change-form" id="emailChangeForm">
+                            <!-- Step 1: Verify Current Email -->
+                            <div class="form-step active" id="emailStep1">
+                                <h3>1. Mevcut E-postanızı Doğrulayın</h3>
+                                <p>Güvenlik amacıyla önce mevcut e-posta adresinize gönderilen kodu girmeniz gerekmektedir.</p>
+                                
+                                <button type="button" class="btn-primary" id="sendCurrentEmailCode">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Mevcut E-postaya Kod Gönder
+                                </button>
+                                
+                                <div class="code-input-group" id="currentEmailCodeGroup" style="display: none;">
+                                    <label for="currentEmailCode">Doğrulama Kodu</label>
+                                    <div class="code-input-wrapper">
+                                        <input type="text" id="currentEmailCode" placeholder="6 haneli kod" maxlength="6" pattern="[0-9]{6}">
+                                        <button type="button" class="btn-verify" id="verifyCurrentEmailCode">
+                                            <i class="fas fa-check"></i>
+                                            Doğrula
+                                        </button>
+                                    </div>
+                                    <div class="resend-code">
+                                        <span>Kod gelmedi mi? </span>
+                                        <button type="button" class="btn-link" id="resendCurrentEmailCode">Tekrar gönder</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Enter New Email -->
+                            <div class="form-step" id="emailStep2" style="display: none;">
+                                <h3>2. Yeni E-posta Adresini Girin</h3>
+                                <p>Kullanmak istediğiniz yeni e-posta adresini girin ve doğrulama kodunu bekleyin.</p>
+                                
+                                <div class="form-group">
+                                    <label for="newEmail">Yeni E-posta Adresi</label>
+                                    <input type="email" id="newEmail" placeholder="yeni@email.com" required>
+                                </div>
+                                
+                                <button type="button" class="btn-primary" id="sendNewEmailCode">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Yeni E-postaya Kod Gönder
+                                </button>
+                                
+                                <div class="code-input-group" id="newEmailCodeGroup" style="display: none;">
+                                    <label for="newEmailCode">Doğrulama Kodu</label>
+                                    <div class="code-input-wrapper">
+                                        <input type="text" id="newEmailCode" placeholder="6 haneli kod" maxlength="6" pattern="[0-9]{6}">
+                                        <button type="button" class="btn-success" id="changeEmail">
+                                            <i class="fas fa-save"></i>
+                                            E-postayı Değiştir
+                                        </button>
+                                    </div>
+                                    <div class="resend-code">
+                                        <span>Kod gelmedi mi? </span>
+                                        <button type="button" class="btn-link" id="resendNewEmailCode">Tekrar gönder</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reset Button -->
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="resetEmailForm">
+                                    <i class="fas fa-undo"></i>
+                                    Baştan Başla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Change Section -->
+                <div class="settings-section" id="passwordSection">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-lock"></i>
+                            <span>Şifre Değişimi</span>
+                        </div>
+                        <div class="section-subtitle">
+                            Hesabınızın güvenliği için şifrenizi düzenli olarak değiştirin
+                        </div>
+                    </div>
+                    
+                    <div class="section-content">
+                        <!-- Password Change Form -->
+                        <div class="change-form" id="passwordChangeForm">
+                            <!-- Step 1: Verify Current Password -->
+                            <div class="form-step active" id="passwordStep1">
+                                <h3>1. Mevcut Şifrenizi Doğrulayın</h3>
+                                <p>Güvenlik amacıyla önce mevcut şifrenizi girmeniz gerekmektedir.</p>
+                                
+                                <div class="form-group">
+                                    <label for="currentPassword">Mevcut Şifre</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="currentPassword" placeholder="Mevcut şifrenizi girin" required>
+                                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('currentPassword')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="btn-primary" id="validateCurrentPassword">
+                                    <i class="fas fa-check"></i>
+                                    Şifreyi Doğrula
+                                </button>
+                            </div>
+
+                            <!-- Step 2: Enter New Password -->
+                            <div class="form-step" id="passwordStep2" style="display: none;">
+                                <h3>2. Yeni Şifrenizi Belirleyin</h3>
+                                <p>Güçlü bir şifre seçin ve e-posta adresinize gönderilen doğrulama kodunu bekleyin.</p>
+                                
+                                <div class="form-group">
+                                    <label for="newPassword">Yeni Şifre</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="newPassword" placeholder="Yeni şifrenizi girin" required>
+                                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('newPassword')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-requirements">
+                                        <ul id="passwordRequirements">
+                                            <li data-rule="length">En az 8 karakter</li>
+                                            <li data-rule="uppercase">En az 1 büyük harf</li>
+                                            <li data-rule="lowercase">En az 1 küçük harf</li>
+                                            <li data-rule="number">En az 1 rakam</li>
+                                            <li data-rule="special">En az 1 özel karakter</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="confirmPassword">Yeni Şifre (Tekrar)</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="confirmPassword" placeholder="Yeni şifrenizi tekrar girin" required>
+                                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirmPassword')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="btn-primary" id="sendPasswordChangeCode">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Doğrulama Kodu Gönder
+                                </button>
+                                
+                                <div class="code-input-group" id="passwordCodeGroup" style="display: none;">
+                                    <label for="passwordChangeCode">Doğrulama Kodu</label>
+                                    <div class="code-input-wrapper">
+                                        <input type="text" id="passwordChangeCode" placeholder="6 haneli kod" maxlength="6" pattern="[0-9]{6}">
+                                        <button type="button" class="btn-success" id="changePassword">
+                                            <i class="fas fa-save"></i>
+                                            Şifreyi Değiştir
+                                        </button>
+                                    </div>
+                                    <div class="resend-code">
+                                        <span>Kod gelmedi mi? </span>
+                                        <button type="button" class="btn-link" id="resendPasswordChangeCode">Tekrar gönder</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reset Button -->
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="resetPasswordForm">
+                                    <i class="fas fa-undo"></i>
+                                    Baştan Başla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <span class="loading-text">İşleminiz gerçekleştiriliyor...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../assets/js/backend-api.js"></script>
+    <script src="../assets/js/global-features.js"></script>
+    <script src="../assets/js/settings-script.js"></script>
+</body>
+</html>
