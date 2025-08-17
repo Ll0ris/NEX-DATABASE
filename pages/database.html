@@ -114,7 +114,7 @@
             </a>
             <a href="canvas.html" class="nav-item">
                 <i class="fas fa-paint-brush nav-icon"></i>
-                <span>Kanvas</span>
+                <span>Canvas</span>
             </a>
             <a href="nex-feed.html" class="nav-item">
                 <i class="fas fa-comments nav-icon"></i>
@@ -171,7 +171,7 @@
 
                     <!-- Action Buttons -->
                     <div class="journal-actions">
-                        <button class="btn-about">
+                        <button class="btn-about" onclick="openJournalAboutModal()">
                             <i class="fas fa-info-circle"></i>
                             Hakkında
                         </button>
@@ -476,6 +476,41 @@
 
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Journal About Modal -->
+    <div class="journal-about-modal" id="journalAboutModal">
+        <div class="modal-overlay" onclick="closeJournalAboutModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-info-circle"></i>
+                    Journal Hakkında
+                </h3>
+                <button class="modal-close-btn" onclick="closeJournalAboutModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="journal-about-loading" id="journalAboutLoading">
+                    <div class="loading-spinner"></div>
+                    <span>Journal bilgileri yükleniyor...</span>
+                </div>
+                <div class="journal-about-content" id="journalAboutContent" style="display: none;">
+                    <div class="journal-about-text" id="journalAboutText"></div>
+                </div>
+                <div class="journal-about-error" id="journalAboutError" style="display: none;">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="error-message">Journal bilgileri yüklenirken bir hata oluştu.</div>
+                    <button class="retry-btn" onclick="loadJournalAbout()">
+                        <i class="fas fa-redo"></i>
+                        Tekrar Dene
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="../assets/js/backend-api.js"></script>
     <script src="../assets/js/database-script.js"></script>

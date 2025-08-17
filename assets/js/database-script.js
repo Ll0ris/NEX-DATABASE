@@ -2675,3 +2675,95 @@ if (typeof window !== 'undefined') {
 var isValidDateYMDSafe = window.isValidDateYMDSafe;
 var isValidTimeHHMMSafe = window.isValidTimeHHMMSafe;
 /* eslint-enable no-redeclare */
+
+// Journal About Modal Functions
+function openJournalAboutModal() {
+    const modal = document.getElementById('journalAboutModal');
+    if (modal) {
+        modal.classList.add('show');
+        loadJournalAbout();
+    }
+}
+
+function closeJournalAboutModal() {
+    const modal = document.getElementById('journalAboutModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+async function loadJournalAbout() {
+    const loadingEl = document.getElementById('journalAboutLoading');
+    const contentEl = document.getElementById('journalAboutContent');
+    const errorEl = document.getElementById('journalAboutError');
+    const textEl = document.getElementById('journalAboutText');
+
+    // Reset states
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (contentEl) contentEl.style.display = 'none';
+    if (errorEl) errorEl.style.display = 'none';
+
+    try {
+        // Get current journal ID
+        if (!currentJournal || !currentJournal.id) {
+            throw new Error('Journal ID bulunamadı');
+        }
+
+        console.log('Loading journal about for ID:', currentJournal.id);
+
+        // Call backend API
+        const response = await window.backendAPI.get('journals.php', {
+            action: 'get',
+            id: currentJournal.id
+        });
+        console.log(response);
+
+        if (response && response.success && response.journal) {
+            const aboutText = response.journal.about || '';
+
+            if (textEl) {
+                if (aboutText.trim()) {
+                    textEl.textContent = aboutText;
+                } else {
+                    textEl.innerHTML = '<em style="opacity: 0.6;">Bu journal için henüz açıklama eklenmemiş.</em>';
+                }
+            }
+
+            // Show content
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'block';
+        } else {
+            throw new Error(response?.message || 'Journal bilgileri alınamadı');
+        }
+    } catch (error) {
+        console.error('Journal about loading error:', error);
+        
+        // Show error
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'block';
+        
+        // Update error message if needed
+        const errorMsg = errorEl?.querySelector('.error-message');
+        if (errorMsg) {
+            errorMsg.textContent = error.message || 'Journal bilgileri yüklenirken bir hata oluştu.';
+        }
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('journalAboutModal');
+    if (modal && modal.classList.contains('show') && event.target === modal.querySelector('.modal-overlay')) {
+        closeJournalAboutModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('journalAboutModal');
+        if (modal && modal.classList.contains('show')) {
+            closeJournalAboutModal();
+        }
+    }
+});

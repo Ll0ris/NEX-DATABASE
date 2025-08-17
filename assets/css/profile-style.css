@@ -1965,7 +1965,6 @@
 
 .stat-label {
     font-size: 0.9rem;
-    color: var(--secondary-text);
     font-weight: 500;
 }
 
@@ -2928,4 +2927,55 @@
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* Add About Section Button */
+.add-about-section {
+    margin: 24px 0;
+    text-align: center;
+}
+
+.add-about-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    justify-content: center;
+}
+
+.add-about-btn:hover {
+    background: #4a1515;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.add-about-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.add-about-btn i {
+    font-size: 1.1em;
+}
+
+/* Dark mode için add about button */
+[data-theme="dark"] .add-about-btn {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .add-about-btn:hover {
+    background: #7f2d2d;
+    color: white;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }

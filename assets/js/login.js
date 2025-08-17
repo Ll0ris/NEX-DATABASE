@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Disable session timer for login page
     window.DISABLE_SESSION_TIMER = true;
     
-    resetToSafeMode();
     
     const form = document.querySelector('.login-form');
     const errorBubble = document.getElementById('errorBubble');

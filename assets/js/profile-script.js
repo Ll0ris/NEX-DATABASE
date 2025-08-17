@@ -367,15 +367,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 // About section
                 const aboutSectionEl = document.getElementById('profileAboutSection');
                 const aboutEl = document.getElementById('aboutText');
+                const addAboutSectionEl = document.getElementById('addAboutSection');
                 if (aboutEl) {
                     const aboutText = (typeof data.about !== 'undefined' ? data.about : (data.bio || '')) || '';
                     const trimmed = aboutText.toString().trim();
                     if (trimmed) {
                         aboutEl.textContent = trimmed;
                         if (aboutSectionEl) aboutSectionEl.style.display = '';
+                        if (addAboutSectionEl) addAboutSectionEl.style.display = 'none';
                     } else {
                         aboutEl.textContent = '';
                         if (aboutSectionEl) aboutSectionEl.style.display = 'none';
+                        // Show add about button only if:
+                        // 1. User can edit (not read-only or admin mode)
+                        // 2. It's their own profile OR they are in admin mode
+                        if (addAboutSectionEl) {
+                            const isReadOnly = data.readOnly === true || data.readOnly === 'true';
+                            const adminMode = localStorage.getItem('adminMode');
+                            const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+                            const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+                            const currentUserEmail = (localStorage.getItem('currentUserEmail') || '').toLowerCase();
+                            const isSelfProfile = !viewUserParam || (viewUserParam || '').toLowerCase() === currentUserEmail;
+                            
+                            // Show button only if user can edit AND (it's their own profile OR admin mode)
+                            const canEdit = !isReadOnly || isAdminMode;
+                            const hasPermission = isSelfProfile || isAdminMode;
+                            
+                            addAboutSectionEl.style.display = (canEdit && hasPermission) ? 'block' : 'none';
+                        }
                     }
                 }
 
@@ -425,9 +444,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const aboutSaveBtn = document.getElementById('aboutSaveBtn');
                 const aboutCancelBtn = document.getElementById('aboutCancelBtn');
                 if (aboutEditBtn) {
-                    if (isReadOnly && !isAdminMode) {
-                        aboutEditBtn.style.display = 'none';
-                    } else {
+                    // Show edit button only if:
+                    // 1. User can edit (not read-only or admin mode)
+                    // 2. It's their own profile OR they are in admin mode
+                    const canEdit = !isReadOnly || isAdminMode;
+                    const hasPermission = isSelfProfile || isAdminMode;
+                    
+                    if (canEdit && hasPermission) {
                         aboutEditBtn.style.display = 'inline-flex';
                         // Set click handler
                         aboutEditBtn.onclick = function() {
@@ -436,12 +459,28 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (aboutEditContainer) aboutEditContainer.style.display = 'block';
                             if (aboutTextEl) aboutTextEl.style.display = 'none';
                         };
+                    } else {
+                        aboutEditBtn.style.display = 'none';
                     }
                 }
                 if (aboutCancelBtn) {
                     aboutCancelBtn.onclick = function() {
                         if (aboutEditContainer) aboutEditContainer.style.display = 'none';
                         if (aboutTextEl) aboutTextEl.style.display = '';
+                        
+                        // Check if about text is empty and show add button if needed
+                        const currentAboutText = aboutTextEl?.textContent || '';
+                        if (!currentAboutText.trim()) {
+                            const aboutSectionEl = document.getElementById('profileAboutSection');
+                            const addAboutSectionEl = document.getElementById('addAboutSection');
+                            if (aboutSectionEl) aboutSectionEl.style.display = 'none';
+                            if (addAboutSectionEl) {
+                                // Same permission check as above
+                                const canEdit = !isReadOnly || isAdminMode;
+                                const hasPermission = isSelfProfile || isAdminMode;
+                                addAboutSectionEl.style.display = (canEdit && hasPermission) ? 'block' : 'none';
+                            }
+                        }
                     };
                 }
                 if (aboutSaveBtn) {
@@ -464,8 +503,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                 if (aboutEditContainer) aboutEditContainer.style.display = 'none';
                                 if (aboutTextEl) aboutTextEl.style.display = '';
                                 const aboutSectionEl = document.getElementById('profileAboutSection');
+                                const addAboutSectionEl = document.getElementById('addAboutSection');
                                 if (aboutSectionEl) {
                                     aboutSectionEl.style.display = newAbout ? '' : 'none';
+                                }
+                                if (addAboutSectionEl) {
+                                    addAboutSectionEl.style.display = newAbout ? 'none' : 'block';
                                 }
                             } else {
                                 showErrorMessage('Güncelleme başarısız: ' + (res?.error || 'Bilinmeyen hata'));
@@ -473,6 +516,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         } catch (err) {
                             console.error('Hakkında kaydetme hatası:', err);
                             showErrorMessage('Güncelleme sırasında hata oluştu');
+                        }
+                    };
+                }
+
+                // Add About button handler
+                const addAboutBtn = document.getElementById('addAboutBtn');
+                if (addAboutBtn) {
+                    addAboutBtn.onclick = function() {
+                        // Show the about section
+                        const aboutSectionEl = document.getElementById('profileAboutSection');
+                        const aboutEditContainer = document.getElementById('aboutEditContainer');
+                        const aboutTextEl = document.getElementById('aboutText');
+                        const aboutField = document.getElementById('aboutEditField');
+                        const addAboutSectionEl = document.getElementById('addAboutSection');
+                        
+                        if (aboutSectionEl) aboutSectionEl.style.display = 'block';
+                        if (addAboutSectionEl) addAboutSectionEl.style.display = 'none';
+                        if (aboutEditContainer) aboutEditContainer.style.display = 'block';
+                        if (aboutTextEl) aboutTextEl.style.display = 'none';
+                        if (aboutField) {
+                            aboutField.value = '';
+                            aboutField.focus();
                         }
                     };
                 }
