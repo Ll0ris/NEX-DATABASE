@@ -515,6 +515,142 @@
     }
 }
 
+/* Profile AGNO Section */
+.profile-agno-section {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: var(--shadow);
+}
+
+.agno-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+}
+
+.agno-icon {
+    background: linear-gradient(135deg, var(--primary-color), #e91e63);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+}
+
+.agno-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.agno-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.agno-value {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.agno-score {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.agno-max {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.agno-indicator {
+    width: 8px;
+    height: 40px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+/* AGNO Color Indicators */
+.agno-indicator.excellent {
+    background: linear-gradient(to top, #4caf50, #8bc34a);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+}
+
+.agno-indicator.very-good {
+    background: linear-gradient(to top, #2196f3, #03a9f4);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+}
+
+.agno-indicator.good {
+    background: linear-gradient(to top, #ff9800, #ffc107);
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+}
+
+.agno-indicator.satisfactory {
+    background: linear-gradient(to top, #ff5722, #f44336);
+    box-shadow: 0 2px 8px rgba(255, 87, 34, 0.4);
+}
+
+.agno-indicator.poor {
+    background: linear-gradient(to top, #9e9e9e, #607d8b);
+    box-shadow: 0 2px 8px rgba(158, 158, 158, 0.4);
+}
+
+/* Dark theme adjustments for AGNO */
+[data-theme="dark"] .agno-score {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .agno-label {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .agno-max {
+    color: #888888;
+}
+
+/* Responsive design for AGNO */
+@media (max-width: 768px) {
+    .agno-container {
+        gap: 12px;
+    }
+    
+    .agno-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .agno-score {
+        font-size: 1.6rem;
+    }
+    
+    .agno-max {
+        font-size: 1rem;
+    }
+    
+    .agno-indicator {
+        width: 6px;
+        height: 32px;
+    }
+}
+
 /* Profile About Section */
 .profile-about-section {
     background: var(--panel-bg);

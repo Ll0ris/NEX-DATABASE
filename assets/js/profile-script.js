@@ -4,7 +4,7 @@
 let originalFormData = {}; // Store original data for cancel functionality
 
 // Helper utilities for compact, safe DOM updates
-const PROFILE_ALLOWED_KEYS = ['name', 'fullName', 'institution', 'faculty', 'department', 'status', 'title_prefix', 'phone', 'photo_url'];
+const PROFILE_ALLOWED_KEYS = ['name', 'fullName', 'institution', 'faculty', 'department', 'status', 'title_prefix', 'phone', 'photo_url', 'agno', 'gpa'];
 
 function setText(element, text = '') {
     if (element) {
@@ -39,6 +39,14 @@ function updateOrInsertImage(container, url) {
     img.alt = 'Profile Photo';
     const defaultIcon = container.querySelector('.default-photo-icon');
     if (defaultIcon) defaultIcon.remove();
+}
+
+function getAgnoColorClass(agno) {
+    if (agno >= 3.5) return 'excellent';
+    if (agno >= 3.0) return 'very-good';
+    if (agno >= 2.5) return 'good';
+    if (agno >= 2.0) return 'satisfactory';
+    return 'poor';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -395,6 +403,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             addAboutSectionEl.style.display = (canEdit && hasPermission) ? 'block' : 'none';
                         }
+                    }
+                }
+
+                // AGNO section
+                const agnoSectionEl = document.getElementById('profileAgnoSection');
+                const agnoScoreEl = document.getElementById('agnoScore');
+                const agnoIndicatorEl = document.getElementById('agnoIndicator');
+                
+                if (agnoSectionEl && agnoScoreEl && agnoIndicatorEl) {
+                    const agnoValue = parseFloat(data.agno || data.gpa || 0);
+                    if (agnoValue > 0) {
+                        agnoScoreEl.textContent = agnoValue.toFixed(2);
+                        
+                        // Set color indicator based on AGNO value
+                        agnoIndicatorEl.className = 'agno-indicator ' + getAgnoColorClass(agnoValue);
+                        
+                        agnoSectionEl.style.display = '';
+                    } else {
+                        agnoSectionEl.style.display = 'none';
                     }
                 }
 
