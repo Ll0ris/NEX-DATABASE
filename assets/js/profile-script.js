@@ -49,6 +49,14 @@ function getAgnoColorClass(agno) {
     return 'poor';
 }
 
+// Auto-refresh functionality for better UX
+function refreshPageAfterUpdate(delay = 1500) {
+    setTimeout(() => {
+        console.log('🔄 Sayfa güncelleniyor...');
+        window.location.reload();
+    }, delay);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Hide profile content initially to prevent placeholder flash
     const profileContent = document.getElementById('profileContent');
@@ -311,6 +319,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.error('Profil güncelleme hatası:', res?.error);
                     } else {
                         console.log('✅ Profil backend\'e kaydedildi! Hedef:', targetUser);
+                        // Auto-refresh page after successful update
+                        refreshPageAfterUpdate();
                     }
                 })
                 .catch((err) => {
@@ -1175,6 +1185,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // This allows cancel to revert photo changes
         
         showSuccessMessage('Profil fotoğrafı güncellendi!');
+        
+        // Auto-refresh page after photo update
+        refreshPageAfterUpdate();
     }
     
     function removeProfilePhoto() {
@@ -2060,6 +2073,9 @@ function saveEducationItem(form) {
     
     // Eğitim sekmesini aç
     switchSection('education');
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function saveThesisItem(form) {
@@ -2081,6 +2097,9 @@ function saveThesisItem(form) {
     renderThesisItems();
     closeModal('thesis');
     saveEducationData(); // Save to localStorage
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function saveLanguageItem(form) {
@@ -2101,6 +2120,9 @@ function saveLanguageItem(form) {
     renderLanguageItems();
     closeModal('language');
     saveEducationData(); // Save to localStorage
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function deleteItem(type, id) {
@@ -2366,6 +2388,9 @@ function handleWorkAreaSubmit(e) {
     
     // Eğitim sekmesini aç
     switchSection('education');
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function handleInterestAreaSubmit(e) {
@@ -2396,6 +2421,9 @@ function handleInterestAreaSubmit(e) {
     
     // Eğitim sekmesini aç
     switchSection('education');
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 // Render functions for work areas and interest areas
@@ -2595,24 +2623,36 @@ function saveAddressData(data) {
     let addresses = JSON.parse(localStorage.getItem('addresses')) || [];
     addresses.push(data);
     localStorage.setItem('addresses', JSON.stringify(addresses));
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function saveEmailData(data) {
     let emails = JSON.parse(localStorage.getItem('emails')) || [];
     emails.push(data);
     localStorage.setItem('emails', JSON.stringify(emails));
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function savePhoneData(data) {
     let phones = JSON.parse(localStorage.getItem('phones')) || [];
     phones.push(data);
     localStorage.setItem('phones', JSON.stringify(phones));
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function saveLinkData(data) {
     let links = JSON.parse(localStorage.getItem('links')) || [];
     links.push(data);
     localStorage.setItem('links', JSON.stringify(links));
+    
+    // Auto-refresh page after update
+    refreshPageAfterUpdate();
 }
 
 function loadContactData() {

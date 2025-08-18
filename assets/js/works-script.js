@@ -657,6 +657,12 @@ class WorksManager {
                 this.showSuccess(this.editingWorkId ? 'Çalışma başarıyla güncellendi.' : 'Çalışma başarıyla eklendi.');
                 this.closeWorkModal();
                 this.loadWorks();
+                
+                // Auto-refresh page after successful work update
+                setTimeout(() => {
+                    console.log('🔄 Sayfa güncelleniyor...');
+                    window.location.reload();
+                }, 1500);
             } else {
                 throw new Error(data.error || 'İşlem başarısız');
             }
