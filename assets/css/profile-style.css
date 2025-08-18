@@ -763,9 +763,45 @@
 
 [data-theme="dark"] .form-group input,
 [data-theme="dark"] .form-group select {
-    background: #444;
-    border-color: #666;
-    color: #fff;
+    background: #374151;
+    color: white;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.2);
+}
+
+[data-theme="dark"] .form-group label {
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .modal-form {
+    background: #1f2937;
+}
+
+[data-theme="dark"] .modal-actions {
+    border-top-color: #4b5563;
+}
+
+[data-theme="dark"] .btn-cancel {
+    background: #4b5563;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .btn-cancel:hover {
+    background: #374151;
+}
+
+[data-theme="dark"] .btn-save {
+    background: var(--primary-color);
+    color: white;
+}
+
+[data-theme="dark"] .btn-save:hover {
+    background: #7a1315;
 }
 
 [data-theme="dark"] .cancel-basic-info-btn {
@@ -1476,22 +1512,6 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(93, 13, 14, 0.3);
 }
-
-/* Profile Editing Panel */
-.profile-editing-panel {
-    position: fixed;
-    right: -400px;
-    top: 60px;
-    width: 400px;
-    height: calc(100vh - 60px);
-    background: var(--panel-bg);
-    border-left: 1px solid var(--border-color);
-    transition: all 0.3s ease;
-    z-index: 1000;
-    overflow-y: auto;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-}
-
 .profile-editing-panel.open {
     right: 0;
 }
@@ -1513,26 +1533,6 @@
 
 .profile-side-panel.open {
     left: 0;
-}
-
-.profile-panel-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--secondary-bg);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.profile-panel-header h3 {
-    margin: 0;
-    color: var(--text-color);
-    font-size: 1.2rem;
-    font-weight: 600;
-}
-
-.profile-panel-content {
-    padding: 0;
 }
 
 /* Profil Fotoğrafı */
@@ -2092,18 +2092,6 @@
     border: 1px solid var(--border-color);
 }
 
-.stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     .profile-side-panel {
@@ -2607,6 +2595,8 @@
     box-shadow: 0 0 0 3px rgba(93, 13, 14, 0.1);
 }
 
+
+
 .modal-actions {
     display: flex;
     gap: 15px;
@@ -2791,13 +2781,6 @@
     justify-content: center;
     align-items: center;
 }
-
-.profile-page .admin-dropdown {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
 /* Edit Modal Styles */
 .edit-modal, .custom-form-modal {
     display: none;
@@ -2844,22 +2827,6 @@
         opacity: 1;
         transform: translateY(0) scale(1);
     }
-}
-
-.modal-header {
-    padding: 20px 25px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--primary-color);
-    color: white;
-}
-
-.modal-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
 }
 
 .close-btn {

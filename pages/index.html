@@ -47,6 +47,10 @@
                     <button type="submit" class="login-btn">
                         <i class="fas fa-sign-in-alt"></i> SİSTEME GİRİŞ
                     </button>
+                    
+                    <div class="forgot-password-link">
+                        <a href="#" id="forgotPasswordLink">Şifremi Unuttum</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -67,6 +71,98 @@
         <div class="loading-content">
             <div class="loading-spinner"></div>
             <div class="loading-text">Siteye yönlendiriliyorsunuz...</div>
+        </div>
+    </div>
+    
+    <!-- Forgot Password Modal -->
+    <div class="modal-overlay" id="forgotPasswordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Şifremi Unuttum</h3>
+                <button class="modal-close" id="closeForgotModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">E-posta adresinizi girin. Size şifre sıfırlama kodu göndereceğiz.</p>
+                <form id="forgotPasswordForm">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="forgotEmail" placeholder="E-posta adresiniz" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-paper-plane"></i>
+                        Kod Gönder
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Code Modal -->
+    <div class="modal-overlay" id="verificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Doğrulama Kodu</h3>
+                <button class="modal-close" id="closeVerificationModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">E-posta adresinize gönderilen 6 haneli doğrulama kodunu girin.</p>
+                <form id="verificationForm">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <i class="fas fa-key input-icon"></i>
+                            <input type="text" id="verificationCode" placeholder="Doğrulama Kodu" maxlength="6" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-check"></i>
+                        Kodu Doğrula
+                    </button>
+                </form>
+                <div class="resend-code">
+                    <span>Kod gelmedi mi? </span>
+                    <a href="#" id="resendCodeLink">Tekrar Gönder</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal-overlay" id="resetPasswordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Yeni Şifre Belirle</h3>
+                <button class="modal-close" id="closeResetModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Yeni şifrenizi belirleyin. Şifre en az 6 karakter olmalıdır.</p>
+                <form id="resetPasswordForm">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="newPassword" placeholder="Yeni Şifre" minlength="6" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="confirmPassword" placeholder="Yeni Şifre (Tekrar)" minlength="6" required>
+                        </div>
+                    </div>
+                    <div class="password-match-indicator" id="passwordMatchIndicator"></div>
+                    <button type="submit" class="submit-btn" id="resetPasswordSubmit">
+                        <i class="fas fa-save"></i>
+                        Şifreyi Güncelle
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
     

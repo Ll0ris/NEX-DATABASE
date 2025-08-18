@@ -698,6 +698,88 @@
     transform: none;
 }
 
+/* Dark theme overrides for Works Modals */
+[data-theme="dark"] .work-modal-content,
+[data-theme="dark"] .work-modal-header,
+[data-theme="dark"] .work-modal-body {
+    background: #1f2937; /* slate-800 */
+}
+
+[data-theme="dark"] .work-modal-title {
+    color: #f3f4f6; /* gray-100 */
+}
+
+[data-theme="dark"] .work-modal-close {
+    color: #e5e7eb; /* gray-200 */
+}
+
+[data-theme="dark"] .work-modal-close:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+[data-theme="dark"] .work-modal-actions {
+    border-top-color: #374151; /* slate-700 */
+}
+
+[data-theme="dark"] .work-modal .form-label,
+[data-theme="dark"] .authors-section-title,
+[data-theme="dark"] .current-user-info .user-name,
+[data-theme="dark"] .authors-modal-name {
+    color: #e5e7eb; /* gray-200 */
+}
+
+[data-theme="dark"] .work-modal .form-input,
+[data-theme="dark"] .work-modal .form-textarea,
+[data-theme="dark"] .work-modal .form-select,
+[data-theme="dark"] .work-modal .author-search input {
+    background: #374151; /* slate-700 */
+    color: #e5e7eb;
+    border-color: #4b5563; /* slate-600 */
+}
+
+[data-theme="dark"] .work-modal .form-input:focus,
+[data-theme="dark"] .work-modal .form-textarea:focus,
+[data-theme="dark"] .work-modal .form-select:focus,
+[data-theme="dark"] .work-modal .author-search input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+}
+
+[data-theme="dark"] .work-modal ::placeholder {
+    color: #9ca3af; /* gray-400 */
+    opacity: 1;
+}
+
+[data-theme="dark"] .authors-section {
+    background: #111827; /* gray-900 */
+    border-color: #374151; /* slate-700 */
+}
+
+[data-theme="dark"] .current-user-info,
+[data-theme="dark"] .authors-modal-list,
+[data-theme="dark"] .author-suggestions {
+    background: #111827; /* gray-900 */
+    border-color: #374151; /* slate-700 */
+}
+
+[data-theme="dark"] .authors-summary,
+[data-theme="dark"] .suggestion-info,
+[data-theme="dark"] .works-loading,
+[data-theme="dark"] .pagination-info {
+    color: #9ca3af; /* gray-400 */
+}
+
+[data-theme="dark"] .btn-cancel {
+    background: #374151; /* slate-700 */
+    color: #e5e7eb;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .btn-cancel:hover {
+    background: #4b5563; /* slate-600 */
+}
+
 /* Loading State */
 .works-loading {
     display: flex;

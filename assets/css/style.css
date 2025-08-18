@@ -142,7 +142,8 @@ body {
 }
 
 .form-group input[type="text"],
-.form-group input[type="password"] {
+.form-group input[type="password"],
+.form-group input[type="email"] {
     width: 100%;
     padding: 14px 15px 14px 45px;
     border: none;
@@ -155,7 +156,8 @@ body {
 }
 
 .form-group input[type="text"]:focus,
-.form-group input[type="password"]:focus {
+.form-group input[type="password"]:focus,
+.form-group input[type="email"]:focus {
     outline: none;
     background-color: #d4b470;
     box-shadow: 0 0 10px rgba(202, 163, 84, 0.5);
@@ -401,4 +403,204 @@ body {
 
 .error-bubble.animate-out {
     animation: bounceOut 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Forgot Password Styles */
+.forgot-password-link {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.forgot-password-link a {
+    color: #4a90e2;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.forgot-password-link a:hover {
+    color: #357abd;
+    text-decoration: underline;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+}
+
+.modal-overlay.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 450px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+    position: relative;
+}
+
+.modal-header {
+    padding: 25px 30px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 0;
+    position: relative;
+}
+
+.modal-header h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #666;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-description {
+    text-align: center;
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(45deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.submit-btn:hover {
+    background: linear-gradient(45deg, #357abd, #2a6aa6);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+}
+
+.submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.resend-code {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.resend-code a {
+    color: #4a90e2;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.resend-code a:hover {
+    text-decoration: underline;
+}
+
+.password-match-indicator {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    display: none;
+}
+
+.password-match-indicator.match {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    display: block;
+}
+
+.password-match-indicator.no-match {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-header,
+    .modal-body {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
 }
