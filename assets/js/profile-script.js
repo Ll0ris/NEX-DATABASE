@@ -587,6 +587,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         profileEditBtnEl.style.borderColor = '#800020';
                     }
                 }
+                
+                // Load interest areas from backend
+                loadInterestAreasFromBackend(targetUserIdentifier);
             })
             .catch((error) => {
                 console.error('🔥 Profil getirme hatası:', error);
@@ -1513,6 +1516,18 @@ function saveEducationData() {
 // Load data on initialization
 loadEducationData();
 
+// Also try to load interest areas from backend if user is logged in
+setTimeout(() => {
+    const targetUser = localStorage.getItem('currentUserEmail');
+    // CRITICAL FIX: Only load if no interest areas exist AND not already loaded from profile
+    if (targetUser && (!educationData.interestAreas || educationData.interestAreas.length === 0)) {
+        console.log('🔄 Timeout loading interest areas as fallback for:', targetUser);
+        loadInterestAreasFromBackend(targetUser);
+    } else {
+        console.log('⏭️ Skipping timeout load - areas already exist:', educationData.interestAreas?.length || 0);
+    }
+}, 1000); // Small delay to ensure page is ready
+
 let editMode = false;
 let currentEditItem = null;
 let currentEditType = null;
@@ -2126,6 +2141,12 @@ function saveLanguageItem(form) {
 }
 
 function deleteItem(type, id) {
+    // Special handling for interest areas - use backend
+    if (type === 'interestArea') {
+        deleteInterestArea(id);
+        return;
+    }
+    
     // No confirmation needed for better UX
     
     // Handle different type names
@@ -2161,6 +2182,140 @@ function deleteItem(type, id) {
     }
     
     saveEducationData(); // Save to localStorage after deletion
+}
+
+// Load interest areas from backend
+function loadInterestAreasFromBackend(targetUser) {
+    if (!targetUser) {
+        console.warn('Target user not specified for interest areas loading');
+        return;
+    }
+    
+    // Since there's no 'get' operation in backend, we'll use the profile.php get endpoint
+    // and extract interest_areas from the user data
+    console.log('🛰️ Loading interest areas from profile data for user:', targetUser);
+    
+    window.backendAPI.get('profile.php', { action: 'get', viewUser: targetUser })
+        .then((response) => {
+            console.log('🛰️ Profile data for interest areas:', response);
+            if (response.success && response.user && response.user.interest_areas) {
+                // Parse interest areas string (comma-separated) into array
+                const areasString = response.user.interest_areas;
+                const areasArray = areasString.split(',').map(area => area.trim()).filter(area => area);
+                
+                // CRITICAL FIX: Remove duplicates by creating a Set of unique names
+                const uniqueAreas = [...new Set(areasArray)];
+                console.log('🔍 Deduplication: Original areas:', areasArray.length, 'Unique areas:', uniqueAreas.length);
+                
+                // CRITICAL FIX: Clear existing interest areas completely before setting new ones
+                educationData.interestAreas = [];
+                
+                // Update local data with unique areas only
+                educationData.interestAreas = uniqueAreas.map((areaName, index) => ({
+                    id: Date.now() + Math.random() * 1000 + index, // Unique IDs for frontend
+                    name: areaName
+                }));
+                
+                console.log('🎯 Final interest areas after deduplication:', educationData.interestAreas);
+                
+                // Re-render the interest areas
+                renderInterestAreaItems();
+                
+                // Save to localStorage as backup
+                saveEducationData();
+                
+                console.log('✅ Interest areas loaded and rendered (deduplicated):', uniqueAreas);
+            } else {
+                console.log('ℹ️ No interest areas found in profile data');
+            }
+        })
+        .catch((error) => {
+            console.error('🔥 Interest areas loading error:', error);
+            // Fallback to localStorage data on error
+            loadEducationData();
+        });
+}
+
+// Utility function to deduplicate interest areas
+function deduplicateInterestAreas() {
+    if (!educationData.interestAreas) return;
+    
+    const uniqueNames = [...new Set(educationData.interestAreas.map(item => item.name))];
+    educationData.interestAreas = uniqueNames.map((name, index) => ({
+        id: Date.now() + Math.random() * 1000 + index,
+        name: name
+    }));
+    
+    console.log('🧹 Local deduplication completed. Unique areas:', uniqueNames.length);
+}
+
+// Backend-connected delete function for interest areas
+function deleteInterestArea(id) {
+    // Find the area name to delete
+    const areaToDelete = educationData.interestAreas.find(item => item.id === id);
+    if (!areaToDelete) {
+        console.error('İlgi alanı bulunamadı');
+        return;
+    }
+    
+    // Get target user for backend request
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewUserParam = urlParams.get('viewUser');
+    const targetUser = viewUserParam || localStorage.getItem('currentUserEmail');
+    
+    if (!targetUser) {
+        console.error('Hedef kullanıcı belirlenemedi');
+        return;
+    }
+    
+    const payload = {
+        action: 'interest_areas',
+        targetUser: targetUser,
+        operation: 'remove',
+        area: areaToDelete.name
+    };
+    
+    console.log('🛰️ Interest area delete request:', payload);
+    
+    // Send to backend
+    window.backendAPI.post('profile.php', payload)
+        .then((response) => {
+            console.log('🛰️ Interest area delete response:', response);
+            if (response.success) {
+                // CRITICAL FIX: Remove duplicates from delete response too
+                const uniqueAreas = [...new Set(response.interest_areas)];
+                console.log('🔍 Delete response deduplication:', response.interest_areas.length, '→', uniqueAreas.length);
+                
+                // Update local data with deduplicated backend response
+                educationData.interestAreas = uniqueAreas.map((areaName, index) => ({
+                    id: Date.now() + Math.random() * 1000 + index, // Unique IDs for frontend
+                    name: areaName
+                }));
+                
+                console.log('🎯 Final interest areas after delete:', educationData.interestAreas);
+                
+                renderInterestAreaItems();
+                
+                // If in research edit mode, show delete buttons after re-render
+                if (researchEditMode) {
+                    setTimeout(() => {
+                        const deleteButtons = document.querySelectorAll('#interestAreaItems .delete-btn');
+                        deleteButtons.forEach(btn => btn.style.display = 'block');
+                    }, 10);
+                }
+                
+                saveEducationData(); // Save to localStorage as backup
+            } else {
+                console.error('İlgi alanı silme hatası:', response.error);
+            }
+        })
+        .catch((error) => {
+            console.error('🔥 İlgi alanı silme backend hatası:', error);
+            // Fallback to local deletion on backend error
+            educationData.interestAreas = educationData.interestAreas.filter(item => item.id !== id);
+            renderInterestAreaItems();
+            saveEducationData();
+        });
 }
 
 function renderEducationItems() {
@@ -2396,34 +2551,113 @@ function handleWorkAreaSubmit(e) {
 function handleInterestAreaSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const item = {
-        id: currentEditItem ? currentEditItem.id : Date.now(),
-        name: formData.get('areaName')
+    const areaName = formData.get('areaName').trim();
+    
+    if (!areaName) {
+        console.error('Alan adı boş olamaz');
+        return;
+    }
+    
+    // CRITICAL FIX: Check for duplicates before submitting
+    const existingArea = educationData.interestAreas.find(item => 
+        item.name.toLowerCase() === areaName.toLowerCase()
+    );
+    
+    if (existingArea && !currentEditItem) {
+        console.warn('⚠️ Duplicate interest area detected:', areaName);
+        alert('Bu ilgi alanı zaten mevcut!');
+        return;
+    }
+    
+    // Get target user for backend request
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewUserParam = urlParams.get('viewUser');
+    const targetUser = viewUserParam || localStorage.getItem('currentUserEmail');
+    
+    if (!targetUser) {
+        console.error('Hedef kullanıcı belirlenemedi');
+        return;
+    }
+    
+    // Prepare backend request
+    const operation = currentEditItem ? 'set' : 'add';
+    const payload = {
+        action: 'interest_areas',
+        targetUser: targetUser,
+        operation: operation,
+        area: areaName
     };
     
+    // If editing, we need to get all current areas and update them
     if (currentEditItem) {
-        const index = educationData.interestAreas.findIndex(i => i.id === currentEditItem.id);
-        educationData.interestAreas[index] = item;
-    } else {
-        educationData.interestAreas.push(item);
+        // Get all current areas except the one being edited, then add the new one
+        const currentAreas = educationData.interestAreas
+            .filter(item => item.id !== currentEditItem.id)
+            .map(item => item.name);
+        currentAreas.push(areaName);
+        payload.operation = 'set';
+        payload.areas = currentAreas;
+        delete payload.area;
     }
     
-    renderInterestAreaItems();
+    console.log('🛰️ Interest areas backend request:', payload);
     
-    // If in edit mode, show delete buttons for newly rendered items
-    if (researchEditMode) {
-        const deleteButtons = document.querySelectorAll('#interestAreaItems .delete-btn');
-        deleteButtons.forEach(btn => btn.style.display = 'block');
-    }
-    
-    closeModal('interestArea');
-    saveEducationData(); // Save to localStorage
-    
-    // Eğitim sekmesini aç
-    switchSection('education');
-    
-    // Auto-refresh page after update
-    refreshPageAfterUpdate();
+    // Send to backend
+    window.backendAPI.post('profile.php', payload)
+        .then((response) => {
+            console.log('🛰️ Interest areas backend response:', response);
+            if (response.success) {
+                // CRITICAL FIX: Remove duplicates from backend response
+                const uniqueAreas = [...new Set(response.interest_areas)];
+                console.log('🔍 Backend response deduplication:', response.interest_areas.length, '→', uniqueAreas.length);
+                
+                // Update local data with deduplicated backend response
+                educationData.interestAreas = uniqueAreas.map((areaName, index) => ({
+                    id: Date.now() + Math.random() * 1000 + index, // Unique IDs for frontend
+                    name: areaName
+                }));
+                
+                console.log('🎯 Final interest areas after submit:', educationData.interestAreas);
+                
+                renderInterestAreaItems();
+                
+                // If in edit mode, show delete buttons for newly rendered items
+                if (researchEditMode) {
+                    const deleteButtons = document.querySelectorAll('#interestAreaItems .delete-btn');
+                    deleteButtons.forEach(btn => btn.style.display = 'block');
+                }
+                
+                closeModal('interestArea');
+                saveEducationData(); // Save to localStorage as backup
+                
+                // Eğitim sekmesini aç
+                switchSection('education');
+                
+                // Auto-refresh page after update
+                refreshPageAfterUpdate();
+            } else {
+                console.error('İlgi alanı kaydetme hatası:', response.error);
+            }
+        })
+        .catch((error) => {
+            console.error('🔥 İlgi alanı backend hatası:', error);
+            // Fallback to local storage on backend error
+            const item = {
+                id: currentEditItem ? currentEditItem.id : Date.now(),
+                name: areaName
+            };
+            
+            if (currentEditItem) {
+                const index = educationData.interestAreas.findIndex(i => i.id === currentEditItem.id);
+                educationData.interestAreas[index] = item;
+            } else {
+                educationData.interestAreas.push(item);
+            }
+            
+            renderInterestAreaItems();
+            closeModal('interestArea');
+            saveEducationData();
+        });
 }
 
 // Render functions for work areas and interest areas
@@ -2462,11 +2696,25 @@ function renderWorkAreaItems() {
 
 function renderInterestAreaItems() {
     const container = document.getElementById('interestAreaItems');
-    container.innerHTML = ''; // Clear all existing content including placeholder
+    if (!container) {
+        console.error('Interest area container not found');
+        return;
+    }
+    
+    // CRITICAL FIX: Apply final deduplication before rendering
+    deduplicateInterestAreas();
+    
+    // Clear all existing content including placeholder - force clear
+    container.innerHTML = '';
+    
+    console.log('🎯 Rendering interest areas (after final dedup):', educationData.interestAreas.length, 'items');
 
-    educationData.interestAreas.forEach(item => {
+    educationData.interestAreas.forEach((item, index) => {
+        console.log(`  - Item ${index + 1}: ID=${item.id}, Name="${item.name}"`);
+        
         const div = document.createElement('div');
         div.className = 'research-item';
+        div.setAttribute('data-item-id', item.id); // Add data attribute for debugging
         div.innerHTML = `
             <button class="delete-btn" onclick="event.stopPropagation(); deleteItem('interestArea', ${item.id})" style="display: none;">
                 <i class="fas fa-times"></i>
@@ -2491,6 +2739,8 @@ function renderInterestAreaItems() {
         placeholderElement.textContent = 'Henüz ilgi alanı eklenmemiş.';
         container.appendChild(placeholderElement);
     }
+    
+    console.log('✅ Interest areas rendered. DOM children count:', container.children.length);
 }
 
 // Load and render all education items when page loads
