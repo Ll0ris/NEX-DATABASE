@@ -1518,13 +1518,17 @@ loadEducationData();
 
 // Also try to load interest areas from backend if user is logged in
 setTimeout(() => {
-    const targetUser = localStorage.getItem('currentUserEmail');
-    // CRITICAL FIX: Only load if no interest areas exist AND not already loaded from profile
-    if (targetUser && (!educationData.interestAreas || educationData.interestAreas.length === 0)) {
-        console.log('🔄 Timeout loading interest areas as fallback for:', targetUser);
-        loadInterestAreasFromBackend(targetUser);
-    } else {
-        console.log('⏭️ Skipping timeout load - areas already exist:', educationData.interestAreas?.length || 0);
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewUserParam = urlParams.get('viewUser');
+    // Only fallback-load for self profile, and only if not yet loaded from backend
+    if (!viewUserParam && !backendInterestAreasLoaded) {
+        const selfUser = localStorage.getItem('currentUserEmail');
+        if (selfUser && (!educationData.interestAreas || educationData.interestAreas.length === 0)) {
+            console.log('🔄 Timeout fallback: loading self interest areas:', selfUser);
+            loadInterestAreasFromBackend(selfUser);
+        } else {
+            console.log('⏭️ Timeout fallback skipped - areas exist or already loaded. Count:', educationData.interestAreas?.length || 0);
+        }
     }
 }, 1000); // Small delay to ensure page is ready
 
@@ -1534,6 +1538,8 @@ let currentEditType = null;
 
 // Research system variables
 let researchEditMode = false;
+// Interest areas load state (to avoid mixing self vs viewUser data)
+let backendInterestAreasLoaded = false;
 
 function initEducationSystem() {
     // Education Edit Mode Toggle
@@ -2218,6 +2224,9 @@ function loadInterestAreasFromBackend(targetUser) {
                 
                 console.log('🎯 Final interest areas after deduplication:', educationData.interestAreas);
                 
+                // Set loaded flag to prevent fallback self-load mixing
+                backendInterestAreasLoaded = true;
+
                 // Re-render the interest areas
                 renderInterestAreaItems();
                 
@@ -2226,13 +2235,29 @@ function loadInterestAreasFromBackend(targetUser) {
                 
                 console.log('✅ Interest areas loaded and rendered (deduplicated):', uniqueAreas);
             } else {
+                // Mark as loaded to avoid mixing with fallback self data when viewing others
+                backendInterestAreasLoaded = true;
                 console.log('ℹ️ No interest areas found in profile data');
+                // Render empty state explicitly
+                educationData.interestAreas = [];
+                renderInterestAreaItems();
             }
         })
         .catch((error) => {
             console.error('🔥 Interest areas loading error:', error);
-            // Fallback to localStorage data on error
-            loadEducationData();
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewUserParam = urlParams.get('viewUser');
+            // If viewing someone else, do NOT fallback to self localStorage to avoid mixing
+            if (viewUserParam) {
+                backendInterestAreasLoaded = true;
+                educationData.interestAreas = [];
+                renderInterestAreaItems();
+                console.warn('⏭️ Skipping localStorage fallback for viewUser to avoid mixing data.');
+            } else {
+                // Fallback to localStorage data on error for self profile
+                loadEducationData();
+                renderInterestAreaItems();
+            }
         });
 }
 
@@ -2600,25 +2625,18 @@ function handleInterestAreaSubmit(e) {
         delete payload.area;
     }
     
-    console.log('🛰️ Interest areas backend request:', payload);
-    
     // Send to backend
     window.backendAPI.post('profile.php', payload)
         .then((response) => {
-            console.log('🛰️ Interest areas backend response:', response);
             if (response.success) {
                 // CRITICAL FIX: Remove duplicates from backend response
-                const uniqueAreas = [...new Set(response.interest_areas)];
-                console.log('🔍 Backend response deduplication:', response.interest_areas.length, '→', uniqueAreas.length);
-                
+                const uniqueAreas = [...new Set(response.interest_areas)];                
                 // Update local data with deduplicated backend response
                 educationData.interestAreas = uniqueAreas.map((areaName, index) => ({
                     id: Date.now() + Math.random() * 1000 + index, // Unique IDs for frontend
                     name: areaName
                 }));
-                
-                console.log('🎯 Final interest areas after submit:', educationData.interestAreas);
-                
+                                
                 renderInterestAreaItems();
                 
                 // If in edit mode, show delete buttons for newly rendered items
@@ -2749,7 +2767,23 @@ function loadEducationItems() {
     renderThesisItems();
     renderLanguageItems();
     renderWorkAreaItems();
-    renderInterestAreaItems();
+    // If viewing another user, don't render localStorage interest areas.
+    // Show placeholder; backend loader will render actual data.
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewUserParam = urlParams.get('viewUser');
+    if (viewUserParam) {
+        const container = document.getElementById('interestAreaItems');
+        if (container) {
+            container.innerHTML = '';
+            const placeholderElement = document.createElement('p');
+            placeholderElement.className = 'placeholder-text';
+            placeholderElement.style.cssText = 'text-align: center; color: #666; font-style: italic;';
+            placeholderElement.textContent = 'İlgi alanları yükleniyor...';
+            container.appendChild(placeholderElement);
+        }
+    } else {
+        renderInterestAreaItems();
+    }
 }
 
 // Contact System
