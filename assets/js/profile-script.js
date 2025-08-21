@@ -590,6 +590,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Load interest areas from backend
                 loadInterestAreasFromBackend(targetUserIdentifier);
+                // Load work areas from backend
+                loadWorkAreasFromBackend(targetUserIdentifier);
             })
             .catch((error) => {
                 console.error('🔥 Profil getirme hatası:', error);
@@ -1505,12 +1507,27 @@ function loadEducationData() {
         if (!educationData.languages) {
             educationData.languages = [];
         }
+
+    // Do NOT source interest_areas or work_areas from localStorage
+    // Always rely on backend for these lists
+    educationData.workAreas = [];
+    educationData.interestAreas = [];
     }
 }
 
 // Save data to localStorage
 function saveEducationData() {
-    localStorage.setItem('educationData', JSON.stringify(educationData));
+    // Persist only education, thesis, and languages. Do NOT persist interest/work areas.
+    const { education, thesis, languages } = educationData;
+    const sanitized = {
+        education: education || [],
+        thesis: thesis || [],
+        languages: languages || [],
+        // Explicitly exclude these from persistence
+        workAreas: [],
+        interestAreas: []
+    };
+    localStorage.setItem('educationData', JSON.stringify(sanitized));
 }
 
 // Load data on initialization
@@ -2147,9 +2164,42 @@ function saveLanguageItem(form) {
 }
 
 function deleteItem(type, id) {
-    // Special handling for interest areas - use backend
+    // Special handling for interest areas & work areas - use backend
     if (type === 'interestArea') {
         deleteInterestArea(id);
+        return;
+    }
+    if (type === 'workArea') {
+        // Backend-connected delete for work areas
+        const item = educationData.workAreas.find(w => w.id === id);
+        if (!item) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewUserParam = urlParams.get('viewUser');
+        const targetUser = viewUserParam || localStorage.getItem('currentUserEmail');
+        if (!targetUser) {
+            console.error('Hedef kullanıcı belirlenemedi');
+            return;
+        }
+        const payload = {
+            action: 'work_areas',
+            targetUser,
+            operation: 'remove',
+            area: item.name
+        };
+        window.backendAPI.post('profile.php?action=work_areas', payload)
+            .then((res) => {
+                if (res && res.success) {
+                    // Update local list from backend response if available
+                    const arr = Array.isArray(res.work_areas) ? res.work_areas : (res.work_areas_string ? res.work_areas_string.split(',').map(a => a.trim()) : []);
+                    educationData.workAreas = arr.map((name, idx) => ({ id: Date.now() + Math.random() * 1000 + idx, name }));
+                    renderWorkAreaItems();
+                } else {
+                    console.error('Çalışma alanı silme hatası:', res?.error);
+                }
+            })
+            .catch(err => {
+                console.error('🔥 Çalışma alanı silme backend hatası:', err);
+            });
         return;
     }
     
@@ -2167,8 +2217,8 @@ function deleteItem(type, id) {
     else if (type === 'thesis') renderThesisItems();
     else if (type === 'languages') renderLanguageItems();
     else if (type === 'workArea') {
+        // Handled above with backend; keep for fallback no-op
         renderWorkAreaItems();
-        // If in research edit mode, show delete buttons after re-render
         if (researchEditMode) {
             setTimeout(() => {
                 const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn');
@@ -2230,15 +2280,11 @@ function loadInterestAreasFromBackend(targetUser) {
                 // Re-render the interest areas
                 renderInterestAreaItems();
                 
-                // Save to localStorage as backup
-                saveEducationData();
-                
                 console.log('✅ Interest areas loaded and rendered (deduplicated):', uniqueAreas);
             } else {
-                // Mark as loaded to avoid mixing with fallback self data when viewing others
+                // Mark as loaded and render empty state explicitly
                 backendInterestAreasLoaded = true;
                 console.log('ℹ️ No interest areas found in profile data');
-                // Render empty state explicitly
                 educationData.interestAreas = [];
                 renderInterestAreaItems();
             }
@@ -2254,10 +2300,48 @@ function loadInterestAreasFromBackend(targetUser) {
                 renderInterestAreaItems();
                 console.warn('⏭️ Skipping localStorage fallback for viewUser to avoid mixing data.');
             } else {
-                // Fallback to localStorage data on error for self profile
-                loadEducationData();
+                // For self profile, do not fallback to localStorage; show empty placeholder
+                backendInterestAreasLoaded = true;
+                educationData.interestAreas = [];
                 renderInterestAreaItems();
             }
+        });
+}
+
+// Load work areas from backend (string -> array)
+function loadWorkAreasFromBackend(targetUser) {
+    if (!targetUser) {
+        console.warn('Target user not specified for work areas loading');
+        return;
+    }
+
+    console.log('🛰️ Loading work areas from profile data for user:', targetUser);
+
+    window.backendAPI.get('profile.php', { action: 'get', viewUser: targetUser })
+        .then((response) => {
+            if (response && response.success && response.user) {
+                const str = response.user.work_areas || '';
+                const areasArray = str ? str.split(',').map(a => a.trim()).filter(Boolean) : [];
+
+                // Replace local list from backend
+                educationData.workAreas = areasArray.map((name, idx) => ({
+                    id: Date.now() + Math.random() * 1000 + idx,
+                    name
+                }));
+
+                renderWorkAreaItems();
+                console.log('✅ Work areas loaded from backend:', areasArray);
+            } else {
+                console.log('ℹ️ No work areas found in profile data');
+                educationData.workAreas = [];
+                renderWorkAreaItems();
+            }
+        })
+        .catch((error) => {
+            console.error('🔥 Work areas loading error:', error);
+            // Do not fallback to localStorage; render empty placeholder
+            educationData.workAreas = [];
+            renderWorkAreaItems();
         });
 }
 
@@ -2328,18 +2412,14 @@ function deleteInterestArea(id) {
                         deleteButtons.forEach(btn => btn.style.display = 'block');
                     }, 10);
                 }
-                
-                saveEducationData(); // Save to localStorage as backup
+                // No local backup; backend is source of truth
             } else {
                 console.error('İlgi alanı silme hatası:', response.error);
             }
         })
         .catch((error) => {
             console.error('🔥 İlgi alanı silme backend hatası:', error);
-            // Fallback to local deletion on backend error
-            educationData.interestAreas = educationData.interestAreas.filter(item => item.id !== id);
-            renderInterestAreaItems();
-            saveEducationData();
+            // No local fallback
         });
 }
 
@@ -2543,34 +2623,59 @@ function toggleResearchEditMode() {
 function handleWorkAreaSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const item = {
-        id: currentEditItem ? currentEditItem.id : Date.now(),
-        name: formData.get('areaName')
+    const areaName = (formData.get('areaName') || '').toString().trim();
+    if (!areaName) {
+        console.warn('Çalışma alanı adı boş olamaz');
+        return;
+    }
+
+    // Build payload according to backend contract
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewUserParam = urlParams.get('viewUser');
+    const targetUser = viewUserParam || localStorage.getItem('currentUserEmail');
+    if (!targetUser) {
+        console.error('Hedef kullanıcı belirlenemedi');
+        return;
+    }
+
+    let payload = {
+        targetUser,
+        operation: 'add',
+        area: areaName
     };
-    
+
+    // If editing, send full set operation replacing the edited item
     if (currentEditItem) {
-        const index = educationData.workAreas.findIndex(w => w.id === currentEditItem.id);
-        educationData.workAreas[index] = item;
-    } else {
-        educationData.workAreas.push(item);
+        const currentAreas = educationData.workAreas
+            .filter(w => w.id !== currentEditItem.id)
+            .map(w => w.name);
+        currentAreas.push(areaName);
+        payload = {
+            targetUser,
+            operation: 'set',
+            areas: currentAreas
+        };
     }
-    
-    renderWorkAreaItems();
-    
-    // If in edit mode, show delete buttons for newly rendered items
-    if (researchEditMode) {
-        const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn');
-        deleteButtons.forEach(btn => btn.style.display = 'block');
-    }
-    
-    closeModal('workArea');
-    saveEducationData(); // Save to localStorage
-    
-    // Eğitim sekmesini aç
-    switchSection('education');
-    
-    // Auto-refresh page after update
-    refreshPageAfterUpdate();
+
+    window.backendAPI.post('profile.php?action=work_areas', payload)
+        .then((res) => {
+            if (res && res.success) {
+                const arr = Array.isArray(res.work_areas) ? res.work_areas : (res.work_areas_string ? res.work_areas_string.split(',').map(a => a.trim()) : []);
+                educationData.workAreas = arr.map((name, idx) => ({ id: Date.now() + Math.random() * 1000 + idx, name }));
+                renderWorkAreaItems();
+                // If in edit mode, show delete buttons for newly rendered items
+                if (researchEditMode) {
+                    const deleteButtons = document.querySelectorAll('#workAreaItems .delete-btn');
+                    deleteButtons.forEach(btn => btn.style.display = 'block');
+                }
+                closeModal('workArea');
+            } else {
+                console.error('Çalışma alanı güncelleme hatası:', res?.error);
+            }
+        })
+        .catch(err => {
+            console.error('🔥 Çalışma alanı backend hatası:', err);
+        });
 }
 
 function handleInterestAreaSubmit(e) {
@@ -2646,7 +2751,6 @@ function handleInterestAreaSubmit(e) {
                 }
                 
                 closeModal('interestArea');
-                saveEducationData(); // Save to localStorage as backup
                 
                 // Eğitim sekmesini aç
                 switchSection('education');
@@ -2659,22 +2763,7 @@ function handleInterestAreaSubmit(e) {
         })
         .catch((error) => {
             console.error('🔥 İlgi alanı backend hatası:', error);
-            // Fallback to local storage on backend error
-            const item = {
-                id: currentEditItem ? currentEditItem.id : Date.now(),
-                name: areaName
-            };
-            
-            if (currentEditItem) {
-                const index = educationData.interestAreas.findIndex(i => i.id === currentEditItem.id);
-                educationData.interestAreas[index] = item;
-            } else {
-                educationData.interestAreas.push(item);
-            }
-            
-            renderInterestAreaItems();
-            closeModal('interestArea');
-            saveEducationData();
+            // No local fallback; keep UI consistent with backend
         });
 }
 
@@ -2766,7 +2855,22 @@ function loadEducationItems() {
     renderEducationItems();
     renderThesisItems();
     renderLanguageItems();
-    renderWorkAreaItems();
+    // If viewing another user, don't render localStorage work areas; show placeholder
+    {
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewUserParam = urlParams.get('viewUser');
+        const container = document.getElementById('workAreaItems');
+        if (viewUserParam && container) {
+            container.innerHTML = '';
+            const placeholderElement = document.createElement('p');
+            placeholderElement.className = 'placeholder-text';
+            placeholderElement.style.cssText = 'text-align: center; color: #666; font-style: italic;';
+            placeholderElement.textContent = 'Çalışma alanları yükleniyor...';
+            container.appendChild(placeholderElement);
+        } else {
+            renderWorkAreaItems();
+        }
+    }
     // If viewing another user, don't render localStorage interest areas.
     // Show placeholder; backend loader will render actual data.
     const urlParams = new URLSearchParams(window.location.search);
