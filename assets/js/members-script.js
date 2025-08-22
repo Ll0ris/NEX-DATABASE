@@ -457,7 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function collectAddMemberValues(fd) {
         const values = {
-            name: getTrim(fd, 'name'),
             fullName: getTrim(fd, 'fullName'),
             email: getTrim(fd, 'email'),
             password: s(fd.get('password')),
@@ -467,7 +466,8 @@ document.addEventListener('DOMContentLoaded', function() {
             phone: getTrim(fd, 'phone'),
             photo_url: getTrim(fd, 'photo_url'),
             role: getOptionalSelect(fd, 'role', 'user'),
-            position: getTrim(fd, 'position'),
+            // Force backend default: when position is null, backend assigns "Ekip Üyesi"
+            position: null,
             status: getOptionalSelect(fd, 'status', 'active'),
             title_prefix: getTrim(fd, 'title_prefix'),
             rank_id_raw: s(fd.get('rank_id')).trim()
@@ -478,7 +478,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function validateAddMemberValues(v) {
         const missing = [];
-        if (!v.name) missing.push('Ad (name)');
         if (!v.fullName) missing.push('Ad Soyad (fullName)');
         if (!v.email) missing.push('E-posta (email)');
         if (missing.length) return { ok: false, message: 'Zorunlu alanlar boş bırakılamaz: ' + missing.join(', ') };
@@ -522,7 +521,8 @@ document.addEventListener('DOMContentLoaded', function() {
             ...(v.phone ? { phone: v.phone } : {}),
             ...(v.photo_url ? { photo_url: v.photo_url } : {}),
             ...(v.role ? { role: normalizeRoleForCreate(v.role) } : {}),
-            ...(v.position ? { position: v.position } : {}),
+            // Explicitly send null so backend defaults to "Ekip Üyesi"
+            position: "Ekip Üyesi",
             ...(v.status ? { status: mapStatusForDB(v.status) } : {}),
             ...(v.title_prefix ? { title_prefix: v.title_prefix } : {}),
             ...(v.rank_id !== null ? { rank_id: v.rank_id } : {})
