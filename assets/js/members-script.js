@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
             institution: row.institution || '',
             rank: row.rank_name || '',
             role: row.role || '',
+            status: row.status || '',
             positions: positions,
             createdAt: createdAt
         };
@@ -81,8 +82,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalMembers = (backendTotalCount !== null && !isNaN(backendTotalCount)) ? backendTotalCount : allMembers.length;
 
         // Role alanından türet (uygunsa)
-        const activeMembers = allMembers.filter(m => normalizeRole(m.role) === 'active').length;
-        const activeAlumni = allMembers.filter(m => normalizeRole(m.role) === 'active_alumni').length;
+        const activeMembers = allMembers.filter(m => normalizeStatus(m.role) === 'active').length;
+        const activeAlumni = allMembers.filter(m => normalizeStatus(m.role) === 'active_alumni').length;
         
         const totalElement = document.getElementById('totalMembers');
         const activeElement = document.getElementById('activeMembers');
@@ -93,11 +94,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (alumniElement) alumniElement.textContent = activeAlumni;
     }
 
-    function normalizeRole(role) {
+    function normalizeStatus(role) {
         if (!role) return 'unknown';
         const r = String(role).toLowerCase();
-        if (r === 'aktif' || r === 'active') return 'active';
-        if (r === 'pasif' || r === 'inactive') return 'inactive';
+        if (r === 'aktif öğrenci' || r === 'active') return 'active';
+        if (r === 'pasif öğrenci' || r === 'inactive') return 'inactive';
         if (r === 'fahri' || r === 'honorary') return 'honorary';
         if (r === 'aktif mezun' || r === 'active_alumni' || r === 'active alumni') return 'active_alumni';
         if (r === 'pasif mezun' || r === 'passive_alumni' || r === 'passive alumni') return 'passive_alumni';
@@ -129,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         currentMembers.forEach(member => {
-            const statusClass = getStatusClass(normalizeRole(member.role));
+            const statusClass = getStatusClass(normalizeStatus(member.status));
             const rankBadge = getRankBadge(member.rank);
             const isCurrentUser = member.email && currentUserEmail && member.email.toLowerCase() === currentUserEmail.toLowerCase();
             const joinYear = getJoinYear(member.createdAt);
@@ -156,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
                 <td><span class="join-year">${joinYear}</span></td>
                 <td>${rankBadge}</td>
-                <td><span class="status-badge ${statusClass}">${member.role || '-'}</span></td>
+                <td><span class="status-badge ${statusClass}">${member.status || '-'}</span></td>
                 <td>
                     <div class="position-list">
                         ${getPositionBadges(member.positions || [])}
@@ -169,12 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </td>
                 ${isAdminMode ? `
-                <td class="admin-only">
-                    <button class="manage-btn" onclick="manageMember('${member.id}')" title="Üyeyi Yönet">
-                        <i class="fas fa-cog"></i>
-                        Yönet
-                    </button>
-                </td>
                 ` : ''}
             `;
             tbody.appendChild(row);
@@ -325,11 +320,11 @@ document.addEventListener('DOMContentLoaded', function() {
             currentMembers = [...allMembers];
         } else if (status === 'alumni') {
             currentMembers = allMembers.filter(member => {
-                const r = normalizeRole(member.role);
+                const r = normalizeStatus(member.status);
                 return r === 'active_alumni' || r === 'passive_alumni';
             });
         } else {
-            currentMembers = allMembers.filter(member => normalizeRole(member.role) === status);
+            currentMembers = allMembers.filter(member => normalizeStatus(member.status) === status);
         }
         renderMemberTable();
         updateStatistics();
@@ -496,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Normalize role to canonical codes in case dropdown values were localized
-    function normalizeRoleForCreate(roleVal) {
+    function normalizeStatusForCreate(roleVal) {
         const rv = (roleVal || '').toString().trim().toLowerCase();
         if (rv === 'aktif öğrenci' || rv === 'aktif ogrenci' || rv === 'aktif' || rv === 'active') return 'active';
         if (rv === 'pasif öğrenci' || rv === 'pasif ogrenci' || rv === 'pasif' || rv === 'inactive') return 'inactive';
@@ -520,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ...(v.institution ? { institution: v.institution } : {}),
             ...(v.phone ? { phone: v.phone } : {}),
             ...(v.photo_url ? { photo_url: v.photo_url } : {}),
-            ...(v.role ? { role: normalizeRoleForCreate(v.role) } : {}),
+            ...(v.role ? { role: normalizeStatusForCreate(v.role) } : {}),
             // Explicitly send null so backend defaults to "Ekip Üyesi"
             position: "Ekip Üyesi",
             ...(v.status ? { status: mapStatusForDB(v.status) } : {}),

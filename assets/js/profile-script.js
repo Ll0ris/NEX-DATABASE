@@ -63,7 +63,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (profileContent) {
         profileContent.style.visibility = 'hidden';
     }
-    
+
+    // Set max year for work experience input
+    const workYearInput = document.getElementById('workYear');
+    if (workYearInput) {
+        workYearInput.max = new Date().getFullYear();
+    }
+
     // Backend tabanlı profil yükleme
     setTimeout(() => {
         loadProfileFromDatabase();
@@ -386,20 +392,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const aboutSectionEl = document.getElementById('profileAboutSection');
                 const aboutEl = document.getElementById('aboutText');
                 const addAboutSectionEl = document.getElementById('addAboutSection');
+                const addAboutBtnEl = document.getElementById('addAboutBtn');
                 if (aboutEl) {
                     const aboutText = (typeof data.about !== 'undefined' ? data.about : (data.bio || '')) || '';
                     const trimmed = aboutText.toString().trim();
                     if (trimmed) {
                         aboutEl.textContent = trimmed;
                         if (aboutSectionEl) aboutSectionEl.style.display = '';
-                        if (addAboutSectionEl) addAboutSectionEl.style.display = 'none';
+                        if (addAboutBtnEl) addAboutBtnEl.style.display = 'none';
+                        // Hide container if AGNO button is also hidden
+                        const addAgnoBtnEl = document.getElementById('addAgnoBtn');
+                        if (addAboutSectionEl && addAgnoBtnEl && addAgnoBtnEl.style.display === 'none') {
+                            addAboutSectionEl.style.display = 'none';
+                        }
                     } else {
                         aboutEl.textContent = '';
                         if (aboutSectionEl) aboutSectionEl.style.display = 'none';
                         // Show add about button only if:
                         // 1. User can edit (not read-only or admin mode)
                         // 2. It's their own profile OR they are in admin mode
-                        if (addAboutSectionEl) {
+                        if (addAboutSectionEl && addAboutBtnEl) {
                             const isReadOnly = data.readOnly === true || data.readOnly === 'true';
                             const adminMode = localStorage.getItem('adminMode');
                             const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
@@ -410,8 +422,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Show button only if user can edit AND (it's their own profile OR admin mode)
                             const canEdit = !isReadOnly || isAdminMode;
                             const hasPermission = isSelfProfile || isAdminMode;
-                            
-                            addAboutSectionEl.style.display = (canEdit && hasPermission) ? 'block' : 'none';
+                            if (canEdit && hasPermission) {
+                                addAboutSectionEl.style.display = 'block';
+                                addAboutBtnEl.style.display = 'inline-flex';
+                            } else {
+                                addAboutBtnEl.style.display = 'none';
+                            }
                         }
                     }
                 }
@@ -420,6 +436,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const agnoSectionEl = document.getElementById('profileAgnoSection');
                 const agnoScoreEl = document.getElementById('agnoScore');
                 const agnoIndicatorEl = document.getElementById('agnoIndicator');
+                const addAgnoBtn = document.getElementById('addAgnoBtn');
+                const editAgnoBtn = document.getElementById('editAgnoBtn');
+                // AGNO Modal elements
+                const agnoModal = document.getElementById('agnoModal');
+                const agnoForm = document.getElementById('agnoForm');
+                const agnoInput = document.getElementById('agnoInput');
+                const closeAgnoModalBtn = document.getElementById('closeAgnoModal');
+                const cancelAgnoBtn = document.getElementById('cancelAgno');
                 
                 if (agnoSectionEl && agnoScoreEl && agnoIndicatorEl) {
                     const agnoValue = parseFloat(data.agno || data.gpa || 0);
@@ -430,9 +454,112 @@ document.addEventListener('DOMContentLoaded', function() {
                         agnoIndicatorEl.className = 'agno-indicator ' + getAgnoColorClass(agnoValue);
                         
                         agnoSectionEl.style.display = '';
+                        if (addAgnoBtn) addAgnoBtn.style.display = 'none';
+                        // Show AGNO edit button if user can edit and has permission
+                        if (editAgnoBtn) {
+                            const canEdit = !isReadOnly || isAdminMode;
+                            const hasPermission = isSelfProfile || isAdminMode;
+                            editAgnoBtn.style.display = (canEdit && hasPermission) ? 'inline-flex' : 'none';
+                        }
                     } else {
                         agnoSectionEl.style.display = 'none';
+                        if (editAgnoBtn) editAgnoBtn.style.display = 'none';
+                        // Show AGNO add button if user can edit and has permission
+                        if (addAboutSectionEl && addAgnoBtn) {
+                            const isReadOnly = data.readOnly === true || data.readOnly === 'true';
+                            const adminMode = localStorage.getItem('adminMode');
+                            const hasRealAdminAccess = localStorage.getItem('realAdminAccess') === 'true';
+                            const isAdminMode = adminMode === 'admin' && hasRealAdminAccess;
+                            const currentUserEmail = (localStorage.getItem('currentUserEmail') || '').toLowerCase();
+                            const isSelfProfile = !viewUserParam || (viewUserParam || '').toLowerCase() === currentUserEmail;
+                            const canEdit = !isReadOnly || isAdminMode;
+                            const hasPermission = isSelfProfile || isAdminMode;
+                            if (canEdit && hasPermission) {
+                                addAboutSectionEl.style.display = 'block';
+                                addAgnoBtn.style.display = 'inline-flex';
+                            } else {
+                                addAgnoBtn.style.display = 'none';
+                            }
+                        }
                     }
+                }
+
+                // Add AGNO button handler
+                // Open AGNO modal
+                function openAgnoModal() {
+                    if (!agnoModal) return;
+                    // Prefill with existing value if any
+                    const currentText = agnoScoreEl?.textContent || '';
+                    const currentVal = parseFloat(currentText.replace(',', '.'));
+                    if (agnoInput) agnoInput.value = (!isNaN(currentVal) && currentVal > 0) ? currentVal.toFixed(2) : '';
+                    agnoModal.classList.add('show');
+                }
+
+                function closeAgnoModal() {
+                    if (agnoModal) agnoModal.classList.remove('show');
+                }
+
+                if (addAgnoBtn) {
+                    addAgnoBtn.onclick = openAgnoModal;
+                }
+                if (editAgnoBtn) {
+                    editAgnoBtn.onclick = openAgnoModal;
+                }
+                if (closeAgnoModalBtn) closeAgnoModalBtn.onclick = closeAgnoModal;
+                if (cancelAgnoBtn) cancelAgnoBtn.onclick = closeAgnoModal;
+                if (agnoModal) {
+                    agnoModal.addEventListener('click', function(e) {
+                        if (e.target === agnoModal) closeAgnoModal();
+                    });
+                }
+
+                if (agnoForm) {
+                    agnoForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const raw = (agnoInput?.value || '').toString().trim();
+                        const num = parseFloat(raw.replace(',', '.'));
+                        if (isNaN(num) || num < 0 || num > 4) {
+                            showErrorMessage('Lütfen 0.00 ile 4.00 arasında geçerli bir sayı giriniz.');
+                            return;
+                        }
+
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const viewUserParam = urlParams.get('viewUser');
+                        const targetUser = viewUserParam || localStorage.getItem('currentUserEmail');
+                        if (!targetUser) return;
+
+                        const payload = {
+                            action: 'update',
+                            targetUser,
+                            profile: { agno: num }
+                        };
+
+                        window.backendAPI.post('profile.php?action=update', payload)
+                            .then(res => {
+                                if (res?.success) {
+                                    // Update UI
+                                    if (agnoScoreEl) agnoScoreEl.textContent = num.toFixed(2);
+                                    if (agnoIndicatorEl) agnoIndicatorEl.className = 'agno-indicator ' + getAgnoColorClass(num);
+                                    if (addAgnoBtn) addAgnoBtn.style.display = 'none';
+                                    const editAgnoBtn = document.getElementById('editAgnoBtn');
+                                    if (editAgnoBtn) editAgnoBtn.style.display = 'inline-flex';
+                                    if (agnoSectionEl) agnoSectionEl.style.display = '';
+                                    if (addAboutSectionEl) {
+                                        const aboutBtn = document.getElementById('addAboutBtn');
+                                        const aboutBtnVisible = aboutBtn && aboutBtn.style.display !== 'none';
+                                        if (!aboutBtnVisible) addAboutSectionEl.style.display = 'none';
+                                    }
+                                    closeAgnoModal();
+                                    showSuccessMessage('AGNO güncellendi');
+                                } else {
+                                    showErrorMessage('Güncelleme başarısız: ' + (res?.error || 'Bilinmeyen hata'));
+                                }
+                            })
+                            .catch(err => {
+                                console.error('AGNO kaydetme hatası:', err);
+                                showErrorMessage('Güncelleme sırasında hata oluştu');
+                            });
+                    });
                 }
 
                 // Side panel
@@ -4441,16 +4568,11 @@ class WorksTracker {
             }
         });
         
-        // Fill missing years with 0
-        const years = Object.keys(this.yearlyStats).map(Number);
-        if (years.length > 0) {
-            const minYear = Math.min(...years);
-            const maxYear = Math.max(...years, currentYear);
-            
-            for (let year = minYear; year <= maxYear; year++) {
-                if (!this.yearlyStats[year]) {
-                    this.yearlyStats[year] = 0;
-                }
+        // Ensure a fixed window covering the last 10 years (inclusive of current year)
+        const startYear = currentYear - 9;
+        for (let y = startYear; y <= currentYear; y++) {
+            if (!this.yearlyStats[y]) {
+                this.yearlyStats[y] = 0;
             }
         }
     }
@@ -4536,18 +4658,21 @@ class WorksTracker {
         chartBars.innerHTML = '';
         chartLabels.innerHTML = '';
         
-        const years = Object.keys(this.yearlyStats).map(Number).sort();
-        if (years.length === 0) return;
+        // Always display the last 10 years (inclusive of current year)
+        const currentYear = new Date().getFullYear();
+        const startYear = currentYear - 9;
+        const displayYears = [];
+        for (let y = startYear; y <= currentYear; y++) {
+            displayYears.push(y);
+        }
         
-        const maxValue = Math.max(...Object.values(this.yearlyStats));
-        if (maxValue === 0) return;
-        
-        // Limit to last 6 years or available years
-        const displayYears = years.slice(-6);
+        // Compute max across the fixed window; allow rendering even if all zeros
+        const maxValue = Math.max(...displayYears.map(y => this.yearlyStats[y] || 0), 0);
+        const denominator = maxValue > 0 ? maxValue : 1;
         
         displayYears.forEach(year => {
             const count = this.yearlyStats[year] || 0;
-            const percentage = maxValue > 0 ? (count / maxValue) * 100 : 0;
+            const percentage = (count / denominator) * 100;
             
             // Create bar
             const bar = document.createElement('div');

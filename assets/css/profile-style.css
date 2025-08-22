@@ -525,6 +525,24 @@
     box-shadow: var(--shadow);
 }
 
+/* AGNO header styled like About header */
+.profile-agno-section .about-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.profile-agno-section .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-color);
+    margin: 0;
+    font-size: 1.1rem;
+}
+
 .agno-container {
     display: flex;
     align-items: center;
@@ -3082,3 +3100,49 @@
     color: white;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
+
+/* Add Agno Section */
+.add-agno-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    justify-content: center;
+}
+.add-agno-btn:hover {
+    background: #4a1515;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.add-agno-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.add-agno-btn i {
+    font-size: 1.1em;
+}
+
+/* Dark mode için add agno button */
+[data-theme="dark"] .add-agno-btn {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .add-agno-btn:hover {
+    background: #7f2d2d;
+    color: white;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+

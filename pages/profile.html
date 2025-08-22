@@ -323,22 +323,31 @@
                     </div>
                 </div>
                 
-                <!-- Add About Section Button (visible when about section is empty) -->
+                <!-- Add Actions Container: About + AGNO (shown when either is missing) -->
                 <div class="add-about-section" id="addAboutSection" style="display: none;">
                     <button type="button" class="add-about-btn" id="addAboutBtn">
                         <i class="fas fa-plus"></i>
                         <span>Hakkında Bölümü Ekle</span>
                     </button>
+                    <button class="add-agno-btn" id="addAgnoBtn" style="display: none;">
+                        <i class="fas fa-plus"></i> AGNO Ekle
+                    </button>
                 </div>
                 
                 <!-- AGNO Bölümü -->
                 <div class="profile-agno-section" id="profileAgnoSection" style="display: none;">
+                    <div class="about-header">
+                        <h3 class="section-title">AGNO</h3>
+                        <button type="button" class="about-edit-btn" id="editAgnoBtn" style="display: none;">
+                            <i class="fas fa-edit"></i>
+                            Düzenle
+                        </button>
+                    </div>
                     <div class="agno-container">
                         <div class="agno-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <div class="agno-content">
-                            <span class="agno-label">AGNO</span>
                             <div class="agno-value">
                                 <span class="agno-score" id="agnoScore">0.00</span>
                                 <span class="agno-max">/4.00</span>
@@ -873,6 +882,27 @@
         </div>
     </div>
 
+    <!-- AGNO Modal -->
+    <div class="modal-overlay" id="agnoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>AGNO Ekle/Düzenle</h3>
+                <button class="modal-close" id="closeAgnoModal">
+                </button>
+            </div>
+            <form class="modal-form" id="agnoForm">
+                <div class="form-group">
+                    <label for="agnoInput">AGNO Değeri (0.00 - 4.00)</label>
+                    <input type="number" id="agnoInput" name="agno" min="0" max="4" step="0.01" placeholder="Örn: 3.45" inputmode="decimal">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelAgno">İptal</button>
+                    <button type="submit" class="btn-save" id="saveAgno">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Email Modal -->
     <div class="modal-overlay" id="emailModal">
         <div class="modal-content">
@@ -981,6 +1011,10 @@
 
     <!-- Profile Dropdown -->
     <div class="profile-dropdown" id="profileDropdown">
+        <a href="profile.html" class="dropdown-item">
+            <i class="fas fa-user dropdown-icon"></i>
+            <span>Profil</span>
+        </a>
         <a href="settings.html" class="dropdown-item">
             <i class="fas fa-cog dropdown-icon"></i>
             <span>Ayarlar</span>
