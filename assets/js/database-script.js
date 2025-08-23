@@ -275,18 +275,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     events = res.items.map(normalizeEventFromBackend);
                     return;
                 }
+                // Esnek yanıt desteği
+                if (Array.isArray(res)) { events = res.map(normalizeEventFromBackend); return; }
+                if (Array.isArray(res?.data)) { events = res.data.map(normalizeEventFromBackend); return; }
+                if (Array.isArray(res?.list)) { events = res.list.map(normalizeEventFromBackend); return; }
             }
         } catch (e) {
             console.warn('⚠️ Etkinlikler yüklenemedi (backend):', e?.message || e);
         }
-        // Backend başarısızsa mevcut örnek veriler ile devam et
-        events = [
-            { id: 1, title: 'Makine Öğrenmesi Semineri', date: '2025-08-15', time: '14:00' },
-            { id: 2, title: 'Proje Sunumları', date: '2025-08-22', time: '10:00' },
-            { id: 3, title: 'Yapay Zeka Konferansı', date: '2025-09-05', time: '09:00' },
-            { id: 4, title: 'Veri Bilimi Workshops', date: '2025-09-12', time: '13:30' },
-            { id: 5, title: 'Teknoloji Fuarı', date: '2025-09-25', time: '11:00' }
-        ];
+        // Fallback örnek verileri kaldır: etkinlik yoksa boş kalsın
+        events = [];
     }
 
     function normalizeEventFromBackend(row) {
@@ -546,14 +544,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         body.innerHTML = html;
 
-        // Footer: Admin ise etkinlik ekle
+        // Footer: Admin ise, geçmiş günlerde buton yerine not göster
         footer.innerHTML = '';
         if (isAdminUser()) {
-            const addBtn = document.createElement('button');
-            addBtn.className = 'btn-confirm';
-            addBtn.innerHTML = '<i class="fas fa-plus"></i> Etkinlik Ekle';
-            addBtn.addEventListener('click', () => openCreateEventModal(dateStr));
-            footer.appendChild(addBtn);
+            if (isPastDateYMD(dateStr)) {
+                const note = document.createElement('div');
+                note.style.cssText = 'color:#888; font-size: 13px; font-style: italic;';
+                note.textContent = 'Geçmiş tarihe etkinlik eklenemez.';
+                footer.appendChild(note);
+            } else {
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn-confirm';
+                addBtn.innerHTML = '<i class="fas fa-plus"></i> Etkinlik Ekle';
+                addBtn.addEventListener('click', () => openCreateEventModal(dateStr));
+                footer.appendChild(addBtn);
+            }
         }
 
         modal.style.display = 'flex';
@@ -706,6 +711,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function openCreateEventModal(dateStr) {
+        if (dateStr && isPastDateYMD(dateStr)) {
+            // Guard: do not open create modal for past dates
+            showToast('Geçmiş tarihe etkinlik eklenemez.', 'warning');
+            return;
+        }
         ensureCreateEventModal();
         const modal = document.getElementById('createEventModal');
         const form = document.getElementById('createEventForm');
@@ -742,6 +752,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof window !== 'undefined') {
         window.isValidDateYMDSafe = isValidDateYMDSafe;
         window.isValidTimeHHMMSafe = isValidTimeHHMMSafe;
+    }
+
+    // Yardımcı: YYYY-MM-DD geçmiş mi?
+    function isPastDateYMD(ymd) {
+        if (!isValidDateYMDSafe(ymd)) return false;
+        const today = new Date();
+        const ty = today.getFullYear();
+        const tm = String(today.getMonth() + 1).padStart(2, '0');
+        const td = String(today.getDate()).padStart(2, '0');
+        const todayYMD = `${ty}-${tm}-${td}`;
+        return ymd < todayYMD;
     }
 
     // Fallback alias to avoid ReferenceError if loadEventsFromBackend is not in this scope
@@ -924,17 +945,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 container.appendChild(el);
             });
         }
-        // Admin kullanıcılar için: Etkinlik Ekle düğmesi (her durumda ekle)
+        // Admin kullanıcılar için: Geçmiş günlerde buton yerine bilgi notu göster
         try {
             if (typeof isAdminUser === 'function' ? isAdminUser() : (localStorage.getItem('userRole') || '').toLowerCase() === 'admin') {
-                const actions = document.createElement('div');
-                actions.style.marginTop = '12px';
-                const btn = document.createElement('button');
-                btn.className = 'btn-confirm';
-                btn.innerHTML = '<i class="fas fa-plus"></i> Etkinlik Ekle';
-                btn.addEventListener('click', () => openCreateEventModal(dateStr));
-                actions.appendChild(btn);
-                container.appendChild(actions);
+                const isPast = isPastDateYMD(dateStr);
+                const area = document.createElement('div');
+                area.style.marginTop = '12px';
+                if (isPast) {
+                    const note = document.createElement('div');
+                    note.style.cssText = 'color:#888; font-size: 13px; font-style: italic; text-align:center;';
+                    note.textContent = 'Geçmiş tarihe etkinlik eklenemez.';
+                    area.appendChild(note);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-confirm';
+                    btn.innerHTML = '<i class="fas fa-plus"></i> Etkinlik Ekle';
+                    btn.addEventListener('click', () => openCreateEventModal(dateStr));
+                    area.appendChild(btn);
+                }
+                container.appendChild(area);
             }
         } catch (_) {}
     }
@@ -1129,6 +1158,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!Array.isArray(events) || events.length === 0) {
             try { if (typeof window.loadEventsFromBackend === 'function') { await window.loadEventsFromBackend(); } } catch (_) {}
         }
+        // Geçmiş etkinlikleri temizle (yalnızca tarihi geçmiş olanlar)
+        try {
+            await purgePastEvents();
+        } catch (e) {
+            console.warn('Geçmiş etkinlik temizleme hatası:', e?.message || e);
+        }
         
         // Listeyi hazırla (tarih-saat sıralı)
         const enriched = events.map(ev => ({ ...ev, __d: new Date(ev.date) }))
@@ -1179,6 +1214,33 @@ document.addEventListener('DOMContentLoaded', function() {
         
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    // Geçmiş etkinlikleri backend'den sil ve listeyi tazele
+    async function purgePastEvents() {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        const todayYMD = `${y}-${m}-${d}`;
+
+        // events elemanları normalizeEventFromBackend ile YMD olmalı; lexicographic karşılaştırma yeterli
+        const past = (events || []).filter(ev => ev && ev.date && ev.date < todayYMD && ev.id != null);
+        if (past.length === 0) return;
+
+        for (const ev of past) {
+            try {
+                await deleteEventInBackend(ev.id);
+            } catch (err) {
+                // Birini silerken hata olursa devam et
+                console.warn('Etkinlik silinemedi:', ev.id, err?.message || err);
+            }
+        }
+
+        // Silme sonrası listeyi yeniden yükle
+        if (typeof window.loadEventsFromBackend === 'function') {
+            await window.loadEventsFromBackend();
+        }
     }
 
     // Basit Onay Modalı (site içi)
