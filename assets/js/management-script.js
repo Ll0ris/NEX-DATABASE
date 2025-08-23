@@ -112,7 +112,7 @@
     TIERS.forEach(tier => {
       const tierUsers = tier.roles.flatMap(r => byRole.get(r) || []);
       const tierEl = document.createElement('div');
-      tierEl.className = 'tier';
+      tierEl.className = `tier ${tierClassByTitle(tier.title)}`;
       tierEl.innerHTML = `
         <div class="tier-header">
           <div class="tier-title">${tier.title}</div>
@@ -134,16 +134,21 @@
               <div class="subgroup-title">${roleName}</div>
               <div class="subgroup-count">${usersForRole.length} kişi</div>
             </div>
-            <div class="subgroup-grid"></div>
+            <ul class="role-list"></ul>
           `;
-          const sgGrid = subgroup.querySelector('.subgroup-grid');
+          const list = subgroup.querySelector('.role-list');
           if (usersForRole.length === 0) {
-            const empty = document.createElement('div');
-            empty.style.cssText = 'color: var(--text-secondary); padding: 8px;';
+            const empty = document.createElement('li');
+            empty.style.cssText = 'color: var(--text-secondary); padding: 8px; list-style: none;';
             empty.textContent = 'Henüz atama yapılmamış';
-            sgGrid.appendChild(empty);
+            list.appendChild(empty);
           } else {
-            usersForRole.forEach(u => sgGrid.appendChild(renderMemberCard(u)));
+            usersForRole.forEach(u => {
+              const li = document.createElement('li');
+              li.className = 'role-item';
+              li.appendChild(renderMemberCard(u, { showRole: true, roleName }));
+              list.appendChild(li);
+            });
           }
           subWrap.appendChild(subgroup);
         });
@@ -176,7 +181,20 @@
     }
   }
 
-  function renderMemberCard(user){
+  function tierClassByTitle(title){
+    switch (title) {
+      case 'Ekip Başkanı': return 'tier--president';
+      case 'Başkan Yardımcıları': return 'tier--vps';
+      case 'Kurullar': return 'tier--boards';
+      case 'Sorumlular': return 'tier--leads';
+      case 'Ekip Üyeleri': return 'tier--members';
+      default: return '';
+    }
+  }
+
+  function renderMemberCard(user, opts={}){
+    const showRole = !!opts.showRole;
+    const roleText = opts.roleName || '';
     const el = document.createElement('div');
     el.className = 'member-card';
     el.innerHTML = `
