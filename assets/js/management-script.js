@@ -108,68 +108,63 @@
       }
     });
 
-    // Render tiers
-    TIERS.forEach(tier => {
-      const tierUsers = tier.roles.flatMap(r => byRole.get(r) || []);
-      const tierEl = document.createElement('div');
-      tierEl.className = `tier ${tierClassByTitle(tier.title)}`;
-      tierEl.innerHTML = `
-        <div class="tier-header">
-          <div class="tier-title">${tier.title}</div>
-          <div class="tier-count">${tierUsers.length} kişi</div>
+    // 1) Leadership row: [Yönetim Başkan Yardımcısı] [Ekip Başkanı] [Ekip Başkan Yardımcısı]
+    const leadershipRow = document.createElement('div');
+    leadershipRow.className = 'panel-row leadership-row';
+    leadershipRow.appendChild(renderTierPanel('Yönetim Başkan Yardımcısı', byRole.get('Yönetim Başkan Yardımcısı')||[], 'tier--vps'));
+    leadershipRow.appendChild(renderTierPanel('Ekip Başkanı', byRole.get('Ekip Başkanı')||[], 'tier--president'));
+    leadershipRow.appendChild(renderTierPanel('Ekip Başkan Yardımcısı', byRole.get('Ekip Başkan Yardımcısı')||[], 'tier--vps'));
+    root.appendChild(leadershipRow);
+
+    // 2) Kurullar row: [Senato Üyesi] [Denetim Kurulu Üyesi] [İcra Kurulu Üyesi]
+    const boardsRow = document.createElement('div');
+    boardsRow.className = 'panel-row boards-row';
+    boardsRow.appendChild(renderTierPanel('Senato Üyesi', byRole.get('Senato Üyesi')||[], 'tier--boards'));
+    boardsRow.appendChild(renderTierPanel('Denetim Kurulu Üyesi', byRole.get('Denetim Kurulu Üyesi')||[], 'tier--boards'));
+    boardsRow.appendChild(renderTierPanel('İcra Kurulu Üyesi', byRole.get('İcra Kurulu Üyesi')||[], 'tier--boards'));
+    root.appendChild(boardsRow);
+
+    // 3) Sorumlular tier under boards (single box with subgroups like earlier)
+    const leadsTier = document.createElement('div');
+    leadsTier.className = `tier tier--leads`;
+    const leadsAll = ['Workshop Sorumlusu','Organizasyon Sorumlusu','Sosyal Medya Sorumlusu','Dergi Sorumlusu']
+      .reduce((acc, r)=> acc + ((byRole.get(r)||[]).length), 0);
+    leadsTier.innerHTML = `
+      <div class="tier-header">
+        <div class="tier-title">Sorumlular</div>
+        <div class="tier-count">${leadsAll} kişi</div>
+      </div>
+    `;
+    const subWrap = document.createElement('div');
+    subWrap.className = 'tier-subgroups';
+    ['Workshop Sorumlusu','Organizasyon Sorumlusu','Sosyal Medya Sorumlusu','Dergi Sorumlusu'].forEach(roleName=>{
+      const usersForRole = byRole.get(roleName)||[];
+      const subgroup = document.createElement('div');
+      subgroup.className = 'subgroup';
+      subgroup.innerHTML = `
+        <div class="subgroup-header">
+          <div class="subgroup-title">${roleName}</div>
+          <div class="subgroup-count">${usersForRole.length} kişi</div>
         </div>
+        <div class="subgroup-grid member-grid"></div>
       `;
-
-      // For Sorumlular and Kurullar, branch into subgroups per role
-      if (tier.title === 'Sorumlular' || tier.title === 'Kurullar') {
-        const subWrap = document.createElement('div');
-        subWrap.className = 'tier-subgroups';
-
-        tier.roles.forEach(roleName => {
-          const usersForRole = byRole.get(roleName) || [];
-          const subgroup = document.createElement('div');
-          subgroup.className = 'subgroup';
-          subgroup.innerHTML = `
-            <div class="subgroup-header">
-              <div class="subgroup-title">${roleName}</div>
-              <div class="subgroup-count">${usersForRole.length} kişi</div>
-            </div>
-            <ul class="role-list"></ul>
-          `;
-          const list = subgroup.querySelector('.role-list');
-          if (usersForRole.length === 0) {
-            const empty = document.createElement('li');
-            empty.style.cssText = 'color: var(--text-secondary); padding: 8px; list-style: none;';
-            empty.textContent = 'Henüz atama yapılmamış';
-            list.appendChild(empty);
-          } else {
-            usersForRole.forEach(u => {
-              const li = document.createElement('li');
-              li.className = 'role-item';
-              li.appendChild(renderMemberCard(u, { showRole: true, roleName }));
-              list.appendChild(li);
-            });
-          }
-          subWrap.appendChild(subgroup);
-        });
-
-        tierEl.appendChild(subWrap);
+      const sg = subgroup.querySelector('.subgroup-grid');
+      if (usersForRole.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color: var(--text-secondary); padding: 8px;';
+        empty.textContent = 'Henüz atama yapılmamış';
+        sg.appendChild(empty);
       } else {
-        const grid = document.createElement('div');
-        grid.className = 'member-grid';
-        if (tierUsers.length === 0) {
-          const empty = document.createElement('div');
-          empty.style.cssText = 'color: var(--text-secondary); padding: 8px;';
-          empty.textContent = 'Henüz atama yapılmamış';
-          grid.appendChild(empty);
-        } else {
-          tierUsers.forEach(u => grid.appendChild(renderMemberCard(u)));
-        }
-        tierEl.appendChild(grid);
+        usersForRole.forEach(u=> sg.appendChild(renderMemberCard(u)));
       }
-
-      root.appendChild(tierEl);
+      subWrap.appendChild(subgroup);
     });
+    leadsTier.appendChild(subWrap);
+    root.appendChild(leadsTier);
+
+    // 4) Ekip Üyeleri as bottom full-width panel
+    const membersPanel = renderTierPanel('Ekip Üyeleri', byRole.get('Ekip Üyesi')||[], 'tier--members');
+    root.appendChild(membersPanel);
 
     // If absolutely no one found in any role, show a friendly hint
     const totalUsers = Array.from(byRole.values()).reduce((acc, arr)=> acc + (arr?.length||0), 0);
@@ -179,6 +174,29 @@
       hint.textContent = 'Hiç üye görüntülenemedi. Lütfen bağlantınızı ve yetkilerinizi kontrol edin.';
       root.prepend(hint);
     }
+  }
+
+  function renderTierPanel(title, users, extraClass=''){
+    const tierEl = document.createElement('div');
+    tierEl.className = `tier ${extraClass}`.trim();
+    tierEl.innerHTML = `
+      <div class="tier-header">
+        <div class="tier-title">${title}</div>
+        <div class="tier-count">${users.length} kişi</div>
+      </div>
+    `;
+    const grid = document.createElement('div');
+    grid.className = 'member-grid';
+    if (!users || users.length===0){
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color: var(--text-secondary); padding: 8px;';
+      empty.textContent = 'Henüz atama yapılmamış';
+      grid.appendChild(empty);
+    } else {
+      users.forEach(u => grid.appendChild(renderMemberCard(u)));
+    }
+    tierEl.appendChild(grid);
+    return tierEl;
   }
 
   function tierClassByTitle(title){
