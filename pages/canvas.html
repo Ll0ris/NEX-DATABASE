@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Database - Canvas</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
+    <link rel="shortcut icon" href="../favicon.ico">
+    <script src="../assets/js/theme-loader.js"></script>
+    <link rel="stylesheet" href="../assets/css/database-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <div class="left-section">
+            <button class="hamburger-btn" id="hamburgerBtn">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="logo-section" onclick="window.location.href='database.html'" style="cursor: pointer;">
+                <img src="../assets/images/logo.png" alt="NEX Logo" class="top-logo">
+                <div class="logo-text">
+                    <span class="top-title">NEX DATABASE</span>
+                    <span class="top-subtitle">FSAC - Yildiz Teknik Üniversitesi</span>
+                </div>
+            </div>
+        </div>
+        <div class="center-section">
+            <div class="admin-mode-dropdown" id="adminModeDropdown">
+                <div class="dropdown-trigger" id="dropdownTrigger">
+                    <i class="fas fa-shield-alt mode-icon" id="modeIcon"></i>
+                    <span class="mode-text">Güvenli Mod</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-option active" data-mode="safe">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Güvenli Mod</span>
+                    </div>
+                    <div class="dropdown-option" data-mode="admin">
+                        <i class="fas fa-cog"></i>
+                        <span>Yönetici Modu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="right-section">
+            <div class="theme-toggle" id="themeToggle"><i class="fas fa-sun theme-icon"></i></div>
+            <div class="profile-section" id="profileSection">
+                <div class="profile-info"><div class="profile-name"></div><div class="profile-rank">Sistem Yöneticisi</div></div>
+                <div class="profile-avatar"><i class="fas fa-user-circle top-profile-icon"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel" id="sidePanel">
+        <nav class="side-nav">
+            <a href="database.html" class="nav-item active"><i class="fas fa-home nav-icon"></i><span>Ana Sayfa</span></a>
+            <a href="members.html" class="nav-item"><i class="fas fa-users nav-icon"></i><span>Üyeler</span></a>
+            <a href="teams.html" class="nav-item"><i class="fas fa-user-friends nav-icon"></i><span>Takımlar</span></a>
+            <a href="management.html" class="nav-item"><i class="fas fa-user-tie nav-icon"></i><span>Yönetim Kadrosu</span></a>
+            <a href="archive.html" class="nav-item"><i class="fas fa-archive nav-icon"></i><span>Arşiv</span></a>
+            <a href="awards.html" class="nav-item"><i class="fas fa-trophy nav-icon"></i><span>NEX Awards</span></a>
+            <a href="workshops.html" class="nav-item"><i class="fas fa-tools nav-icon"></i><span>Atölyeler</span></a>
+            <a href="canvas.html" class="nav-item"><i class="fas fa-paint-brush nav-icon"></i><span>Canvas</span></a>
+            <a href="nex-feed.html" class="nav-item"><i class="fas fa-comments nav-icon"></i><span>NEX Feed</span></a>
+            <div class="admin-section admin-only">
+                <div class="admin-divider"></div>
+                <a href="reports.html" class="nav-item admin-only"><i class="fas fa-chart-bar nav-icon"></i><span>Raporlar</span></a>
+                <a href="server-status.html" class="nav-item admin-only"><i class="fas fa-server nav-icon"></i><span>Sunucu Durumu</span></a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="page-header">
+            <h1><i class="fas fa-paint-brush"></i> Canvas</h1>
+            <p>Bu sayfa yakında burada olacak.</p>
+        </div>
+        <div class="panel" style="padding: 24px;">
+            <p>Görsel çalışma alanı için hazırlık yapılıyor. Lütfen daha sonra tekrar ziyaret edin.</p>
+        </div>
+    </div>
+
+    <!-- Overlay and Session Timer placeholders -->
+    <div class="overlay" id="overlay"></div>
+    <div class="session-timer" id="sessionTimer"><div class="timer-content"><i class="fas fa-clock"></i><span class="timer-text">40:00</span></div></div>
+
+    <script src="../assets/js/backend-api.js"></script>
+    <script src="../assets/js/global-features.js"></script>
+</body>
+</html>
+

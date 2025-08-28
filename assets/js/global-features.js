@@ -40,6 +40,54 @@ function initGlobalFeatures() {
     }
     
     initScrollDetection();
+    // Ensure extra nav items exist on all pages with standard side panel
+    try { ensureExtraNavItems(); } catch (e) { /* no-op */ }
+}
+
+// Inject additional nav items site-wide and fix active state
+function ensureExtraNavItems() {
+    const sidePanel = document.getElementById('sidePanel');
+    if (!sidePanel) return; // Do not touch profile page or pages without global side panel
+    const nav = sidePanel.querySelector('.side-nav');
+    if (!nav) return;
+
+    const desired = [
+        // Use English slugs for URLs while keeping Turkish labels
+        { href: 'glossary.html', icon: 'fas fa-book', text: 'Akademik Sözlük' },
+        { href: 'senate.html',   icon: 'fas fa-university', text: 'Senato' },
+        { href: 'projects.html', icon: 'fas fa-project-diagram', text: 'Projeler' },
+    ];
+
+    const existing = new Set(
+        Array.from(nav.querySelectorAll('a.nav-item[href]')).map(a => a.getAttribute('href'))
+    );
+
+    // Insert before admin section if present, else append
+    const adminSection = nav.querySelector('.admin-section');
+    for (const item of desired) {
+        if (existing.has(item.href)) continue;
+        const a = document.createElement('a');
+        a.className = 'nav-item';
+        a.href = item.href;
+        a.innerHTML = `<i class="${item.icon} nav-icon"></i><span>${item.text}</span>`;
+        if (adminSection) {
+            nav.insertBefore(a, adminSection);
+        } else {
+            nav.appendChild(a);
+        }
+    }
+
+    // Fix active state based on current path
+    const current = (window.location.pathname.split('/').pop() || '').toLowerCase();
+    if (!current) return;
+    const links = nav.querySelectorAll('a.nav-item[href]');
+    let matched = null;
+    links.forEach(a => {
+        a.classList.remove('active');
+        const href = (a.getAttribute('href') || '').toLowerCase();
+        if (!matched && href === current) matched = a;
+    });
+    if (matched) matched.classList.add('active');
 }
 
 // Hide page content during authentication check

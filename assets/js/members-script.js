@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentMembers = [];
     let allMembers = [];
+    // Default sort by member name
     let sortField = 'name';
     let sortDirection = 'asc';
     let backendTotalCount = null; // Backend'den gelen toplam üye sayısı
@@ -340,10 +341,75 @@ document.addEventListener('DOMContentLoaded', function() {
         'Transcendent': 5
     };
 
-    // statusOrder removed (unused)
+    // Custom status order: aktif > fahri > mezun > pasif
+    function statusOrderValue(member) {
+        // Prefer explicit status if available; otherwise try role
+        const raw = (member.status || member.role || '').toString();
+        const norm = normalizeStatus(raw); // maps to: active, inactive, honorary, active_alumni, passive_alumni, ...
+        switch (norm) {
+            case 'active': return 1;
+            case 'honorary': return 2;
+            case 'active_alumni': return 3;
+            case 'passive_alumni': return 3; // mezun grubunda birlikte değerlensin
+            case 'inactive': return 4;
+            default: return 99;
+        }
+    }
+
+    // Position order: highest priority first
+    function positionOrderValue(member) {
+        const list = Array.isArray(member.positions)
+            ? member.positions
+            : (member.positions ? String(member.positions).split(',') : []);
+
+        if (!list || list.length === 0) return 999;
+
+        // Normalize helper (case-insensitive, Turkish locale)
+        const norm = (s) => (s || '').toLocaleLowerCase('tr-TR').trim();
+
+        // Map known positions to order values (lower is higher priority)
+        const map = new Map([
+            ['ekip başkanı', 1],
+            ['ekip baskani', 1],
+            ['yönetim başkan yardımcısı', 2],
+            ['yonetim baskan yardimcisi', 2],
+            ['ekip başkan yardımcısı', 3],
+            ['ekip baskan yardimcisi', 3],
+            ['senato üyesi', 4],
+            ['senato uyesi', 4],
+            ['denetim kurulu üyesi', 5],
+            ['denetim kurulu uyesi', 5],
+            ['icra kurulu üyesi', 6],
+            ['icra kurulu uyesi', 6],
+            // Sorumlu alt başlıkları
+            ['dergi sorumlusu', 7.1],
+            ['organizasyon sorumlusu', 7.2],
+            ['workshop sorumlusu', 7.3],
+            ['eğitim sorumlusu', 7.4],
+            ['egitim sorumlusu', 7.4],
+            ['sosyal medya sorumlusu', 7.5],
+        ]);
+
+        let best = 999;
+        for (const p of list) {
+            const key = norm(p);
+            if (map.has(key)) {
+                const val = map.get(key);
+                if (val < best) best = val;
+            } else if (key.includes('sorumlu')) {
+                // Generic responsible positions fall after known ones
+                best = Math.min(best, 8);
+            } else if (key.includes('başkan') || key.includes('baskan')) {
+                // Any other president/vice roles get relatively high priority
+                best = Math.min(best, 3.5);
+            }
+        }
+        return best;
+    }
 
     function getComparableValue(member, field) {
         switch (field) {
+            case 'name':
             case 'fullName': {
                 return (member.fullName || '').toLowerCase();
             }
@@ -363,7 +429,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return order;
             }
             case 'status': {
-                return (member.role ?? '').toString().toLowerCase();
+                return statusOrderValue(member);
+            }
+            case 'position':
+            case 'positions': {
+                return positionOrderValue(member);
             }
             default: {
                 const v = member[field];
